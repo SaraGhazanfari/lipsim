@@ -1,0 +1,6 @@
+#tensorboardX==1.2
+#torch==2.0.0
+#torchvision==0.15.0
+#torchaudio==2.0.0
+pytorch-warmup==0.1.1
+typing-extensions==4.7.1
