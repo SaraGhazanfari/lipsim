@@ -54,14 +54,14 @@ def set_config(config):
     return config
 
 
-def main(config):
+def main(config, image=None):
     config = set_config(config)
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
     elif config.mode in ['certified', 'attack', 'eval', 'dreamsim']:
         evaluate = Evaluator(config)
-        evaluate()
+        evaluate(image)
 
 
 if __name__ == '__main__':
