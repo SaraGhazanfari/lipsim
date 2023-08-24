@@ -1,16 +1,16 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-long_description = "".join(long_description.split("<!--Experiments-->")[::2])
-long_description = "".join(long_description.split("![teaser](images/figs/teaser.png)"))
+# with open("README.md", "r") as fh:
+#     long_description = fh.read()
+# long_description = "".join(long_description.split("<!--Experiments-->")[::2])
+# long_description = "".join(long_description.split("![teaser](images/figs/teaser.png)"))
 
 setuptools.setup(
     name="lipsim",
     version="0.1.0",
     description="LipSim similarity metric",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+    # long_description=long_description,
+    # long_description_content_type="text/markdown",
     url="https://github.com/SaraGhazanfari/lipsim",
     packages=['lipsim', 'lipsim/core'],
     install_requires=[
