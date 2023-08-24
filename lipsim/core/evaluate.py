@@ -66,7 +66,6 @@ class Evaluator:
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
         self.n_classes = 768
-        self.config.means = self.means
 
         # load model
         self.model = LipschitzNetwork(self.config, self.n_classes)
