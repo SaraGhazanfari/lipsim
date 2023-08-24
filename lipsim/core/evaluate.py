@@ -63,13 +63,14 @@ class Evaluator:
             self.batch_size = self.config.batch_size
 
         # load reader
-        Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        self.config.means = self.reader.means
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
+        self.n_classes = 768
+        self.config.means = self.means
 
         # load model
-        self.model = LipschitzNetwork(self.config, self.reader.n_classes)
-        self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        self.model = LipschitzNetwork(self.config, self.n_classes)
+        self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.cuda()
 
@@ -82,6 +83,8 @@ class Evaluator:
         logging.info('Done with batched inference.')
 
     def vanilla_eval(self):
+        Reader = readers_config[self.config.dataset]
+        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         loss = 0
         data_loader, _ = self.reader.load_dataset()
         with torch.no_grad():
