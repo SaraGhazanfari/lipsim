@@ -61,7 +61,7 @@ def main(config, image=None):
         trainer()
     elif config.mode in ['certified', 'attack', 'eval', 'dreamsim']:
         evaluate = Evaluator(config)
-        evaluate(image)
+        return evaluate()
 
 
 if __name__ == '__main__':

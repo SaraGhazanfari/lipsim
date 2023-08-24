@@ -46,7 +46,7 @@ class Evaluator:
         epoch = checkpoint['epoch']
         return epoch
 
-    def __call__(self, image):
+    def __call__(self):
         '''Run evaluation of model or eval under attack'''
 
         cudnn.benchmark = True
@@ -78,10 +78,9 @@ class Evaluator:
             self.vanilla_eval()
         elif self.config.mode == 'dreamsim':
             self.dreamsim_eval()
-        elif self.config.mode == 'embedding':
-            return self.model(image)
 
         logging.info('Done with batched inference.')
+        return self.model
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
