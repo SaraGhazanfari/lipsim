@@ -51,10 +51,11 @@ def set_config(config):
 
     if config.mode == 'attack' and config.attack is None:
         ValueError('With mode=attack, the following arguments are required: --attack')
+    return config
 
 
 def main(config):
-    set_config(config)
+    config = set_config(config)
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
