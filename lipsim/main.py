@@ -9,6 +9,50 @@ from lipsim.core.evaluate import Evaluator
 warnings.filterwarnings("ignore")
 
 
+def override_args(config, depth, num_channels, depth_linear, n_features):
+    config.depth = depth
+    config.num_channels = num_channels
+    config.depth_linear = depth_linear
+    config.n_features = n_features
+    return config
+
+
+def set_config(config):
+    if config.model_name == 'small':
+        config = override_args(config, 20, 45, 7, 2048)  # depth, num_channels, depth_linear, n_features
+    elif config.model_name == 'medium':
+        config = override_args(config, 30, 60, 10, 2048)
+    elif config.model_name == 'large':
+        config = override_args(config, 50, 90, 10, 2048)
+    elif config.model_name == 'xlarge':
+        config = override_args(config, 70, 120, 15, 2048)
+    elif config.model_name is None and \
+            not all([config.depth, config.num_channels, config.depth_linear, config.n_features]):
+        ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
+
+    # process argments
+    eval_mode = ['certified', 'attack']
+    if config.data_dir is None:
+        config.data_dir = os.environ.get('DATADIR', None)
+    if config.data_dir is None:
+        ValueError("the following arguments are required: --data_dir")
+    os.makedirs('./trained_models', exist_ok=True)
+    path = realpath('./trained_models')
+    if config.train_dir is None:
+        ValueError("--train_dir must be defined.")
+    elif config.mode == 'train' and config.train_dir is not None:
+        config.train_dir = f'{path}/{config.train_dir}'
+        os.makedirs(config.train_dir, exist_ok=True)
+        os.makedirs(f'{config.train_dir}/checkpoints', exist_ok=True)
+    elif config.mode in eval_mode and config.train_dir is not None:
+        config.train_dir = f'{path}/{config.train_dir}'
+    elif config.mode in eval_mode and config.train_dir is None:
+        ValueError("--train_dir must be defined.")
+
+    if config.mode == 'attack' and config.attack is None:
+        ValueError('With mode=attack, the following arguments are required: --attack')
+
+
 def main(config):
     set_config(config)
     if config.mode == 'train':
@@ -20,7 +64,6 @@ def main(config):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='Train or Evaluate Lipschitz Networks.')
 
     # parameters training or eval
@@ -74,46 +117,4 @@ if __name__ == '__main__':
     config = parser.parse_args()
     config.cmd = f"python3 {' '.join(sys.argv)}"
 
-
-    def override_args(config, depth, num_channels, depth_linear, n_features):
-        config.depth = depth
-        config.num_channels = num_channels
-        config.depth_linear = depth_linear
-        config.n_features = n_features
-        return config
-
-    def set_config(config):
-        if config.model_name == 'small':
-            config = override_args(config, 20, 45, 7, 2048)  # depth, num_channels, depth_linear, n_features
-        elif config.model_name == 'medium':
-            config = override_args(config, 30, 60, 10, 2048)
-        elif config.model_name == 'large':
-            config = override_args(config, 50, 90, 10, 2048)
-        elif config.model_name == 'xlarge':
-            config = override_args(config, 70, 120, 15, 2048)
-        elif config.model_name is None and \
-                not all([config.depth, config.num_channels, config.depth_linear, config.n_features]):
-            ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
-
-        # process argments
-        eval_mode = ['certified', 'attack']
-        if config.data_dir is None:
-            config.data_dir = os.environ.get('DATADIR', None)
-        if config.data_dir is None:
-            ValueError("the following arguments are required: --data_dir")
-        os.makedirs('./trained_models', exist_ok=True)
-        path = realpath('./trained_models')
-        if config.train_dir is None:
-            ValueError("--train_dir must be defined.")
-        elif config.mode == 'train' and config.train_dir is not None:
-            config.train_dir = f'{path}/{config.train_dir}'
-            os.makedirs(config.train_dir, exist_ok=True)
-            os.makedirs(f'{config.train_dir}/checkpoints', exist_ok=True)
-        elif config.mode in eval_mode and config.train_dir is not None:
-            config.train_dir = f'{path}/{config.train_dir}'
-        elif config.mode in eval_mode and config.train_dir is None:
-            ValueError("--train_dir must be defined.")
-
-        if config.mode == 'attack' and config.attack is None:
-            ValueError('With mode=attack, the following arguments are required: --attack')
-
+    main(config)
