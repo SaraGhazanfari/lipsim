@@ -1,11 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="lipsim",
     version="0.1.0",
     description="LipSim similarity metric",
     url="https://github.com/SaraGhazanfari/lipsim",
-    packages=['lipsim', 'lipsim/core'],
+    packages=find_packages()#['lipsim', 'lipsim/core'],
     # install_requires=[
     #     "numpy",
     #     "open-clip-torch",
