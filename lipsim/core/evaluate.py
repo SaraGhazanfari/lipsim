@@ -74,13 +74,15 @@ class Evaluator:
         self.model = self.model.cuda()
 
         self.load_ckpt()
-        if self.config.mode == 'eval':
+        if self.config.mode == 'lipsim':
+            return self.model
+        elif self.config.mode == 'eval':
             self.vanilla_eval()
         elif self.config.mode == 'dreamsim':
             self.dreamsim_eval()
 
         logging.info('Done with batched inference.')
-        return self.model
+
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]

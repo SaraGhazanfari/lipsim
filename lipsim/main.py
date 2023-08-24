@@ -59,7 +59,7 @@ def main(config, image=None):
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
-    elif config.mode in ['certified', 'attack', 'eval', 'dreamsim']:
+    elif config.mode in ['lipsim', 'eval', 'dreamsim']:
         evaluate = Evaluator(config)
         return evaluate()
 
