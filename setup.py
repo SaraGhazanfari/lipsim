@@ -8,6 +8,13 @@ setup(
     packages=find_packages(include=['lipsim', 'lipsim.*']),
     install_requires=[
         "dreamsim",
+        "pytorch-warmup==0.1.1",
+        "typing-extensions==4.7.1",
+        "numpy",
+        "tqdm",
+        "git+https://github.com/BorealisAI/advertorch.git",
+        "torchvision==0.15.0",
+        "pandas",
     ],
     # classifiers=[
     #     "Programming Language :: Python :: 3",
