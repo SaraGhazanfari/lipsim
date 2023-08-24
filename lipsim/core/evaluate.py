@@ -80,6 +80,7 @@ class Evaluator:
             self.dreamsim_eval()
 
         logging.info('Done with batched inference.')
+        return self.model
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
