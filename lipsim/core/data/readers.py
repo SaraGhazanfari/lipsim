@@ -5,7 +5,7 @@ import pandas as pd
 from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
-from core.utils import get_preprocess_fn
+from lipsim.core.utils import get_preprocess_fn
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 

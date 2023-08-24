@@ -1,4 +1,3 @@
-import os
 import time
 import pprint
 import socket
@@ -7,9 +6,9 @@ import glob
 from os.path import join, exists
 from contextlib import nullcontext
 from dreamsim import dreamsim
-from core import utils
-from core.data.readers import ImagenetDataset, readers_config
-from core.models.model import NormalizedModel, LipschitzNetwork
+from lipsim.core import utils
+from lipsim.core.data.readers import readers_config
+from lipsim.core.models.model import NormalizedModel, LipschitzNetwork
 import sys
 import numpy as np
 import torch

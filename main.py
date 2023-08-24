@@ -3,9 +3,8 @@ import sys
 import warnings
 import argparse
 from os.path import realpath
-import numpy as np
-from core.trainer import Trainer
-from core.evaluate import Evaluator
+from lipsim.core.trainer import Trainer
+from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")
 

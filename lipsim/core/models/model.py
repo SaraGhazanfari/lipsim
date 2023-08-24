@@ -1,10 +1,7 @@
-import logging
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torchvision.transforms import Normalize
-from core.models.layers import LinearNormalized, PoolingLinear, PaddingChannels
-from core.models.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
+from lipsim.core.models.layers import LinearNormalized, PoolingLinear, PaddingChannels
+from lipsim.core.models.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 
 
 class NormalizedModel(nn.Module):
