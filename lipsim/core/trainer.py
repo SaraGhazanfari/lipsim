@@ -24,7 +24,6 @@ class Trainer:
 
     def __init__(self, config):
         self.config = config
-        self.device_0 = torch.device('cuda:0')
         self.dino_model, _ = dreamsim(pretrained=True, dreamsim_type='dino_vitb16', cache_dir='./checkpoints')
 
     def _load_state(self):
