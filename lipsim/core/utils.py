@@ -16,20 +16,70 @@ import pytorch_warmup as warmup
 import torch
 from torchvision import transforms
 
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+Misc functions.
 
-def get_preprocess(model_type):
-    if 'lpips' in model_type:
-        return 'LPIPS'
-    elif 'dists' in model_type:
-        return 'DISTS'
-    elif 'psnr' in model_type:
-        return 'PSNR'
-    elif 'ssim' in model_type:
-        return 'SSIM'
-    elif 'clip' in model_type or 'open_clip' in model_type or 'dino' in model_type or 'mae' in model_type:
-        return 'DEFAULT'
-    else:
-        return 'DEFAULT'
+Mostly copy-paste from torchvision references or other public repos like DETR:
+https://github.com/facebookresearch/detr/blob/master/util/misc.py
+"""
+import os
+import random
+
+import numpy as np
+import torch
+from torch import nn
+import torch.distributed as dist
+from PIL import ImageFilter, ImageOps
+
+
+class GaussianBlur(object):
+    """
+    Apply Gaussian Blur to the PIL image.
+    """
+
+    def __init__(self, p=0.5, radius_min=0.1, radius_max=2.):
+        self.prob = p
+        self.radius_min = radius_min
+        self.radius_max = radius_max
+
+    def __call__(self, img):
+        do_it = random.random() <= self.prob
+        if not do_it:
+            return img
+
+        return img.filter(
+            ImageFilter.GaussianBlur(
+                radius=random.uniform(self.radius_min, self.radius_max)
+            )
+        )
+
+
+class Solarization(object):
+    """
+    Apply Solarization to the PIL image.
+    """
+
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, img):
+        if random.random() < self.p:
+            return ImageOps.solarize(img)
+        else:
+            return img
 
 
 def get_preprocess_fn(preprocess, load_size, interpolation):
@@ -52,8 +102,6 @@ def get_preprocess_fn(preprocess, load_size, interpolation):
         else:
             raise ValueError("Unknown preprocessing method")
         return lambda pil_img: t(pil_img.convert("RGB"))
-
-
 
 
 def get_epochs_from_ckpt(filename):
@@ -120,11 +168,12 @@ def setup_distributed_training(world_size, rank):
     # get distributed url
     # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
     # stdout = subprocess.check_output(cmd.split())
-    host_name = 'hostnames'#stdout.decode().splitlines()[0]
+    host_name = 'hostnames'  # stdout.decode().splitlines()[0]
     dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
+
 
 def get_loss(config):
     return nn.MSELoss()

@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torchvision.transforms import Normalize
-from lipsim.core.models.layers import LinearNormalized, PoolingLinear, PaddingChannels
-from lipsim.core.models.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
+from lipsim.core.models.l2_lip.layers import LinearNormalized, PoolingLinear, PaddingChannels
+from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 
 
 class NormalizedModel(nn.Module):
@@ -15,10 +15,10 @@ class NormalizedModel(nn.Module):
         return self.model(self.normalize(x))
 
 
-class LipschitzNetwork(nn.Module):
+class L2LipschitzNetwork(nn.Module):
 
     def __init__(self, config, n_classes):
-        super(LipschitzNetwork, self).__init__()
+        super(L2LipschitzNetwork, self).__init__()
         self.depth = config.depth
         self.num_channels = config.num_channels
         self.depth_linear = config.depth_linear

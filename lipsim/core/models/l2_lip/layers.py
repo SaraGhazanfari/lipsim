@@ -40,7 +40,7 @@ class SDPBasedLipschitzConvLayer(nn.Module):
 
 class SDPBasedLipschitzLinearLayer(nn.Module):
 
-  def __init__(self, config, cin, cout, epsilon=1e-6):
+  def __init__(self, config, cin, cout, epsilon=5e-6): #1e-6
     super(SDPBasedLipschitzLinearLayer, self).__init__()
 
     self.activation = nn.ReLU(inplace=False)
@@ -58,9 +58,10 @@ class SDPBasedLipschitzLinearLayer(nn.Module):
   def forward(self, x):
     res = F.linear(x, self.weights, self.bias)
     res = self.activation(res)
-    q_abs = torch.abs(self.q)
+    q_abs = torch.abs(self.q + self.epsilon)
     q = q_abs[None, :]
-    q_inv = (1/(q_abs+self.epsilon))[:, None]
+    q_inv = (1/(q_abs))[:, None]
+
     T = 2/torch.abs(q_inv * self.weights @ self.weights.T * q).sum(1)
     res = T * res
     res = F.linear(res, self.weights.t())

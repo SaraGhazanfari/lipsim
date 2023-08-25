@@ -8,6 +8,47 @@ from torch.utils.data import Dataset
 from lipsim.core.utils import get_preprocess_fn
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+from lipsim.core.utils import GaussianBlur, Solarization
+
+
+class DataAugmentationDINO(object):
+    def __init__(self, global_crops_scale, local_crops_scale, local_crops_number):
+        flip_and_color_jitter = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomApply(
+                [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
+                p=0.8
+            ),
+            transforms.RandomGrayscale(p=0.2),
+        ])
+        normalize = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+
+        # first global crop
+        self.global_transfo1 = transforms.Compose([
+            transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
+            flip_and_color_jitter,
+            GaussianBlur(1.0),
+            normalize,
+        ])
+        # second global crop
+        self.global_transfo2 = transforms.Compose([
+            transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
+            flip_and_color_jitter,
+            GaussianBlur(0.1),
+            Solarization(0.2),
+            normalize,
+        ])
+        # transformation for the local small crops
+        self.local_crops_number = local_crops_number
+        self.local_transfo = transforms.Compose([
+            transforms.RandomResizedCrop(96, scale=local_crops_scale, interpolation=Image.BICUBIC),
+            flip_and_color_jitter,
+            GaussianBlur(p=0.5),
+            normalize,
+        ])
 
 
 class ImagenetDataset(Dataset):
@@ -35,6 +76,11 @@ class ImagenetDataset(Dataset):
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]),
+            # 'train': DataAugmentationDINO(
+            #     global_crops_scale=(0.4, 1.),
+            #     local_crops_scale=(0.05, 0.4),
+            #     local_crops_number=8
+            # ),
             'val': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
@@ -96,7 +142,8 @@ class ImagenetDataset(Dataset):
 
 
 class NightDataset(Dataset):
-    def __init__(self, config, batch_size, is_training=True, is_distributed=False, num_workers=4, split: str = "test_imagenet",
+    def __init__(self, config, batch_size, is_training=True, is_distributed=False, num_workers=4,
+                 split: str = "test_imagenet",
                  interpolation: transforms.InterpolationMode = transforms.InterpolationMode.BICUBIC,
                  preprocess: str = "DEFAULT", **kwargs):
         self.root_dir = config.data_dir
@@ -141,4 +188,3 @@ readers_config = {
     'imagenet-1k': ImagenetDataset,
     'night': NightDataset,
 }
-

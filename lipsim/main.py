@@ -54,7 +54,7 @@ def set_config(config):
     return config
 
 
-def main(config, image=None):
+def main(config):
     config = set_config(config)
     if config.mode == 'train':
         trainer = Trainer(config)

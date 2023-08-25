@@ -4,7 +4,7 @@ from os.path import join
 from tqdm import tqdm
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config, NightDataset
-from lipsim.core.models.model import NormalizedModel, LipschitzNetwork
+from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 from dreamsim import dreamsim
 import torch.nn as nn
 import torch
@@ -68,7 +68,7 @@ class Evaluator:
         self.n_classes = 768
 
         # load model
-        self.model = LipschitzNetwork(self.config, self.n_classes)
+        self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.cuda()

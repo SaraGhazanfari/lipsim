@@ -8,7 +8,7 @@ from contextlib import nullcontext
 from dreamsim import dreamsim
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config
-from lipsim.core.models.model import NormalizedModel, LipschitzNetwork
+from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 import sys
 import numpy as np
 import torch
@@ -16,6 +16,7 @@ import torch.backends.cudnn as cudnn
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
+import os
 
 
 class Trainer:
@@ -73,10 +74,10 @@ class Trainer:
         self.ngpus = 1
 
         # job_env = submitit.JobEnvironment()
-        self.rank = 0 #todo int(os.environ['RANK'])
-        self.local_rank = 0 #todo int(os.environ['LOCAL_RANK'])
-        self.num_nodes = 1 #todo int(os.environ['LOCAL_WORLD_SIZE'])
-        self.num_tasks = 1 #todo int(os.environ['WORLD_SIZE'])
+        self.rank = int(os.environ['RANK'])
+        self.local_rank = int(os.environ['LOCAL_RANK'])
+        self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
+        self.num_tasks = int(os.environ['WORLD_SIZE'])
         self.is_master = bool(self.rank == 0)
 
         # Setup logging
@@ -101,9 +102,9 @@ class Trainer:
         # ditributed settings
         self.world_size = 1
         self.is_distributed = False
-        # if self.num_nodes > 1 or self.num_tasks > 1:
-        #     self.is_distributed = True
-        #     self.world_size = self.num_nodes * self.ngpus
+        if self.num_nodes > 1 or self.num_tasks > 1:
+            self.is_distributed = True
+            self.world_size = self.num_nodes * self.ngpus
         if self.num_nodes > 1:
             logging.info(
                 f"Distributed Training on {self.num_nodes} nodes")
@@ -127,12 +128,12 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                                      is_distributed=self.is_distributed)
+                             is_distributed=self.is_distributed)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
         # load model
-        self.model = LipschitzNetwork(self.config, self.reader.n_classes)
+        self.model = L2LipschitzNetwork(self.config, self.reader.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
         param_size = 0
         for param in self.model.parameters():
