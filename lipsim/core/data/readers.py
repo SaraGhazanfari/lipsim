@@ -111,7 +111,7 @@ class ImagenetDataset(Dataset):
             sampler = DistributedSampler(dataset, shuffle=shuffle, num_replicas=self.world_size)
 
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size,
-                                 num_workers=self.num_workers, pin_memory=True, drop_last=True)
+                                 num_workers=self.num_workers, pin_memory=False, drop_last=True)
         return data_loader, sampler
 
 
