@@ -16,14 +16,17 @@ import torch.backends.cudnn as cudnn
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
-import os
 
 
 class Trainer:
     """A Trainer to train a PyTorch."""
 
-    def __init__(self, config):
+    def __init__(self, rank, world_size, config):
         self.config = config
+        self.rank = rank
+        self.world_size = world_size
+        self.is_distributed = True
+        self.global_batch_size = world_size * self.config.batch_size
 
     def _load_state(self):
         # load last checkpoint
@@ -70,62 +73,62 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        self.rank = int(os.environ['RANK'])
-        self.local_rank = int(os.environ['LOCAL_RANK'])
-        self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
-        self.num_tasks = int(os.environ['WORLD_SIZE'])
+        # todo self.rank = int(os.environ['RANK'])
+        # todo self.local_rank = int(os.environ['LOCAL_RANK'])
+        # todo self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
+        # todo self.num_tasks = int(os.environ['WORLD_SIZE'])
         self.is_master = bool(self.rank == 0)
 
         # Setup logging
         utils.setup_logging(self.config, self.rank)
         logging.info(self.rank)
-        logging.info(self.local_rank)
-        logging.info(self.num_nodes)
-        logging.info(self.num_tasks)
+        # todo logging.info(self.local_rank)
+        # todo logging.info(self.num_nodes)
+        # todo logging.info(self.num_tasks)
 
         self.message = utils.MessageBuilder()
         # print self.config parameters
-        if self.local_rank == 0:
+        if self.rank == 0:  # todo if self.local_rank == 0:
             logging.info(self.config.cmd)
             pp = pprint.PrettyPrinter(indent=2, compact=True)
             logging.info(pp.pformat(vars(self.config)))
         # print infos
-        if self.local_rank == 0:
+        if self.rank == 0:  # todo if self.local_rank == 0:
             logging.info(f"PyTorch version: {torch.__version__}.")
             logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
             logging.info(f"Hostname: {socket.gethostname()}.")
 
-        # ditributed settings
-        self.world_size = 1
-        self.is_distributed = False
-        if self.num_nodes > 1 or self.num_tasks > 1:
-            self.is_distributed = True
-            self.world_size = self.num_nodes * self.ngpus
-        if self.num_nodes > 1:
-            logging.info(
-                f"Distributed Training on {self.num_nodes} nodes")
-        elif self.num_nodes == 1 and self.num_tasks > 1:
-            logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
-        else:
-            assert self.num_nodes == 1 and self.num_tasks == 1
-            logging.info("Single node training.")
-
-        if not self.is_distributed:
-            self.batch_size = self.config.batch_size * self.ngpus
-        else:
-            self.batch_size = self.config.batch_size
-
-        self.global_batch_size = self.batch_size * self.world_size
-        logging.info('World Size={} => Total batch size {}'.format(
-            self.world_size, self.global_batch_size))
-
-        torch.cuda.set_device(self.local_rank)
+        # todo ditributed settings
+        # self.world_size = 1
+        # self.is_distributed = False
+        # if self.num_nodes > 1 or self.num_tasks > 1:
+        #     self.is_distributed = True
+        #     self.world_size = self.num_nodes * self.ngpus
+        # if self.num_nodes > 1:
+        #     logging.info(
+        #         f"Distributed Training on {self.num_nodes} nodes")
+        # elif self.num_nodes == 1 and self.num_tasks > 1:
+        #     logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
+        # else:
+        #     assert self.num_nodes == 1 and self.num_tasks == 1
+        #     logging.info("Single node training.")
+        #
+        # if not self.is_distributed:
+        #     self.batch_size = self.config.batch_size * self.ngpus
+        # else:
+        #     self.batch_size = self.config.batch_size
+        #
+        # self.global_batch_size = self.batch_size * self.world_size
+        # logging.info('World Size={} => Total batch size {}'.format(
+        #     self.world_size, self.global_batch_size))
+        # todo
+        torch.cuda.set_device(self.rank)  # todo self.local_rank
 
         # load dataset
         Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=self.is_distributed, world_size=self.world_size)
-        if self.local_rank == 0:
+        self.reader = Reader(config=self.config, batch_size=self.config.batch_size, is_training=True,
+                             is_distributed=self.is_distributed, world_size=self.world_size)  # todo self.batch_size
+        if self.rank == 0:  # todo if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
         # load model
@@ -155,8 +158,8 @@ class Trainer:
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.rank)
             self.model = DistributedDataParallel(
-                self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-            if self.local_rank == 0:
+                self.model, device_ids=[self.rank], output_device=self.rank)  # todo self.local_rank
+            if self.rank == 0:  # todo self.local_rank
                 logging.info('Model defined with DistributedDataParallel')
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
@@ -243,18 +246,18 @@ class Trainer:
         frequency = self.config.frequency_log_steps
         if frequency is None:
             return False
-        return (step % frequency == 0 and self.local_rank == 0) or \
-            (step == 1 and self.local_rank == 0)
+        return (step % frequency == 0 and self.rank == 0) or \
+            (step == 1 and self.rank == 0)  # todo self.local_rank
 
     def process_gradients(self, step):
         if self.config.gradient_clip_by_norm:
-            if step == 0 and self.local_rank == 0:
+            if step == 0 and self.rank == 0:  # todo self.local_rank
                 logging.info("Clipping Gradient by norm: {}".format(
                     self.config.gradient_clip_by_norm))
             torch.nn.utils.clip_grad_norm_(
                 self.model.parameters(), self.config.gradient_clip_by_norm)
         elif self.config.gradient_clip_by_value:
-            if step == 0 and self.local_rank == 0:
+            if step == 0 and self.rank == 0:  # todo self.local_rank
                 logging.info("Clipping Gradient by value: {}".format(
                     self.config.gradient_clip_by_value))
             torch.nn.utils.clip_grad_value_(
@@ -266,10 +269,10 @@ class Trainer:
         batch_start_time = time.time()
         images, _ = data
         images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).cuda()
-        if step == 0 and self.local_rank == 0:
+        if step == 0 and self.rank == 0:  # todo self.local_rank
             logging.info(f'images {images.shape}')
         outputs = self.model(images)
-        if step == 0 and self.local_rank == 0:
+        if step == 0 and self.rank == 0:  # todo self.local_rank
             logging.info(f'outputs {outputs.shape}')
         teacher_outputs = self.teacher_model.embed(images)
         loss = self.criterion(outputs, teacher_outputs)
@@ -282,7 +285,7 @@ class Trainer:
             self.scheduler.step(step)
 
         seconds_per_batch = time.time() - batch_start_time
-        examples_per_second = self.batch_size / seconds_per_batch
+        examples_per_second = self.global_batch_size / seconds_per_batch
         examples_per_second *= self.world_size
 
         if self._to_print(step):
