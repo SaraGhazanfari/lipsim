@@ -127,7 +127,7 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=self.is_distributed)
+                             is_distributed=self.is_distributed, world_size=self.world_size)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
@@ -149,8 +149,7 @@ class Trainer:
         nb_parameters = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         self.teacher_model, _ = dreamsim(pretrained=True,
                                          dreamsim_type=self.config.teacher_model_name, cache_dir='./checkpoints')
-        self.teacher_model = DistributedDataParallel(self.teacher_model, device_ids=[self.local_rank],
-                                                     output_device=self.local_rank)
+        self.teacher_model = self.teacher_model.cuda()
 
         logging.info(f'Number of parameters to train: {nb_parameters}')
 

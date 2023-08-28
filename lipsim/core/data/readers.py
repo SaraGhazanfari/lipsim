@@ -1,6 +1,5 @@
 import os
 import torch
-import json
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -66,11 +65,12 @@ class DataAugmentationDINO(object):
 
 
 class ImagenetDataset(Dataset):
-    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=8):
+    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=8, world_size=1):
         self.config = config
         self.batch_size = batch_size
         self.is_training = is_training
         self.is_distributed = is_distributed
+        self.world_size = world_size
         self.num_workers = num_workers
         self.n_classes = 768
         self.height, self.width = 224, 500
@@ -108,7 +108,8 @@ class ImagenetDataset(Dataset):
         shuffle = True if self.is_training else False
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
         if self.is_distributed:
-            sampler = DistributedSampler(dataset, shuffle=shuffle)
+            sampler = DistributedSampler(dataset, shuffle=shuffle, num_replicas=self.world_size)
+
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size,
                                  num_workers=self.num_workers, pin_memory=True, drop_last=True)
         return data_loader, sampler
