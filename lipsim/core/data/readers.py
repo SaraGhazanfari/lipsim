@@ -27,11 +27,11 @@ class DataAugmentationDINO(object):
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
         self.standard_transform = transforms.Compose([
-                transforms.CenterCrop(224),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
+            transforms.CenterCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
         # first global crop
         self.global_transfo1 = transforms.Compose([
             transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
@@ -55,18 +55,15 @@ class DataAugmentationDINO(object):
             GaussianBlur(p=0.5),
             normalize,
         ])
+
     def __call__(self, image):
-        #crops = []
         images = []
         images.append(self.standard_transform(image))
         images.append(self.global_transfo1(image))
         images.append(self.global_transfo2(image))
-        #for _ in range(self.local_crops_number):
-        #    crops.append(self.local_transfo(image))
-        
-        #crops = torch.stack(crops, dim=0)
         images = torch.stack(images, dim=0)
-        return images#, crops
+        return images
+
 
 class ImagenetDataset(Dataset):
     def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=8):
@@ -88,126 +85,33 @@ class ImagenetDataset(Dataset):
         self.samples = []
         self.targets = []
         self.transform = {
-            #'train': transforms.Compose([
+            # 'train': transforms.Compose([
             #    transforms.CenterCrop(224),
             #    transforms.RandomHorizontalFlip(),
             #    transforms.ToTensor(),
             #    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            #]),
+            # ]),
             'train': DataAugmentationDINO(
-                 global_crops_scale=(0.4, 1.),
-                 local_crops_scale=(0.05, 0.4),
-                 local_crops_number=8
-             ),
+                global_crops_scale=(0.4, 1.),
+                local_crops_scale=(0.05, 0.4),
+                local_crops_number=8
+            ),
             'val': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ])
         }
+
     def load_dataset(self):
         sampler = None
         shuffle = True if self.is_training else False
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
         if self.is_distributed:
-            sampler = torch.utils.data.DistributedSampler(dataset, shuffle=shuffle)
-        data_loader = torch.utils.data.DataLoader(
-        dataset,
-        sampler=sampler,
-        batch_size=self.batch_size,
-        num_workers=self.num_workers,
-        pin_memory=True,
-        drop_last=True)
+            sampler = DistributedSampler(dataset, shuffle=shuffle)
+        data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size,
+                                 num_workers=self.num_workers, pin_memory=True, drop_last=True)
         return data_loader, sampler
-
-#class ImagenetDataset(Dataset):
-#    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=8):
-#        self.config = config
-#        self.batch_size = batch_size
-#        self.is_training = is_training
-#        self.is_distributed = is_distributed
-#        self.num_workers = num_workers
-#        self.n_classes = 768
-#        self.height, self.width = 224, 500
-#        self.n_train_files = 1_281_167
-#        self.n_test_files = 50_1000
-#        self.img_size = (None, 3, 224, 500)
-#
-#        self.means = (0.0000, 0.0000, 0.0000)
-#        self.stds = (1.0000, 1.0000, 1.0000)
-#
-#        self.samples = []
-#        self.targets = []
-#        self.transform = {
-#            'train': transforms.Compose([
-#                transforms.CenterCrop(224),
-#                transforms.RandomHorizontalFlip(),
-#                transforms.ToTensor(),
-#                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-#            ]),
-#            # 'train': DataAugmentationDINO(
-#            #     global_crops_scale=(0.4, 1.),
-#            #     local_crops_scale=(0.05, 0.4),
-#            #     local_crops_number=8
-#            # ),
-#            'val': transforms.Compose([
-#                transforms.CenterCrop(224),
-#                transforms.ToTensor(),
-#                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-#            ])
-#        }
-#        self.syn_to_class = {}
-#        self.split = 'train' if self.is_training else 'val'
-#        self._get_samples()
-#
-#    def _get_samples(self):
-#
-#        with open(os.path.join(self.config.data_dir, "imagenet_class_index.json"), "rb") as f:
-#            json_file = json.load(f)
-#            for class_id, v in json_file.items():
-#                self.syn_to_class[v[0]] = int(class_id)
-#        with open(os.path.join(self.config.data_dir, "ILSVRC2012_val_labels.json"), "rb") as f:
-#            self.val_to_syn = json.load(f)
-#        samples_dir = os.path.join(self.config.data_dir, "ILSVRC/Data/CLS-LOC", self.split)
-#        for entry in os.listdir(samples_dir):
-#            if self.split == "train":
-#                syn_id = entry
-#                target = self.syn_to_class[syn_id]
-#                syn_folder = os.path.join(samples_dir, syn_id)
-#                for sample in os.listdir(syn_folder):
-#                    sample_path = os.path.join(syn_folder, sample)
-#                    self.samples.append(sample_path)
-#                    self.targets.append(target)
-#            elif self.split == "val":
-#                syn_id = self.val_to_syn[entry]
-#                target = self.syn_to_class[syn_id]
-#                sample_path = os.path.join(samples_dir, entry)
-#                self.samples.append(sample_path)
-#                self.targets.append(target)
-#
-#    def __len__(self):
-#        return len(self.samples)
-#
-#    def __getitem__(self, idx):
-#        x = Image.open(self.samples[idx]).convert("RGB")
-#        if self.transform:
-#            x = self.transform[self.split](x)
-#        return x, self.targets[idx]
-#
-#    def load_dataset(self):
-#        sampler = None
-#        if self.is_distributed:
-#            sampler = DistributedSampler(self, shuffle=self.is_training)
-#        dataloader = DataLoader(
-#            self,
-#            batch_size=self.batch_size,  # may need to reduce this depending on your GPU
-#            num_workers=self.num_workers,  # may need to reduce this depending on your num of CPUs and RAM
-#            shuffle=self.is_training,
-#            drop_last=False,
-#            pin_memory=True,
-#            sampler=sampler
-#        )
-#        return dataloader, sampler
 
 
 class NightDataset(Dataset):

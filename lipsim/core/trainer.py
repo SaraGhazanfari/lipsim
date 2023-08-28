@@ -24,7 +24,7 @@ class Trainer:
 
     def __init__(self, config):
         self.config = config
-        #self.dino_model, _ = dreamsim(pretrained=True, dreamsim_type='dino_vitb16', cache_dir='./checkpoints')
+        # self.dino_model, _ = dreamsim(pretrained=True, dreamsim_type='dino_vitb16', cache_dir='./checkpoints')
 
     def _load_state(self):
         # load last checkpoint
@@ -77,7 +77,8 @@ class Trainer:
         self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
         self.num_tasks = int(os.environ['WORLD_SIZE'])
         self.is_master = bool(self.rank == 0)
-        print('rank: ', self.rank, 'local rank: ', self.local_rank, 'num_nodes: ', self.num_nodes, 'num_tasks: ', self.num_tasks)
+        print('rank: ', self.rank, 'local rank: ', self.local_rank, 'num_nodes: ', self.num_nodes, 'num_tasks: ',
+              self.num_tasks)
         # Setup logging
         utils.setup_logging(self.config, self.rank)
         logging.info(self.rank)
@@ -146,8 +147,11 @@ class Trainer:
         print('-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S')
         self.model = self.model.cuda()
         nb_parameters = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
-        self.teacher_model, _ = dreamsim(pretrained=True, device=next(self.model.parameters()).device, 
-                dreamsim_type=self.config.teacher_model_name, cache_dir='./checkpoints')
+        self.teacher_model, _ = dreamsim(pretrained=True,
+                                         dreamsim_type=self.config.teacher_model_name, cache_dir='./checkpoints')
+        self.teacher_model = DistributedDataParallel(self.teacher_model, device_ids=[self.local_rank],
+                                                     output_device=self.local_rank)
+
         logging.info(f'Number of parameters to train: {nb_parameters}')
 
         # setup distributed process if training is distributed 
@@ -263,21 +267,17 @@ class Trainer:
     def one_step_training(self, data, epoch, step):
 
         self.optimizer.zero_grad()
-
         batch_start_time = time.time()
         images, _ = data
         images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).cuda()
-        print(images.shape)
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {images.shape}')
-            # logging.info(f'labels {labels.shape}')
         outputs = self.model(images)
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {outputs.shape}')
         teacher_outputs = self.teacher_model.embed(images)
         loss = self.criterion(outputs, teacher_outputs)
         loss.backward()
-        # if step % 100 == 99:
         print('step: {step}, loss:{loss}'.format(step=step + 1, loss=loss.item()))
         sys.stdout.flush()
         self.process_gradients(step)
