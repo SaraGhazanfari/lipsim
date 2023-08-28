@@ -4,6 +4,8 @@ import torch
 import warnings
 import argparse
 from os.path import realpath
+
+from lipsim.core import utils
 from lipsim.core.trainer import Trainer
 from lipsim.core.evaluate import Evaluator
 import torch.multiprocessing as mp
@@ -59,6 +61,7 @@ def set_config(config):
 def main(rank, world_size, config):
     config = set_config(config)
     if config.mode == 'train':
+        utils.setup_distributed_training(world_size, rank)
         trainer = Trainer(rank, world_size, config)
         trainer()
     elif config.mode in ['lipsim', 'eval', 'dreamsim']:

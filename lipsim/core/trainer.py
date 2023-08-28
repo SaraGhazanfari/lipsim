@@ -156,7 +156,7 @@ class Trainer:
         # setup distributed process if training is distributed 
         # and use DistributedDataParallel for distributed training
         if self.is_distributed:
-            utils.setup_distributed_training(self.world_size, self.rank)
+            # utils.setup_distributed_training(self.world_size, self.rank)
             self.model = DistributedDataParallel(
                 self.model, device_ids=[self.rank], output_device=self.rank)  # todo self.local_rank
             if self.rank == 0:  # todo self.local_rank
