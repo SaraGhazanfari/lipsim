@@ -24,7 +24,6 @@ class Trainer:
 
     def __init__(self, config):
         self.config = config
-        # self.dino_model, _ = dreamsim(pretrained=True, dreamsim_type='dino_vitb16', cache_dir='./checkpoints')
 
     def _load_state(self):
         # load last checkpoint
@@ -69,16 +68,14 @@ class Trainer:
 
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir
-        self.ngpus = 1
+        self.ngpus = torch.cuda.device_count()
 
-        # job_env = submitit.JobEnvironment()
         self.rank = int(os.environ['RANK'])
         self.local_rank = int(os.environ['LOCAL_RANK'])
         self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
         self.num_tasks = int(os.environ['WORLD_SIZE'])
         self.is_master = bool(self.rank == 0)
-        print('rank: ', self.rank, 'local rank: ', self.local_rank, 'num_nodes: ', self.num_nodes, 'num_tasks: ',
-              self.num_tasks)
+
         # Setup logging
         utils.setup_logging(self.config, self.rank)
         logging.info(self.rank)
