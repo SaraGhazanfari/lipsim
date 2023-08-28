@@ -65,7 +65,7 @@ class DataAugmentationDINO(object):
 
 
 class ImagenetDataset(Dataset):
-    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=8, world_size=1):
+    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=0, world_size=1):
         self.config = config
         self.batch_size = batch_size
         self.is_training = is_training
