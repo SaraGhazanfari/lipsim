@@ -85,17 +85,17 @@ class ImagenetDataset(Dataset):
         self.samples = []
         self.targets = []
         self.transform = {
-            # 'train': transforms.Compose([
-            #    transforms.CenterCrop(224),
-            #    transforms.RandomHorizontalFlip(),
-            #    transforms.ToTensor(),
-            #    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            # ]),
-            'train': DataAugmentationDINO(
-                global_crops_scale=(0.4, 1.),
-                local_crops_scale=(0.05, 0.4),
-                local_crops_number=8
-            ),
+            'train': transforms.Compose([
+               transforms.CenterCrop(224),
+               transforms.RandomHorizontalFlip(),
+               transforms.ToTensor(),
+               transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]),
+            # 'train': DataAugmentationDINO(
+            #     global_crops_scale=(0.4, 1.),
+            #     local_crops_scale=(0.05, 0.4),
+            #     local_crops_number=8
+            # ),
             'val': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),

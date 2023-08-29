@@ -127,7 +127,7 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.config.batch_size, is_training=True,
-                             is_distributed=True, world_size=self.world_size)  # todo self.batch_size
+                             is_distributed=self.is_distributed, world_size=self.world_size)  # todo self.batch_size
         if self.rank == 0:  # todo if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
