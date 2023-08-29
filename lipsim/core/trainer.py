@@ -5,6 +5,8 @@ import logging
 import glob
 from os.path import join, exists
 from contextlib import nullcontext
+
+import submitit
 from dreamsim import dreamsim
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config
@@ -71,11 +73,17 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
+        job_env = submitit.JobEnvironment()
+        self.rank = int(job_env.global_rank)
+        self.local_rank = int(job_env.local_rank)
+        self.num_nodes = int(job_env.num_nodes)
+        self.num_tasks = int(job_env.num_tasks)
+
         # self.rank = int(os.environ['RANK'])
-        self.rank = int(os.environ['SLURM_LOCALID'])
-        self.local_rank = int(os.environ['SLURM_LOCALID'])
-        self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))
-        self.num_tasks = self.num_nodes
+        # self.rank = int(os.environ['SLURM_LOCALID'])
+        # self.local_rank = int(os.environ['SLURM_LOCALID'])
+        # self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))
+        # self.num_tasks = self.num_nodes
         self.is_master = bool(self.rank == 0)
         print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
 
