@@ -107,6 +107,7 @@ def main(config):
                 cpus_per_task=20, # todo 40
                 slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
                 slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
+                mem='32GB',
                 #qos='qos_gpu-t3',
                 timeout_min=60
             )
