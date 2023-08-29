@@ -287,7 +287,7 @@ class Trainer:
 
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
-        examples_per_second *= self.world_size
+        # examples_per_second *= self.world_size
 
         if self._to_print(step):
             lr = self.optimizer.param_groups[0]['lr']
