@@ -36,25 +36,25 @@ def set_config(config):
     os.makedirs('./trained_models', exist_ok=True)
     path = realpath('./trained_models')
     if config.mode == 'train' and config.train_dir is None:
-      config.start_new_model = True
-      folder = datetime.now().strftime("%Y-%m-%d_%H.%M.%S_%f")[:-2]
-      if config.debug:
-        folder = 'folder_debug'
-        if exists(f'{path}/folder_debug'):
-          shutil.rmtree(f'{path}/folder_debug')
-      config.train_dir = f'{path}/{folder}'
-      os.makedirs(config.train_dir)
-      os.makedirs(f'{config.train_dir}/checkpoints')
+        config.start_new_model = True
+        folder = datetime.now().strftime("%Y-%m-%d_%H.%M.%S_%f")[:-2]
+        if config.debug:
+            folder = 'folder_debug'
+            if exists(f'{path}/folder_debug'):
+                shutil.rmtree(f'{path}/folder_debug')
+        config.train_dir = f'{path}/{folder}'
+        os.makedirs(config.train_dir)
+        os.makedirs(f'{config.train_dir}/checkpoints')
     elif config.mode == 'train' and config.train_dir is not None:
-      config.start_new_model = False
-      config.train_dir = f'{path}/{config.train_dir}'
-      assert exists(config.train_dir)
+        config.start_new_model = False
+        config.train_dir = f'{path}/{config.train_dir}'
+        assert exists(config.train_dir)
     elif config.mode in eval_mode and config.train_dir is not None:
-      config.train_dir = f'{path}/{config.train_dir}'
+        config.train_dir = f'{path}/{config.train_dir}'
     elif config.mode in eval_mode and config.train_dir is None:
-      ValueError("--train_dir must be defined.")
+        ValueError("--train_dir must be defined.")
     if config.mode == 'attack' and config.attack is None:
-      ValueError('With mode=attack, the following arguments are required: --attack')
+        ValueError('With mode=attack, the following arguments are required: --attack')
 
     return config
 
@@ -69,7 +69,6 @@ def set_config(config):
 #         return evaluate()
 
 def main(config):
-
     config = set_config(config)
     setup = "singularity exec --nv --overlay /scratch/sg7457/pytorch-example/my_pytorch.ext3:ro "
     setup += "/scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif "
@@ -80,65 +79,62 @@ def main(config):
     # default: set tasks_per_node equal to number of gpus
     tasks_per_node = config.ngpus
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
-      tasks_per_node = 1
+        tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
 
     executor = submitit.AutoExecutor(
-      folder=config.train_dir, cluster=cluster)
+        folder=config.train_dir, cluster=cluster)
     executor.update_parameters(
-      gpus_per_node=config.ngpus,
-      nodes=config.nnodes,
-      tasks_per_node=tasks_per_node,
-      cpus_per_task=ncpus // tasks_per_node,
-      stderr_to_stdout=True,
-      slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-      # slurm_constraint=config.constraint,
-      slurm_signal_delay_s=0,
-      timeout_min=config.timeout,
-      #slurm_setup=setup,
+        gpus_per_node=config.ngpus,
+        nodes=config.nnodes,
+        tasks_per_node=tasks_per_node,
+        cpus_per_task=ncpus // tasks_per_node,
+        stderr_to_stdout=True,
+        slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
+        # slurm_constraint=config.constraint,
+        slurm_signal_delay_s=0,
+        timeout_min=config.timeout,
+        slurm_setup=setup,
     )
 
     if config.mode == 'train':
-      trainer = Trainer(config)
-      job = executor.submit(trainer)
-      job_id = job.job_id
+        trainer = Trainer(config)
+        job = executor.submit(trainer)
+        job_id = job.job_id
 
-      # run eval after training
-      if not config.no_eval and not config.debug and not config.local:
-        config.mode = 'certified'
-        executor.update_parameters(
-          nodes=1,
-          tasks_per_node=1,
-          cpus_per_task=40,
-          slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-          slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
-          qos='qos_gpu-t3',
-          timeout_min=60
-        )
-        evaluate = Evaluator(config)
-        job = executor.submit(evaluate)
+        # run eval after training
+        if not config.no_eval and not config.debug and not config.local:
+            config.mode = 'certified'
+            executor.update_parameters(
+                nodes=1,
+                tasks_per_node=1,
+                cpus_per_task=40,
+                slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
+                slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
+                qos='qos_gpu-t3',
+                timeout_min=60
+            )
+            evaluate = Evaluator(config)
+            job = executor.submit(evaluate)
+            job_id = job.job_id
 
     elif config.mode in ['eval', 'eval_best', 'attack', 'certified']:
-      evaluate = Evaluator(config)
-      job = executor.submit(evaluate)
-      job_id = job.job_id
+        evaluate = Evaluator(config)
+        job = executor.submit(evaluate)
+        job_id = job.job_id
 
     folder = config.train_dir.split('/')[-1]
     print(f"Submitted batch job {job_id} in folder {folder}")
 
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train or Evaluate Lipschitz Networks.')
 
-
-
     parser.add_argument("--account", type=str, default='dci@v100',
-                      help="Account to use for slurm.")
-    parser.add_argument("--ngpus", type=int, default=4, 
-                      help="Number of GPUs to use.")
-    parser.add_argument("--nnodes", type=int, default=1, 
+                        help="Account to use for slurm.")
+    parser.add_argument("--ngpus", type=int, default=4,
+                        help="Number of GPUs to use.")
+    parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
     parser.add_argument("--timeout", type=int, default=1200,
                         help="Time of the Slurm job in minutes for training.")
@@ -153,8 +149,8 @@ if __name__ == '__main__':
     parser.add_argument("--local", action='store_true',
                         help="Execute with local machine instead of slurm.")
     parser.add_argument("--debug", action="store_true",
-                          help="Activate debug mode.")
-    
+                        help="Activate debug mode.")
+
     # parameters training or eval
     parser.add_argument("--no-eval", action="store_true", default=True, help="No eval after training")
     parser.add_argument("--mode", type=str, default="train",
@@ -206,6 +202,5 @@ if __name__ == '__main__':
     # parse all arguments
     config = parser.parse_args()
     config.cmd = f"python3 {' '.join(sys.argv)}"
-
 
     main(config)
