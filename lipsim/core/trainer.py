@@ -103,7 +103,7 @@ class Trainer:
         self.is_distributed = False
         if self.num_nodes > 1 or self.num_tasks > 1:
             self.is_distributed = True
-            self.world_size = self.num_nodes * self.ngpus
+            self.world_size = self.ngpus  # todo self.num_nodes * self.ngpus
         if self.num_nodes > 1:
             logging.info(
                 f"Distributed Training on {self.num_nodes} nodes")
