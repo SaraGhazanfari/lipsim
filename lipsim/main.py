@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--account", type=str, default='dci@v100',
                         help="Account to use for slurm.")
-    parser.add_argument("--ngpus", type=int, default=4,
+    parser.add_argument("--ngpus", type=int, default=2,
                         help="Number of GPUs to use.") # todo 4
     parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
