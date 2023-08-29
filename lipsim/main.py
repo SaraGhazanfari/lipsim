@@ -87,10 +87,9 @@ def main(config):
         cpus_per_task=ncpus // tasks_per_node,
         stderr_to_stdout=True,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
+        mem_gb=64,
         timeout_min=config.timeout,
-        #slurm_setup=setup,
     )
 
     if config.mode == 'train':

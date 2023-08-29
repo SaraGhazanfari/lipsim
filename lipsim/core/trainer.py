@@ -73,9 +73,9 @@ class Trainer:
 
         # self.rank = int(os.environ['RANK'])
         self.rank = int(os.environ['SLURM_LOCALID'])
-        self.local_rank = int(os.environ['SLURM_LOCALID'])  # int(os.environ['LOCAL_RANK'])
-        self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))  # int(os.environ['LOCAL_WORLD_SIZE'])
-        self.num_tasks = torch.cuda.device_count()  # int(os.environ['WORLD_SIZE'])
+        self.local_rank = int(os.environ['SLURM_LOCALID'])
+        self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))
+        self.num_tasks = self.num_nodes
         self.is_master = bool(self.rank == 0)
         print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
 
