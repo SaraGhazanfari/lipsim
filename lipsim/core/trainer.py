@@ -40,7 +40,7 @@ class Trainer:
         self.optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
         self.saved_ckpts.add(self.checkpoint['epoch'])
         epoch = self.checkpoint['epoch']
-        if self.local_rank == 0:
+        if self.rank == 0:  # todo self.local_rank == 0:
             logging.info('Loading checkpoint {}'.format(checkpoints[-1]))
 
     def _save_ckpt(self, step, epoch, final=False, best=False):
@@ -188,7 +188,7 @@ class Trainer:
         # define the loss
         self.criterion = utils.get_loss(self.config)
 
-        if self.local_rank == 0:
+        if self.rank == 0:  # todo self.local_rank == 0:
             logging.info("Number of files on worker: {}".format(n_files))
             logging.info("Start training")
 
