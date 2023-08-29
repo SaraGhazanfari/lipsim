@@ -107,7 +107,7 @@ def main(config):
                 cpus_per_task=20, # todo 40
                 slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
                 slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
-                mem='32GB',
+                mem='64GB',
                 #qos='qos_gpu-t3',
                 timeout_min=60
             )
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--account", type=str, default='dci@v100',
                         help="Account to use for slurm.")
-    parser.add_argument("--ngpus", type=int, default=2,
+    parser.add_argument("--ngpus", type=int, default=4,
                         help="Number of GPUs to use.") # todo 4
     parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
