@@ -108,7 +108,7 @@ class ImagenetDataset(Dataset):
         shuffle = True if self.is_training else False
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
         if self.is_distributed:
-            sampler = DistributedSampler(dataset, shuffle=False , num_replicas=self.world_size)
+            sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
 
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size,
                                  num_workers=self.num_workers, pin_memory=True, drop_last=True)
