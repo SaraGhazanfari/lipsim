@@ -7,5 +7,5 @@ numpy
 dreamsim
 tqdm
 git+https://github.com/BorealisAI/advertorch.git
-torchvision==0.15.0
+#torchvision==0.15.0
 pandas

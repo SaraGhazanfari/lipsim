@@ -71,7 +71,9 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        self.rank = int(os.environ['RANK'])
+        #self.rank = int(os.environ['RANK'])
+        print(os.environ)
+        self.rank = int(os.environ['LOCAL_RANK'])
         self.local_rank = int(os.environ['LOCAL_RANK'])
         self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
         self.num_tasks = int(os.environ['WORLD_SIZE'])

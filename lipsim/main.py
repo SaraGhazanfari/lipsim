@@ -70,12 +70,8 @@ def set_config(config):
 
 def main(config):
     config = set_config(config)
-    setup = "singularity exec --nv --overlay /scratch/sg7457/pytorch-example/my_pytorch.ext3:ro "
-    setup += "/scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif "
-    setup += " /bin/bash -c 'source /ext3/env.sh"
 
-    ncpus = 48
-
+    ncpus = 20 # 48
     # default: set tasks_per_node equal to number of gpus
     tasks_per_node = config.ngpus
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
@@ -94,7 +90,7 @@ def main(config):
         # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
         timeout_min=config.timeout,
-        slurm_setup=setup,
+        #slurm_setup=setup,
     )
 
     if config.mode == 'train':
@@ -108,10 +104,10 @@ def main(config):
             executor.update_parameters(
                 nodes=1,
                 tasks_per_node=1,
-                cpus_per_task=40,
+                cpus_per_task=20, # todo 40
                 slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
                 slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
-                qos='qos_gpu-t3',
+                #qos='qos_gpu-t3',
                 timeout_min=60
             )
             evaluate = Evaluator(config)
@@ -132,7 +128,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--account", type=str, default='dci@v100',
                         help="Account to use for slurm.")
-    parser.add_argument("--ngpus", type=int, default=1,
+    parser.add_argument("--ngpus", type=int, default=2,
                         help="Number of GPUs to use.") # todo 4
     parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
