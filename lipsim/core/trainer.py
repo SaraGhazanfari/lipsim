@@ -145,7 +145,7 @@ class Trainer:
         print('-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S')
         print('model size: {:.3f}MB'.format(size_all_mb))
         print('-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S')
-        # self.model = self.model.to(self.rank)
+        self.model = self.model.to(self.rank)
         nb_parameters = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         self.teacher_model, _ = dreamsim(pretrained=True,
                                          dreamsim_type=self.config.teacher_model_name, cache_dir='./checkpoints')
