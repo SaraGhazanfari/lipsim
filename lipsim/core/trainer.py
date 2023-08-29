@@ -145,11 +145,11 @@ class Trainer:
         print('-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S')
         print('model size: {:.3f}MB'.format(size_all_mb))
         print('-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S')
-        self.model = self.model.cuda()
+        # self.model = self.model.to(self.rank)
         nb_parameters = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         self.teacher_model, _ = dreamsim(pretrained=True,
                                          dreamsim_type=self.config.teacher_model_name, cache_dir='./checkpoints')
-        self.teacher_model = self.teacher_model.cuda()
+        self.teacher_model = self.teacher_model.to(self.rank)
 
         logging.info(f'Number of parameters to train: {nb_parameters}')
 
@@ -268,7 +268,7 @@ class Trainer:
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         images, _ = data
-        images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).cuda()
+        images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).to(self.rank)
         if step == 0 and self.rank == 0:  # todo self.local_rank
             logging.info(f'images {images.shape}')
         outputs = self.model(images)
