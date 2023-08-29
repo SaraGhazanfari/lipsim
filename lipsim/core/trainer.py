@@ -71,13 +71,14 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        #self.rank = int(os.environ['RANK'])
+        # self.rank = int(os.environ['RANK'])
         print(os.environ)
-        self.rank = int(os.environ['LOCAL_RANK'])
-        self.local_rank = int(os.environ['LOCAL_RANK'])
-        self.num_nodes = int(os.environ['LOCAL_WORLD_SIZE'])
-        self.num_tasks = int(os.environ['WORLD_SIZE'])
+        self.rank = int(os.environ['SLURM_LOCALID'])
+        self.local_rank = int(os.environ['SLURM_LOCALID'])  # int(os.environ['LOCAL_RANK'])
+        self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))  # int(os.environ['LOCAL_WORLD_SIZE'])
+        self.num_tasks = torch.cuda.device_count()  # int(os.environ['WORLD_SIZE'])
         self.is_master = bool(self.rank == 0)
+        print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
 
         # Setup logging
         utils.setup_logging(self.config, self.rank)
