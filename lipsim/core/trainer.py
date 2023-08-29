@@ -72,7 +72,6 @@ class Trainer:
         self.ngpus = torch.cuda.device_count()
 
         # self.rank = int(os.environ['RANK'])
-        print(os.environ)
         self.rank = int(os.environ['SLURM_LOCALID'])
         self.local_rank = int(os.environ['SLURM_LOCALID'])  # int(os.environ['LOCAL_RANK'])
         self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))  # int(os.environ['LOCAL_WORLD_SIZE'])
