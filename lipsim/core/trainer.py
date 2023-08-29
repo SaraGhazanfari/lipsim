@@ -268,7 +268,8 @@ class Trainer:
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         images, _ = data
-        images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).to(self.rank)
+        # images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4]).to(self.rank)
+        images = images.to(self.rank)
         if step == 0 and self.rank == 0:  # todo self.local_rank
             logging.info(f'images {images.shape}')
         outputs = self.model(images)
