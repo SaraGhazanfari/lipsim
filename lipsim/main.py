@@ -90,6 +90,8 @@ def main(config):
         slurm_signal_delay_s=0,
         mem_gb=64,
         timeout_min=config.timeout,
+        mail_type='BEGIN',
+        mail_user='sg7457@nyu.edu'
     )
 
     if config.mode == 'train':
