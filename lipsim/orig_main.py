@@ -61,7 +61,7 @@ def set_config(config):
 def main(rank, world_size, config):
     config = set_config(config)
     if config.mode == 'train':
-        utils.setup_distributed_training(world_size, rank)
+        #utils.setup_distributed_training(world_size, rank)
         trainer = Trainer(config)
         trainer()
     elif config.mode in ['lipsim', 'eval', 'dreamsim']:
@@ -125,5 +125,3 @@ if __name__ == '__main__':
     config = parser.parse_args()
     config.cmd = f"python3 {' '.join(sys.argv)}"
     main(config)
-    # world_size = torch.cuda.device_count()
-    # mp.spawn(main, args=(world_size, config), nprocs=world_size)

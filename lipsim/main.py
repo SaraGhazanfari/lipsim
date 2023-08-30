@@ -88,7 +88,7 @@ def main(config):
         stderr_to_stdout=True,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
         slurm_signal_delay_s=0,
-        mem_gb=64,
+        mem_gb=120,
         timeout_min=config.timeout,
         #slurm_mail_type='BEGIN',
         #slurm_mail_user='sg7457@nyu.edu'
@@ -108,7 +108,7 @@ def main(config):
                 cpus_per_task=20, # todo 40
                 slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
                 slurm_additional_parameters={'dependency': f'afterany:{job_id}'},
-                mem_gb='64',
+                mem_gb='120',
                 #qos='qos_gpu-t3',
                 timeout_min=60
             )
@@ -131,11 +131,11 @@ if __name__ == '__main__':
     parser.add_argument("--account", type=str, default='dci@v100',
                         help="Account to use for slurm.")
     parser.add_argument("--ngpus", type=int, default=4,
-                        help="Number of GPUs to use.")
+                        help="Number of GPUs to use.") #
     parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
     parser.add_argument("--timeout", type=int, default=1440,
-                        help="Time of the Slurm job in minutes for training.")
+                        help="Time of the Slurm job in minutes for training.") # 1440
     parser.add_argument("--partition", type=str, default="gpu_p13",
                         help="Partition to use for Slurm.")
     parser.add_argument("--qos", type=str, default="qos_gpu-t3",
