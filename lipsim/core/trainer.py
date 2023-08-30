@@ -126,7 +126,7 @@ class Trainer:
         else:
             self.batch_size = self.config.batch_size
 
-        self.global_batch_size = self.batch_size * self.world_size
+        self.global_batch_size = self.batch_size  # todo * self.world_size
         logging.info('World Size={} => Total batch size {}'.format(
             self.world_size, self.global_batch_size))
 
@@ -135,7 +135,7 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=False, world_size=self.world_size) #todo self.is_distributed
+                             is_distributed=False, world_size=self.world_size, num_workers=10)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
@@ -179,10 +179,6 @@ class Trainer:
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
 
-       # if self.is_distributed:
-       #     n_files = sampler.num_samples
-       # else:
-       #     n_files = self.reader.n_train_files
         n_files = self.reader.n_train_files
         # define optimizer
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
@@ -276,6 +272,8 @@ class Trainer:
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         images, _ = data
+        if len(images.shape) == 5:
+            images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4])
         images = images.to(self.local_rank)
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {images.shape}')
