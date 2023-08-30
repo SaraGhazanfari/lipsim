@@ -135,7 +135,7 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=self.is_distributed, world_size=self.world_size)
+                             is_distributed=False, world_size=self.world_size) #todo self.is_distributed
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
 
@@ -206,8 +206,8 @@ class Trainer:
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
         for epoch_id in range(start_epoch, self.config.epochs):
-            if self.is_distributed:
-                sampler.set_epoch(epoch_id)
+            # todo if self.is_distributed:
+            #     sampler.set_epoch(epoch_id)
             for n_batch, data in enumerate(data_loader):
                 if global_step == 2 and self.is_master:
                     start_time = time.time()

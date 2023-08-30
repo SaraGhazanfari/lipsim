@@ -86,10 +86,10 @@ class ImagenetDataset(Dataset):
         self.targets = []
         self.transform = {
             'train': transforms.Compose([
-               transforms.CenterCrop(224),
-               transforms.RandomHorizontalFlip(),
-               transforms.ToTensor(),
-               transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                transforms.CenterCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]),
             # 'train': DataAugmentationDINO(
             #     global_crops_scale=(0.4, 1.),
@@ -110,7 +110,7 @@ class ImagenetDataset(Dataset):
         if self.is_distributed:
             sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
 
-        data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size,
+        data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size, shuffle=shuffle,
                                  num_workers=self.num_workers, pin_memory=True, drop_last=True)
         return data_loader, sampler
 
