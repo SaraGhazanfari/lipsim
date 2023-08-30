@@ -179,11 +179,11 @@ class Trainer:
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
 
-        if self.is_distributed:
-            n_files = sampler.num_samples
-        else:
-            n_files = self.reader.n_train_files
-
+       # if self.is_distributed:
+       #     n_files = sampler.num_samples
+       # else:
+       #     n_files = self.reader.n_train_files
+        n_files = self.reader.n_train_files
         # define optimizer
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
