@@ -26,7 +26,14 @@ class Trainer:
 
     def __init__(self, config):
         self.config = config
-        self.is_distributed = True
+        self.is_distributed = False  # todo self.is_distributed = True
+        self.rank = 0
+        self.local_rank = 0
+        self.num_nodes = 4
+        self.num_tasks = 4
+        self.batch_size = self.config.batch_size
+        self.global_batch_size = self.batch_size
+        self.world_size = 4
 
     def _load_state(self):
         # load last checkpoint
@@ -73,11 +80,11 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        job_env = submitit.JobEnvironment()
-        self.rank = int(job_env.global_rank)
-        self.local_rank = int(job_env.local_rank)
-        self.num_nodes = int(job_env.num_nodes)
-        self.num_tasks = int(job_env.num_tasks)
+        # todo job_env = submitit.JobEnvironment()
+        # self.rank = int(job_env.global_rank)
+        # self.local_rank = int(job_env.local_rank)
+        # self.num_nodes = int(job_env.num_nodes)
+        # todo self.num_tasks = int(job_env.num_tasks)
 
         # self.rank = int(os.environ['RANK'])
         # self.rank = int(os.environ['SLURM_LOCALID'])
@@ -107,24 +114,24 @@ class Trainer:
             logging.info(f"Hostname: {socket.gethostname()}.")
 
         # ditributed settings
-        self.world_size = 1
-        self.is_distributed = False
-        if self.num_nodes > 1 or self.num_tasks > 1:
-            self.is_distributed = True
-            self.world_size = self.ngpus  # todo self.num_nodes * self.ngpus
-        if self.num_nodes > 1:
-            logging.info(
-                f"Distributed Training on {self.num_nodes} nodes")
-        elif self.num_nodes == 1 and self.num_tasks > 1:
-            logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
-        else:
-            assert self.num_nodes == 1 and self.num_tasks == 1
-            logging.info("Single node training.")
-
-        if not self.is_distributed:
-            self.batch_size = self.config.batch_size * self.ngpus
-        else:
-            self.batch_size = self.config.batch_size
+        # todo self.world_size = 1
+        # self.is_distributed = False
+        # if self.num_nodes > 1 or self.num_tasks > 1:
+        #     self.is_distributed = True
+        #     self.world_size = self.ngpus  # todo self.num_nodes * self.ngpus
+        # if self.num_nodes > 1:
+        #     logging.info(
+        #         f"Distributed Training on {self.num_nodes} nodes")
+        # elif self.num_nodes == 1 and self.num_tasks > 1:
+        #     logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
+        # else:
+        #     assert self.num_nodes == 1 and self.num_tasks == 1
+        #     logging.info("Single node training.")
+        #
+        # if not self.is_distributed:
+        #     self.batch_size = self.config.batch_size * self.ngpus
+        # todo else:
+        #     self.batch_size = self.config.batch_size
 
         self.global_batch_size = self.batch_size  # todo * self.world_size
         logging.info('World Size={} => Total batch size {}'.format(
