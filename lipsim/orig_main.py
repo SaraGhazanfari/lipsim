@@ -1,14 +1,11 @@
 import os
 import sys
-import torch
 import warnings
 import argparse
 from os.path import realpath
 
-from lipsim.core import utils
 from lipsim.core.trainer import Trainer
 from lipsim.core.evaluate import Evaluator
-import torch.multiprocessing as mp
 
 warnings.filterwarnings("ignore")
 

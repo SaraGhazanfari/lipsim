@@ -6,13 +6,11 @@ import glob
 from os.path import join, exists
 from contextlib import nullcontext
 
-import submitit
 from dreamsim import dreamsim
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 import sys
-import os
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
