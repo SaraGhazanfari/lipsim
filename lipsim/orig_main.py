@@ -58,10 +58,9 @@ def set_config(config):
     return config
 
 
-def main(rank, world_size, config):
+def main(config):
     config = set_config(config)
     if config.mode == 'train':
-        #utils.setup_distributed_training(world_size, rank)
         trainer = Trainer(config)
         trainer()
     elif config.mode in ['lipsim', 'eval', 'dreamsim']:
