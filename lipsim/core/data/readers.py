@@ -130,7 +130,7 @@ class NightDataset(Dataset):
         self.preprocess_fn = get_preprocess_fn(preprocess, 224, self.interpolation)
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
-        self.n_classes = 768
+        self.n_classes = N_CLASSES[config.teacher_model_name]
         if self.split == "train" or self.split == "val":
             self.csv = self.csv[self.csv["split"] == split]
         elif split == 'test_imagenet':
@@ -161,4 +161,10 @@ class NightDataset(Dataset):
 readers_config = {
     'imagenet-1k': ImagenetDataset,
     'night': NightDataset,
+}
+
+N_CLASSES = {
+    'dino_vitb16': 768,
+    'open_clip_vitb32': 512,
+    'clip_vitb32': 512,
 }
