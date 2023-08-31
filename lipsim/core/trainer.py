@@ -8,7 +8,7 @@ from contextlib import nullcontext
 
 from dreamsim import dreamsim
 from lipsim.core import utils
-from lipsim.core.data.readers import readers_config
+from lipsim.core.data.readers import readers_config, N_CLASSES
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 import sys
 import numpy as np
@@ -143,9 +143,9 @@ class Trainer:
                              is_distributed=False, world_size=self.world_size, num_workers=10)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
-
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
         # load model
-        self.model = L2LipschitzNetwork(self.config, self.reader.n_classes)
+        self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
         param_size = 0
         for param in self.model.parameters():

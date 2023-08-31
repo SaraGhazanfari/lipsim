@@ -3,7 +3,7 @@ import logging
 from os.path import join
 from tqdm import tqdm
 from lipsim.core import utils
-from lipsim.core.data.readers import readers_config, NightDataset
+from lipsim.core.data.readers import readers_config, NightDataset, N_CLASSES
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 from dreamsim import dreamsim
 import torch.nn as nn
@@ -65,7 +65,7 @@ class Evaluator:
         # load reader
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
-        self.n_classes = 768
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
