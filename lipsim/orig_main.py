@@ -32,7 +32,7 @@ def set_config(config):
         ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
 
     # process argments
-    eval_mode = ['certified', 'attack']
+    eval_mode = ['eval', 'dreamsim', 'lipsim']
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
