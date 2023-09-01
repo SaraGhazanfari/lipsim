@@ -166,9 +166,9 @@ def setup_distributed_training(world_size, rank):
         if var.upper() in os.environ:
             del os.environ[var.upper()]
     # get distributed url
-    #cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
-    #stdout = subprocess.check_output(cmd.split())
-    #host_name = stdout.decode().splitlines()[0]
+    # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
+    # stdout = subprocess.check_output(cmd.split())
+    # host_name = stdout.decode().splitlines()[0]
     import platform
     host_name = platform.node()
     dist_url = f'tcp://{host_name}:9000'
@@ -177,8 +177,17 @@ def setup_distributed_training(world_size, rank):
                             world_size=world_size, rank=rank)
 
 
+class RMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
+
+    def forward(self, yhat, y):
+        return torch.sqrt(self.mse(yhat, y))
+
+
 def get_loss(config):
-    return nn.MSELoss()
+    return RMSELoss()
 
 
 def get_scheduler(optimizer, config, num_steps):
