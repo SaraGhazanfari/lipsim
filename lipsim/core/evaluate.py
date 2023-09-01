@@ -118,6 +118,7 @@ class Evaluator:
                                                                          split='test_no_imagenet').load_dataset()
         imagenet_score = self.score_nights_dataset(data_loader)
         logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        torch.cuda.empty_cache()
         no_imagenet_score = self.score_nights_dataset(no_imagenet_data_loader)
         logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
         overall_score = (imagenet_score * dataset_size +
