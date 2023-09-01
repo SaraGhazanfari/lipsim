@@ -167,9 +167,9 @@ class Evaluator:
         return img_ref_adv
 
     def one_step_night_eval(self, img_ref, img_left, img_right, target):
-        img_ref = self.generate_attack(img_ref)
+        if self.config.attack:
+            img_ref = self.generate_attack(img_ref)
         dist_0, dist_1 = self.get_dreamsim_dist(img_ref, img_left, img_right)
-
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)
