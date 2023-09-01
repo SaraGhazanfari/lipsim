@@ -152,16 +152,18 @@ class Evaluator:
         dist_1 = 1 - cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
 
-    def generate_attack(self, img_ref, p=2):
+    def generate_attack(self, img_ref):
         linf_eps = 0.03
         l2_eps = 1.0
-        if p == 2:
+        if self.config.attack == 'PGD_L2':
             adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=l2_eps, nb_iter=200, rand_init=True,
                                     targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-        else:
+        elif self.config.attack == 'PGD_Linf':
             adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=linf_eps, nb_iter=50,
                                       eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1.,
                                       targeted=False)
+        else:
+            return Exception()
         img_ref_adv = adversary(img_ref, self.model(img_ref))
 
         return img_ref_adv
