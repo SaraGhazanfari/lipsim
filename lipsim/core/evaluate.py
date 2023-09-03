@@ -3,6 +3,7 @@ import logging
 from os.path import join
 from tqdm import tqdm
 from lipsim.core import utils
+from lipsim.core.data.bapps_data import BAPPSDataset
 from lipsim.core.data.readers import readers_config, NightDataset, N_CLASSES
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 from dreamsim import dreamsim
@@ -80,9 +81,10 @@ class Evaluator:
             self.vanilla_eval()
         elif self.config.mode == 'dreamsim':
             self.dreamsim_eval()
+        elif self.config.mode == 'lpips':
+            self.lpips_eval()
 
         logging.info('Done with batched inference.')
-
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
@@ -116,16 +118,23 @@ class Evaluator:
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').load_dataset()
-        imagenet_score = self.score_nights_dataset(data_loader)
+        imagenet_score = self.get_2afc_score_eval(data_loader)
         logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
         torch.cuda.empty_cache()
-        no_imagenet_score = self.score_nights_dataset(no_imagenet_data_loader)
+        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
         logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
         overall_score = (imagenet_score * dataset_size +
                          no_imagenet_score * no_imagenet_dataset_size) / (dataset_size + no_imagenet_dataset_size)
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
-    def score_nights_dataset(self, test_loader):
+    def lpips_eval(self):
+        data_loader = BAPPSDataset(data_roots=self.config.data_dir, split='val').get_dataloader(
+            batch_size=self.config.batch_size)
+        twoafc_score = self.get_2afc_score_eval(data_loader)
+        logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
+        return twoafc_score
+
+    def get_2afc_score_eval(self, test_loader):
         logging.info("Evaluating NIGHTS dataset.")
         d0s = []
         d1s = []
@@ -134,7 +143,7 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
-            dist_0, dist_1, target = self.one_step_night_eval(img_ref, img_left, img_right, target)
+            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
@@ -144,7 +153,7 @@ class Evaluator:
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
-    def get_dreamsim_dist(self, img_ref, img_left, img_right):
+    def get_cosine_score_between_images(self, img_ref, img_left, img_right):
         cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         embed_ref = self.model(img_ref).detach()
         embed_x0 = self.model(img_left).detach()
@@ -169,10 +178,10 @@ class Evaluator:
 
         return img_ref_adv
 
-    def one_step_night_eval(self, img_ref, img_left, img_right, target):
+    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
             img_ref = self.generate_attack(img_ref)
-        dist_0, dist_1 = self.get_dreamsim_dist(img_ref, img_left, img_right)
+        dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)

@@ -32,7 +32,7 @@ def set_config(config):
         ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
 
     # process argments
-    eval_mode = ['eval', 'dreamsim', 'lipsim']
+    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips']
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
@@ -60,7 +60,7 @@ def main(config):
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
-    elif config.mode in ['lipsim', 'eval', 'dreamsim']:
+    elif config.mode in ['lipsim', 'eval', 'dreamsim', 'lpips']:
         evaluate = Evaluator(config)
         return evaluate()
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # parameters training or eval
     parser.add_argument("--mode", type=str, default="train",
-                        choices=['train', 'certified', 'attack', 'eval', 'dreamsim'])
+                        choices=['train', 'train-night', 'dreamsim', 'lipsim', 'lpips'])
     parser.add_argument("--train_dir", type=str, help="Name of the training directory.")
     parser.add_argument("--data_dir", type=str, help="Name of the data directory.")
     parser.add_argument("--dataset", type=str, default='imagenet-1k', help="Dataset to use, imagenet-1k, night")
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_checkpoint_epochs", type=int, default=1, help="Save checkpoint every epoch.")
 
     # specific parameters for eval
-    parser.add_argument("--attack", type=str, choices=[None, 'PGD_Linf',  'PGD_L2'], help="Choose the attack.")
+    parser.add_argument("--attack", type=str, choices=[None, 'PGD_Linf', 'PGD_L2'], help="Choose the attack.")
     parser.add_argument("--eps", type=float, default=36)
 
     # parameters of the architectures

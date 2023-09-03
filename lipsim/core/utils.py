@@ -186,8 +186,23 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(yhat, y))
 
 
-def get_loss(config):
-    return RMSELoss()
+class HingeLoss(torch.nn.Module):
+    def __init__(self, device, margin):
+        super(HingeLoss, self).__init__()
+        self.device = device
+        self.margin = margin
+
+    def forward(self, x, y):
+        y_rounded = torch.round(y)  # Map [0, 1] -> {0, 1}
+        y_transformed = -1 * (1 - 2 * y_rounded)  # Map {0, 1} -> {-1, 1}
+        return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
+
+
+def get_loss(config, margin=0, device='cuda:0'):
+    if config.mode in ['train', 'lipsim', 'vanilla-eval']:
+        return RMSELoss()
+    elif config.mode == 'train-night':
+        return HingeLoss(margin=margin, device=device)
 
 
 def get_scheduler(optimizer, config, num_steps):

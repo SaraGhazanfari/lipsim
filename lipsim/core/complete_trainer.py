@@ -77,6 +77,18 @@ class Trainer:
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
+
+        # todo job_env = submitit.JobEnvironment()
+        # self.rank = int(job_env.global_rank)
+        # self.local_rank = int(job_env.local_rank)
+        # self.num_nodes = int(job_env.num_nodes)
+        # todo self.num_tasks = int(job_env.num_tasks)
+
+        # self.rank = int(os.environ['RANK'])
+        # self.rank = int(os.environ['SLURM_LOCALID'])
+        # self.local_rank = int(os.environ['SLURM_LOCALID'])
+        # self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))
+        # self.num_tasks = self.num_nodes
         self.is_master = bool(self.rank == 0)
         print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
 
@@ -99,7 +111,27 @@ class Trainer:
             logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
             logging.info(f"Hostname: {socket.gethostname()}.")
 
-        self.global_batch_size = self.batch_size
+        # ditributed settings
+        # todo self.world_size = 1
+        # self.is_distributed = False
+        # if self.num_nodes > 1 or self.num_tasks > 1:
+        #     self.is_distributed = True
+        #     self.world_size = self.ngpus  # todo self.num_nodes * self.ngpus
+        # if self.num_nodes > 1:
+        #     logging.info(
+        #         f"Distributed Training on {self.num_nodes} nodes")
+        # elif self.num_nodes == 1 and self.num_tasks > 1:
+        #     logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
+        # else:
+        #     assert self.num_nodes == 1 and self.num_tasks == 1
+        #     logging.info("Single node training.")
+        #
+        # if not self.is_distributed:
+        #     self.batch_size = self.config.batch_size * self.ngpus
+        # todo else:
+        #     self.batch_size = self.config.batch_size
+
+        self.global_batch_size = self.batch_size  # todo * self.world_size
         logging.info('World Size={} => Total batch size {}'.format(
             self.world_size, self.global_batch_size))
 
@@ -134,7 +166,7 @@ class Trainer:
 
         logging.info(f'Number of parameters to train: {nb_parameters}')
 
-        # setup distributed process if training is distributed 
+        # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.local_rank)
@@ -175,15 +207,13 @@ class Trainer:
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
         for epoch_id in range(start_epoch, self.config.epochs):
+            # todo if self.is_distributed:
+            #     sampler.set_epoch(epoch_id)
             for n_batch, data in enumerate(data_loader):
                 if global_step == 2 and self.is_master:
                     start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                if self.config.mode == 'train':
-                    self.one_step_embedding_training(data, epoch, global_step)
-                elif self.config.model == 'train-night':
-                    self.one_step_distance_metric_training(data, epoch, global_step)
-
+                self.one_step_training(data, epoch, global_step)
                 self._save_ckpt(global_step, epoch_id)
                 if global_step == 20 and self.is_master:
                     self._print_approximated_train_time(start_time)
@@ -242,7 +272,7 @@ class Trainer:
             torch.nn.utils.clip_grad_value_(
                 self.model.parameters(), self.config.gradient_clip_by_value)
 
-    def one_step_embedding_training(self, data, epoch, step):
+    def one_step_training(self, data, epoch, step):
 
         self.optimizer.zero_grad()
         batch_start_time = time.time()
@@ -257,53 +287,6 @@ class Trainer:
             logging.info(f'outputs {outputs.shape}')
         teacher_outputs = self.teacher_model.embed(images)
         loss = self.criterion(outputs, teacher_outputs)
-        loss.backward()
-        print('step: {step}, loss:{loss}'.format(step=step + 1, loss=loss.item()))
-        sys.stdout.flush()
-        self.process_gradients(step)
-        self.optimizer.step()
-        with self.warmup.dampening() if self.warmup else nullcontext():
-            self.scheduler.step(step)
-
-        seconds_per_batch = time.time() - batch_start_time
-        examples_per_second = self.global_batch_size / seconds_per_batch
-        # examples_per_second *= self.world_size
-
-        if self._to_print(step):
-            lr = self.optimizer.param_groups[0]['lr']
-            self.message.add("epoch", epoch, format="4.2f")
-            self.message.add("step", step, width=5, format=".0f")
-            self.message.add("lr", lr, format=".6f")
-            self.message.add("loss", loss, format=".4f")
-            if self.config.print_grad_norm:
-                grad_norm = self.compute_gradient_norm()
-                self.message.add("grad", grad_norm, format=".4f")
-            self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
-            logging.info(self.message.get_message())
-
-    def get_dreamsim_dist(self, img_ref, img_left, img_right):
-        cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        embed_ref = self.model(img_ref).detach()
-        embed_x0 = self.model(img_left).detach()
-        embed_x1 = self.model(img_right).detach()
-        dist_0 = 1 - cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1
-
-    def one_step_distance_metric_training(self, data, epoch, step):
-
-        self.optimizer.zero_grad()
-        batch_start_time = time.time()
-        img_ref, img_left, img_right, target = data
-        img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), img_right.cuda(), target.cuda()
-        if step == 0 and self.local_rank == 0:
-            logging.info(f'images {img_ref.shape}')
-        dist_0, dist_1 = self.get_dreamsim_dist(img_ref, img_left, img_right)
-        decisions = torch.lt(dist_1, dist_0)
-        logit = dist_0 - dist_1
-        loss = self.criterion(logit.squeeze(), target)
-        val_num_correct = ((target >= 0.5) == decisions).sum()
-        logging.info(f'loss {loss}, val_num_correct {val_num_correct}')
         loss.backward()
         print('step: {step}, loss:{loss}'.format(step=step + 1, loss=loss.item()))
         sys.stdout.flush()
