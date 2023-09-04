@@ -1,5 +1,5 @@
-from night_dataset import NightDataset
-from bapps_dataset import BAPPSDataset
+from lipsim.core.data.night_dataset import NightDataset
+from lipsim.core.data.bapps_dataset import BAPPSDataset
 
 N_CLASSES = {
     'dino_vitb16': 768,
