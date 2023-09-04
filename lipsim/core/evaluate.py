@@ -153,7 +153,7 @@ class Evaluator:
             d1s.append(dist_1)
             targets.append(target)
             twoafc_score = get_2afc_score(d0s, d1s, targets)
-            logging.info('batch_num: {batch_n}, 2afc: {twoafc}'.format(batch_n=i + 1, twoafc=twoafc_score))
+            # logging.info('batch_num: {batch_n}, 2afc: {twoafc}'.format(batch_n=i + 1, twoafc=twoafc_score))
 
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
