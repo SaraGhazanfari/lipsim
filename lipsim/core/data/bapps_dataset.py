@@ -82,7 +82,7 @@ class BAPPSDataset(Dataset):
         judge_img = np.load(judge_path).reshape((1, 1, 1,))  # [0,1]
 
         judge_img = torch.FloatTensor(judge_img)
-        return ref_img, p0_img, p1_img, judge_img
+        return ref_img, p0_img, p1_img, judge_img, index
 
     def __len__(self):
         return len(self.p0_paths)

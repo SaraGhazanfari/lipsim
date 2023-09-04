@@ -3,8 +3,8 @@ import logging
 from os.path import join
 from tqdm import tqdm
 from lipsim.core import utils
-from lipsim.core.data.bapps_data import BAPPSDataset
-from lipsim.core.data.readers import readers_config, NightDataset, N_CLASSES
+from lipsim.core.data import NightDataset, N_CLASSES, BAPPSDataset
+from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 from dreamsim import dreamsim
 import torch.nn as nn
