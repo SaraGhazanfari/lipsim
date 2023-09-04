@@ -55,6 +55,7 @@ class BAPPSDataset(Dataset):
 
         # transform_list = [transforms.Resize(load_size)]
         pad_size = int((load_size - 64)/2)
+        print(pad_size)
         transform_list = [transforms.Pad([pad_size, pad_size])]
         transform_list += [transforms.ToTensor(),
                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
