@@ -53,11 +53,7 @@ class BAPPSDataset(Dataset):
         self.p1_paths = make_dataset(self.dir_p1)
         self.p1_paths = sorted(self.p1_paths)
 
-        # transform_list = [transforms.Resize(load_size)]
-        pad_size = int((load_size - 64)/2)
-        print(pad_size)
-        # transform_list = [transforms.Pad([pad_size, pad_size])]
-        transform_list = []
+        transform_list = [transforms.Resize(load_size)]
         transform_list += [transforms.ToTensor(),
                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 
@@ -85,7 +81,6 @@ class BAPPSDataset(Dataset):
         judge_img = np.load(judge_path).reshape((1, 1, 1,))  # [0,1]
 
         judge_img = torch.FloatTensor(judge_img)
-        print(ref_img.shape, p0_img.shape, p1_img.shape)
         return ref_img, p0_img, p1_img, judge_img, index
 
     def __len__(self):
