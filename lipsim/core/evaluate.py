@@ -148,6 +148,7 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
+            print(img_ref.shape)
             dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
             d0s.append(dist_0)
             d1s.append(dist_1)

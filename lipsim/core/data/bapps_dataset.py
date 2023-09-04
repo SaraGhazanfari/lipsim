@@ -54,7 +54,8 @@ class BAPPSDataset(Dataset):
         self.p1_paths = sorted(self.p1_paths)
 
         # transform_list = [transforms.Resize(load_size)]
-        transform_list = [transforms.Pad([load_size - 64, load_size - 64])]
+        pad_size = int((load_size - 64)/2)
+        transform_list = [transforms.Pad([pad_size, pad_size])]
         transform_list += [transforms.ToTensor(),
                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 
@@ -90,5 +91,5 @@ class BAPPSDataset(Dataset):
     def get_dataloader(self, batch_size=1, num_workers=8):
         dataloader = torch.utils.data.DataLoader(self, batch_size=batch_size,
                                                  shuffle=self.is_training,
-                                                 num_workers=num_workers)
+                                                 num_workers=1)
         return dataloader
