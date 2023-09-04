@@ -21,6 +21,7 @@ def get_2afc_score(d0s, d1s, targets):
     d1s = torch.cat(d1s, dim=0)
     targets = torch.cat(targets, dim=0)
     scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
+    print(scores)
     twoafc_score = torch.mean(scores, dim=0)
     return twoafc_score
 
@@ -152,8 +153,6 @@ class Evaluator:
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
-            twoafc_score = get_2afc_score(d0s, d1s, targets)
-            # logging.info('batch_num: {batch_n}, 2afc: {twoafc}'.format(batch_n=i + 1, twoafc=twoafc_score))
 
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
