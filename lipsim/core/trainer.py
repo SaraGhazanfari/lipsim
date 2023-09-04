@@ -8,7 +8,8 @@ from contextlib import nullcontext
 
 from dreamsim import dreamsim
 from lipsim.core import utils
-from lipsim.core.data import N_CLASSES
+from lipsim.core.models import N_CLASSES
+
 from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 import sys

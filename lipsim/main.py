@@ -1,7 +1,9 @@
 import os
+import shutil
 import sys
 import warnings
 import argparse
+from datetime import datetime
 from os.path import exists, realpath
 import submitit
 from lipsim.core.trainer import Trainer
