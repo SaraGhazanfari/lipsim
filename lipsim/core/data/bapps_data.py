@@ -23,18 +23,15 @@ def is_image_file(filename, mode='img'):
 
 
 # from IPython import embed
-def make_dataset(dirs, mode='img'):
-    if not isinstance(dirs, list):
-        dirs = [dirs, ]
-
+def make_dataset(dir, mode='img'):
     images = []
-    for dir in dirs:
-        assert os.path.isdir(dir), '%s is not a valid directory' % dir
-        for root, _, fnames in sorted(os.walk(dir)):
-            for fname in fnames:
-                if is_image_file(fname, mode=mode):
-                    path = os.path.join(root, fname)
-                    images.append(path)
+    print(dir)
+    assert os.path.isdir(dir), '%s is not a valid directory' % dir
+    for root, _, fnames in sorted(os.walk(dir)):
+        for fname in fnames:
+            if is_image_file(fname, mode=mode):
+                path = os.path.join(root, fname)
+                images.append(path)
     return images
 
 
