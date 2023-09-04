@@ -21,8 +21,7 @@ def get_2afc_score(d0s, d1s, targets):
     d1s = torch.cat(d1s, dim=0)
     targets = torch.cat(targets, dim=0)
     scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
-    print(scores)
-    twoafc_score = torch.mean(scores, dim=0)
+    twoafc_score = torch.mean(scores)
     return twoafc_score
 
 
