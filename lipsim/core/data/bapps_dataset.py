@@ -54,7 +54,7 @@ class BAPPSDataset(Dataset):
         self.p1_paths = sorted(self.p1_paths)
 
         # transform_list = [transforms.Resize(load_size)]
-        transform_list = [transforms.Pad((load_size - 64, load_size - 64))]
+        transform_list = [transforms.Pad([load_size - 64, load_size - 64])]
         transform_list += [transforms.ToTensor(),
                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 
