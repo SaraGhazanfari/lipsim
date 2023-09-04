@@ -39,9 +39,9 @@ def make_dataset(dirs, mode='img'):
 
 
 class BAPPSDataset(Dataset):
-    def __init__(self, data_roots, load_size=64, split='val'):
+    def __init__(self, data_roots, load_size=64, split='val', dataset='cnn'):
         self.is_training = True if split == 'train' else False
-        self.roots = data_roots + split
+        self.roots = os.path.join(data_roots, split, dataset)
         self.load_size = load_size
 
         # image directory

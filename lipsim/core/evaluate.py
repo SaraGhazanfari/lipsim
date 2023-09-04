@@ -128,8 +128,10 @@ class Evaluator:
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
-        data_loader = BAPPSDataset(data_roots=self.config.data_dir, split='val').get_dataloader(
-            batch_size=self.config.batch_size)
+        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                        'frameinterp']:
+            data_loader = BAPPSDataset(data_roots=self.config.data_dir, split='val', dataset=dataset).get_dataloader(
+                batch_size=self.config.batch_size)
         twoafc_score = self.get_2afc_score_eval(data_loader)
         logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
         return twoafc_score
