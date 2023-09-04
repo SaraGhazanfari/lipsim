@@ -36,21 +36,21 @@ def make_dataset(dir, mode='img'):
 
 
 class BAPPSDataset(Dataset):
-    def __init__(self, data_roots, load_size=64, split='val', dataset='cnn'):
+    def __init__(self, data_root, load_size=64, split='val', dataset='cnn'):
         self.is_training = True if split == 'train' else False
-        self.roots = os.path.join(data_roots, split, dataset)
+        self.root = os.path.join(data_root, split, dataset)
         self.load_size = load_size
 
         # image directory
-        self.dir_ref = [os.path.join(root, 'ref') for root in self.roots]
+        self.dir_ref = os.path.join(self.root, 'ref')
         self.ref_paths = make_dataset(self.dir_ref)
         self.ref_paths = sorted(self.ref_paths)
 
-        self.dir_p0 = [os.path.join(root, 'p0') for root in self.roots]
+        self.dir_p0 = os.path.join(self.root, 'p0')
         self.p0_paths = make_dataset(self.dir_p0)
         self.p0_paths = sorted(self.p0_paths)
 
-        self.dir_p1 = [os.path.join(root, 'p1') for root in self.roots]
+        self.dir_p1 = os.path.join(self.root, 'p1')
         self.p1_paths = make_dataset(self.dir_p1)
         self.p1_paths = sorted(self.p1_paths)
 
@@ -61,7 +61,7 @@ class BAPPSDataset(Dataset):
         self.transform = transforms.Compose(transform_list)
 
         # judgement directory
-        self.dir_J = [os.path.join(root, 'judge') for root in self.roots]
+        self.dir_J = os.path.join(self.root, 'judge')
         self.judge_paths = make_dataset(self.dir_J, mode='np')
         self.judge_paths = sorted(self.judge_paths)
 

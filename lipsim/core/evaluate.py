@@ -130,7 +130,7 @@ class Evaluator:
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
-            data_loader = BAPPSDataset(data_roots=self.config.data_dir, split='val', dataset=dataset).get_dataloader(
+            data_loader = BAPPSDataset(data_root=self.config.data_dir, split='val', dataset=dataset).get_dataloader(
                 batch_size=self.config.batch_size)
         twoafc_score = self.get_2afc_score_eval(data_loader)
         logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
