@@ -135,8 +135,8 @@ class Evaluator:
             data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
                                        split='val', dataset=dataset).get_dataloader(
                 batch_size=self.config.batch_size)
-        twoafc_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
+            twoafc_score = self.get_2afc_score_eval(data_loader)
+            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
         return twoafc_score
 
     def get_2afc_score_eval(self, test_loader):
