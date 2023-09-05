@@ -92,7 +92,7 @@ class Evaluator:
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         loss = 0
-        data_loader, _ = self.reader.load_dataset()
+        data_loader, _ = self.reader.get_dataloader()
         with torch.no_grad():
             for batch_n, data in enumerate(data_loader):
                 inputs, _ = data
@@ -116,10 +116,10 @@ class Evaluator:
 
     def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').load_dataset()
+                                                 split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
-                                                                         split='test_no_imagenet').load_dataset()
+                                                                         split='test_no_imagenet').get_dataloader()
         imagenet_score = self.get_2afc_score_eval(data_loader)
         logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
         torch.cuda.empty_cache()

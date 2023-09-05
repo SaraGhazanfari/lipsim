@@ -48,6 +48,6 @@ class NightDataset(Dataset):
         img_right = self.preprocess_fn(Image.open(os.path.join(self.root_dir, self.csv.iloc[idx, 6])))
         return img_ref, img_left, img_right, p, id
 
-    def load_dataset(self):
+    def get_dataloader(self):
         return DataLoader(self, batch_size=self.batch_size,
                           num_workers=self.num_workers, shuffle=False), len(self.csv)

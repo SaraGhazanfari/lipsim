@@ -181,7 +181,7 @@ class Trainer:
         # define set for saved ckpt
         self.saved_ckpts = set([0])
 
-        data_loader, sampler = self.reader.load_dataset()
+        data_loader, sampler = self.reader.get_dataloader()
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
 

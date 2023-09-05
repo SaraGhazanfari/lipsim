@@ -4,6 +4,9 @@ from torchvision import transforms, datasets
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+
+from lipsim.core.data import NightDataset, BAPPSDataset
+from lipsim.core.data.coco_datast import COCODataset
 from lipsim.core.utils import GaussianBlur, Solarization
 
 
@@ -81,17 +84,17 @@ class ImagenetDataset(Dataset):
         self.samples = []
         self.targets = []
         self.transform = {
-            # 'train': transforms.Compose([
-            #     transforms.CenterCrop(224),
-            #     transforms.RandomHorizontalFlip(),
-            #     transforms.ToTensor(),
-            #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            # ]),
-            'train': DataAugmentationDINO(
-                global_crops_scale=(0.4, 1.),
-                local_crops_scale=(0.05, 0.4),
-                local_crops_number=8
-            ),
+            'train': transforms.Compose([
+                transforms.CenterCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]),
+            # 'train': DataAugmentationDINO(
+            #     global_crops_scale=(0.4, 1.),
+            #     local_crops_scale=(0.05, 0.4),
+            #     local_crops_number=8
+            # ),
             'val': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
@@ -113,6 +116,7 @@ class ImagenetDataset(Dataset):
 
 readers_config = {
     'imagenet-1k': ImagenetDataset,
+    'night': NightDataset,
+    'bapps': BAPPSDataset,
+    'coco': COCODataset
 }
-
-
