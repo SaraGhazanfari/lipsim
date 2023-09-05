@@ -12,6 +12,8 @@ class COCODataset:
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config = config
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
         self.transform = transforms.Compose([
             transforms.CenterCrop(224),
             transforms.ToTensor(),
