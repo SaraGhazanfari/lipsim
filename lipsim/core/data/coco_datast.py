@@ -15,7 +15,7 @@ class COCODataset(CocoDetection):
             transforms: Optional[Callable] = None,
             is_training=True, is_distributed=False, world_size=1
     ) -> None:
-        super().__init__(config.data_dir, transforms, transform)
+        super().__init__(root=config.data_dir, transforms=transforms, transform=transform, annFile=annFile)
         from pycocotools.coco import COCO
 
         self.coco = COCO(annFile)
