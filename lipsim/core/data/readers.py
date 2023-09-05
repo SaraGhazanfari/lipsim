@@ -102,7 +102,7 @@ class ImagenetDataset(Dataset):
             ])
         }
 
-    def load_dataset(self):
+    def get_dataloader(self):
         sampler = None
         shuffle = True if self.is_training else False
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
