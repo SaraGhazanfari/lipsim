@@ -10,12 +10,12 @@ class COCODataset(CocoDetection):
 
     def __init__(
             self, config: Optional, root: str, batch_size: int,
-            annFile: str, num_workers=10,
+            annFile='path2json', num_workers=10,
             transform: Optional[Callable] = None,
             transforms: Optional[Callable] = None,
             is_training=True, is_distributed=False, world_size=1
     ) -> None:
-        super().__init__(root, transforms, transform)
+        super().__init__(config.data_dir, transforms, transform)
         from pycocotools.coco import COCO
 
         self.coco = COCO(annFile)
