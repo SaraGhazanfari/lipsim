@@ -23,4 +23,4 @@ class COCODataset:
     def get_dataloader(self):
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform)
         return DataLoader(dataset, batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=False)
+                          num_workers=self.num_workers, shuffle=False), None
