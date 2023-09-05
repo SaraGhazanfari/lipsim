@@ -12,6 +12,8 @@ class COCODataset:
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config = config
+        self.n_train_files = 118287
+        self.n_test_files = 50_1000 # todo tobe checked
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
         self.transform = transforms.Compose([
