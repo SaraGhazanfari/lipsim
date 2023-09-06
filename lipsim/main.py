@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime
 from os.path import exists, realpath
 import submitit
-from lipsim.core.trainer import Trainer
+from lipsim.core.distributed_trainer import Trainer
 from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")

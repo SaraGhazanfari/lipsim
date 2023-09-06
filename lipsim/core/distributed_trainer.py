@@ -6,6 +6,7 @@ import glob
 from os.path import join, exists
 from contextlib import nullcontext
 
+import submitit
 from dreamsim import dreamsim
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config
@@ -25,14 +26,6 @@ class Trainer:
 
     def __init__(self, config):
         self.config = config
-        self.is_distributed = False  # todo self.is_distributed = True
-        self.rank = 0
-        self.local_rank = 0
-        self.num_nodes = 4
-        self.num_tasks = 4
-        self.batch_size = self.config.batch_size
-        self.global_batch_size = self.batch_size
-        self.world_size = 4
 
     def _load_state(self):
         # load last checkpoint
@@ -79,17 +72,13 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        # todo job_env = submitit.JobEnvironment()
-        # self.rank = int(job_env.global_rank)
-        # self.local_rank = int(job_env.local_rank)
-        # self.num_nodes = int(job_env.num_nodes)
-        # todo self.num_tasks = int(job_env.num_tasks)
+        job_env = submitit.JobEnvironment()
+        self.rank = int(job_env.global_rank)
+        self.local_rank = int(job_env.local_rank)
+        self.num_nodes = int(job_env.num_nodes)
+        self.num_tasks = int(job_env.num_tasks)
 
-        # self.rank = int(os.environ['RANK'])
-        # self.rank = int(os.environ['SLURM_LOCALID'])
-        # self.local_rank = int(os.environ['SLURM_LOCALID'])
-        # self.num_nodes = len(os.environ['SLURM_JOB_GPUS'].split(','))
-        # self.num_tasks = self.num_nodes
+        self.num_tasks = self.num_nodes
         self.is_master = bool(self.rank == 0)
         print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
 
@@ -113,26 +102,26 @@ class Trainer:
             logging.info(f"Hostname: {socket.gethostname()}.")
 
         # ditributed settings
-        # todo self.world_size = 1
-        # self.is_distributed = False
-        # if self.num_nodes > 1 or self.num_tasks > 1:
-        #     self.is_distributed = True
-        #     self.world_size = self.ngpus  # todo self.num_nodes * self.ngpus
-        # if self.num_nodes > 1:
-        #     logging.info(
-        #         f"Distributed Training on {self.num_nodes} nodes")
-        # elif self.num_nodes == 1 and self.num_tasks > 1:
-        #     logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
-        # else:
-        #     assert self.num_nodes == 1 and self.num_tasks == 1
-        #     logging.info("Single node training.")
-        #
-        # if not self.is_distributed:
-        #     self.batch_size = self.config.batch_size * self.ngpus
-        # todo else:
-        #     self.batch_size = self.config.batch_size
+        self.world_size = 1
+        self.is_distributed = False
+        if self.num_nodes > 1 or self.num_tasks > 1:
+            self.is_distributed = True
+            self.world_size = self.num_nodes * self.ngpus
+        if self.num_nodes > 1:
+            logging.info(
+                f"Distributed Training on {self.num_nodes} nodes")
+        elif self.num_nodes == 1 and self.num_tasks > 1:
+            logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
+        else:
+            assert self.num_nodes == 1 and self.num_tasks == 1
+            logging.info("Single node training.")
 
-        self.global_batch_size = self.batch_size  # todo * self.world_size
+        if not self.is_distributed:
+            self.batch_size = self.config.batch_size * self.ngpus
+        else:
+            self.batch_size = self.config.batch_size
+
+        self.global_batch_size = self.batch_size * self.world_size
         logging.info('World Size={} => Total batch size {}'.format(
             self.world_size, self.global_batch_size))
 
@@ -208,8 +197,8 @@ class Trainer:
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
         for epoch_id in range(start_epoch, self.config.epochs):
-            # todo if self.is_distributed:
-            #     sampler.set_epoch(epoch_id)
+            if self.is_distributed:
+                sampler.set_epoch(epoch_id)
             for n_batch, data in enumerate(data_loader):
                 if global_step == 2 and self.is_master:
                     start_time = time.time()
