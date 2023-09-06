@@ -250,6 +250,7 @@ class Trainer:
         batch_start_time = time.time()
         images, _ = data
         images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4])
+        print(images.shape)
         standard_images = images[0]
         jittered_images = images[1]
         standard_images, jittered_images = standard_images.to(self.local_rank), jittered_images.to(self.local_rank)
