@@ -131,7 +131,7 @@ class Trainer:
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=False, world_size=self.world_size, num_workers=10)
+                             is_distributed=self.is_distributed, world_size=self.world_size, num_workers=10)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
