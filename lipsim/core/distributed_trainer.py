@@ -80,7 +80,8 @@ class Trainer:
 
         self.num_tasks = self.num_nodes
         self.is_master = bool(self.rank == 0)
-        print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks)
+        print('rank ', self.rank, ' num_nodes ', self.num_nodes, ' world size ', self.num_tasks, 'num_gpus ',
+              self.ngpus)
 
         # Setup logging
         utils.setup_logging(self.config, self.rank)
