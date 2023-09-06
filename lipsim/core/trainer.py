@@ -249,10 +249,9 @@ class Trainer:
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         images, _ = data
-        images = images.reshape(-1, images.shape[2], images.shape[3], images.shape[4])
-        print(images.shape)
-        standard_images = images[0]
-        jittered_images = images[1]
+        standard_images = images[:, 0, :, :].reshape(-1, images.shape[2], images.shape[3], images.shape[4])
+        jittered_images = images[:, 1, :, :].reshape(-1, images.shape[2], images.shape[3], images.shape[4])
+        print(standard_images.shape, jittered_images.shape)
         standard_images, jittered_images = standard_images.to(self.local_rank), jittered_images.to(self.local_rank)
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {standard_images.shape}')
