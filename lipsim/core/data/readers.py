@@ -11,7 +11,7 @@ from lipsim.core.utils import GaussianBlur, Solarization
 
 
 class DataAugmentationDINO(object):
-    def __init__(self, global_crops_scale, local_crops_scale, local_crops_number):
+    def __init__(self, global_crops_scale=None, local_crops_scale=None, local_crops_number=None):
         flip_and_color_jitter = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomApply(
@@ -20,45 +20,39 @@ class DataAugmentationDINO(object):
             ),
             transforms.RandomGrayscale(p=0.2),
         ])
-        normalize = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
         self.standard_transform = transforms.Compose([
             transforms.CenterCrop(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
         # first global crop
         self.global_transfo1 = transforms.Compose([
-            transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
+            #transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
+            transforms.CenterCrop(224),
             flip_and_color_jitter,
-            GaussianBlur(1.0),
-            normalize,
+            # GaussianBlur(1.0),
         ])
         # second global crop
-        self.global_transfo2 = transforms.Compose([
-            transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
-            flip_and_color_jitter,
-            GaussianBlur(0.1),
-            Solarization(0.2),
-            normalize,
-        ])
-        # transformation for the local small crops
-        self.local_crops_number = local_crops_number
-        self.local_transfo = transforms.Compose([
-            transforms.RandomResizedCrop(96, scale=local_crops_scale, interpolation=Image.BICUBIC),
-            flip_and_color_jitter,
-            GaussianBlur(p=0.5),
-            normalize,
-        ])
+        # self.global_transfo2 = transforms.Compose([
+        #     transforms.RandomResizedCrop(224, scale=global_crops_scale, interpolation=Image.BICUBIC),
+        #     flip_and_color_jitter,
+        #     GaussianBlur(0.1),
+        #     Solarization(0.2),
+        #     normalize,
+        # ])
+        # # transformation for the local small crops
+        # self.local_crops_number = local_crops_number
+        # self.local_transfo = transforms.Compose([
+        #     transforms.RandomResizedCrop(96, scale=local_crops_scale, interpolation=Image.BICUBIC),
+        #     flip_and_color_jitter,
+        #     GaussianBlur(p=0.5),
+        #     normalize,
+        # ])
 
     def __call__(self, image):
         images = []
         images.append(self.standard_transform(image))
         images.append(self.global_transfo1(image))
-        images.append(self.global_transfo2(image))
         images = torch.stack(images, dim=0)
         return images
 
@@ -84,11 +78,16 @@ class ImagenetDataset(Dataset):
         self.samples = []
         self.targets = []
         self.transform = {
-            'train': transforms.Compose([
-                transforms.CenterCrop(224),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-            ]),
+            # 'train': transforms.Compose([
+            #     transforms.CenterCrop(224),
+            #     transforms.RandomHorizontalFlip(),
+            #     transforms.ToTensor(),
+            # ]),
+            'train': DataAugmentationDINO(
+                global_crops_scale=(0.4, 1.),
+                local_crops_scale=(0.05, 0.4),
+                local_crops_number=8
+            ),
             'val': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
