@@ -105,7 +105,7 @@ class Trainer:
         # ditributed settings
         self.world_size = 1
         self.is_distributed = False
-        if self.num_nodes > 1 or self.num_tasks > 1:
+        if self.num_nodes > 1 or self.num_tasks > 1 or self.ngpus > 1:
             self.is_distributed = True
             self.world_size = self.num_nodes * self.ngpus
         if self.num_nodes > 1:
