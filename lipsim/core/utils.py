@@ -160,11 +160,11 @@ def setup_logging(config, rank):
 def setup_distributed_training(world_size, rank):
     """ find a common host name on all nodes and setup distributed training """
     # make sure http proxy are unset, in order for the nodes to communicate
-    for var in ['http_proxy', 'https_proxy']:
-        if var in os.environ:
-            del os.environ[var]
-        if var.upper() in os.environ:
-            del os.environ[var.upper()]
+    # for var in ['http_proxy', 'https_proxy']:
+    #     if var in os.environ:
+    #         del os.environ[var]
+    #     if var.upper() in os.environ:
+    #         del os.environ[var.upper()]
     # get distributed url
     # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
     # stdout = subprocess.check_output(cmd.split())
@@ -173,6 +173,9 @@ def setup_distributed_training(world_size, rank):
     host_name = platform.node()
     dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
+    print('*********************************************')
+    print(dist_url)
+    print('*********************************************')
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
 
