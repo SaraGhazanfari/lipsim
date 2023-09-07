@@ -83,7 +83,7 @@ def main(config):
     executor = submitit.AutoExecutor(
         folder=config.train_dir, cluster=cluster)
     executor.update_parameters(
-        gpus_per_node=config.ngpus,
+        # gpus_per_node=config.ngpus,
         nodes=config.nnodes,
         tasks_per_node=tasks_per_node,
         cpus_per_task=ncpus // tasks_per_node,
@@ -92,7 +92,7 @@ def main(config):
         slurm_signal_delay_s=0,
         mem_gb=120,
         timeout_min=config.timeout,
-        gres=config.gres
+        gpus_per_node=config.gres,
         # slurm_mail_type='BEGIN',
         # slurm_mail_user='sg7457@nyu.edu'
     )
