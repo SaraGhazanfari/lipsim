@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     # parser.add_argument("--account", type=str, default='dci@v100',
     #                     help="Account to use for slurm.")
-    parser.add_argument("--gres", type=str, default='gpu:a100:4',
+    parser.add_argument("--gres", type=str, default='gpu:a100:1',
                         help=".")
     parser.add_argument("--ngpus", type=int, default=4,
                         help="Number of GPUs to use.")
