@@ -92,7 +92,7 @@ def main(config):
         slurm_signal_delay_s=0,
         mem_gb=120,
         timeout_min=config.timeout,
-        gres=config.sgres
+        gres=config.gres
         # slurm_mail_type='BEGIN',
         # slurm_mail_user='sg7457@nyu.edu'
     )
