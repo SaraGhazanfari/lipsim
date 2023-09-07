@@ -88,7 +88,7 @@ def main(config):
         "export MASTER_PORT=$(shuf -i 10000-65500 -n 1)",
     ]
     executor.update_parameters(
-        # gpus_per_node=config.ngpus,
+        gpus_per_node=config.ngpus,
         nodes=config.nnodes,
         tasks_per_node=tasks_per_node,
         cpus_per_task=ncpus // tasks_per_node,
@@ -97,7 +97,7 @@ def main(config):
         slurm_signal_delay_s=0,
         mem_gb=120,
         timeout_min=config.timeout,
-        slurm_additional_parameters={'gres': config.gres},
+        # slurm_additional_parameters={'gres': config.gres},
         setup=setup
         # slurm_mail_type='BEGIN',
         # slurm_mail_user='sg7457@nyu.edu'
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     #                     help="Account to use for slurm.")
     parser.add_argument("--gres", type=str, default='gpu:a100:2',
                         help=".")
-    parser.add_argument("--ngpus", type=int, default=2,
+    parser.add_argument("--ngpus", type=int, default=4,
                         help="Number of GPUs to use.")
     parser.add_argument("--nnodes", type=int, default=2,
                         help="Number of nodes.")
