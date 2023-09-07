@@ -82,6 +82,11 @@ def main(config):
 
     executor = submitit.AutoExecutor(
         folder=config.train_dir, cluster=cluster)
+
+    setup = [
+        "export MASTER_ADDR=$(hostname -s)-ib0",
+        "export MASTER_PORT=$(shuf -i 10000-65500 -n 1)",
+    ]
     executor.update_parameters(
         gpus_per_node=config.ngpus,
         nodes=config.nnodes,
@@ -93,6 +98,7 @@ def main(config):
         mem_gb=120,
         timeout_min=config.timeout,
         slurm_additional_parameters={'gres': config.gres},
+        setup=setup
         # slurm_mail_type='BEGIN',
         # slurm_mail_user='sg7457@nyu.edu'
     )
