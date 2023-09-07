@@ -88,7 +88,7 @@ def main(config):
         "export MASTER_PORT=$(shuf -i 10000-65500 -n 1)",
     ]
     executor.update_parameters(
-        gpus_per_node=config.ngpus,
+        # gpus_per_node=config.ngpus,
         nodes=config.nnodes,
         tasks_per_node=tasks_per_node,
         cpus_per_task=ncpus // tasks_per_node,
