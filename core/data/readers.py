@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from torchvision.datasets import ImageNet
+from core.data.imagenet_embedding_dataset import ImageNetEmbeddingDataset
 from core.data.night_dataset import NightDataset
 from core.data.bapps_dataset import BAPPSDataset
 from core.data.coco_datast import COCODataset
@@ -51,7 +52,7 @@ class BaseReader:
     self.batch_size = batch_size
     self.is_training = is_training
     self.is_distributed = is_distributed
-    self.num_workers = 10
+    self.num_workers = 4
     self.prefetch_factor = self.batch_size * 2
     self.path = join(self.get_data_dir(), self.config.dataset)
 
@@ -118,11 +119,48 @@ class ImagenetReader(BaseReader):
     self.dataset = ImageNet(self.path, split=split, transform=transform)
 
 
+class ImagenetEmbeddingReader(BaseReader):
+
+  def __init__(self, config, batch_size, is_training, is_distributed=False):
+    config.dataset = 'imagenet'
+    super(ImagenetEmbeddingReader, self).__init__(
+      config, batch_size, is_distributed, is_training)
+    self.config = config
+    self.batch_size = batch_size
+    self.is_training = is_training
+    self.n_classes = 1792
+    self.n_train_files = 1_281_167
+    self.n_test_files = 50_1000
+    self.img_size = (None, 3, 224, 500)
+    self.split = 'train' if self.is_training else 'val'
+    self.path_embedding = config.path_embedding
+
+    self.means = (0.0000, 0.0000, 0.0000)
+    self.stds = (1.0000, 1.0000, 1.0000)
+
+    if is_training:
+      transform = DataAugmentationDINO(
+        global_crops_scale=(0.4, 1.),
+        local_crops_scale=(0.05, 0.4),
+        local_crops_number=8
+      )
+    else:
+      transform = transforms.Compose([
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+      ])
+    split = 'train' if is_training else 'val'
+    self.dataset = ImageNetEmbeddingDataset(
+      self.path, self.path_embedding, split=split, transform=transform)
+
+
+
 
 
 
 readers_config = {
   'imagenet': ImagenetReader,
+  'imagenet_embedding': ImagenetEmbeddingReader,
   # 'night': NightDataset,
   # 'bapps': BAPPSDataset,
   # 'coco': COCODataset

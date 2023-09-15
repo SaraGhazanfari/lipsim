@@ -128,10 +128,10 @@ def setup_distributed_training(world_size, rank):
   """ find a common host name on all nodes and setup distributed training """
   # make sure http proxy are unset, in order for the nodes to communicate
   for var in ['http_proxy', 'https_proxy']:
-      if var in os.environ:
-          del os.environ[var]
-      if var.upper() in os.environ:
-          del os.environ[var.upper()]
+    if var in os.environ:
+      del os.environ[var]
+    if var.upper() in os.environ:
+      del os.environ[var.upper()]
   # get distributed url
   cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
   stdout = subprocess.check_output(cmd.split())
@@ -143,83 +143,87 @@ def setup_distributed_training(world_size, rank):
 
 
 class RMSELoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.mse = nn.MSELoss()
 
-    def forward(self, yhat, y):
-        return torch.sqrt(self.mse(yhat, y))
+  def __init__(self):
+    super().__init__()
+    self.mse = nn.MSELoss()
+
+  def forward(self, yhat, y):
+    return torch.sqrt(self.mse(yhat, y))
 
 
 class HingeLoss(torch.nn.Module):
-    def __init__(self, device, margin):
-        super(HingeLoss, self).__init__()
-        self.device = device
-        self.margin = margin
 
-    def forward(self, x, y):
-        y_rounded = torch.round(y)  # Map [0, 1] -> {0, 1}
-        y_transformed = -1 * (1 - 2 * y_rounded)  # Map {0, 1} -> {-1, 1}
-        return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
+  def __init__(self, device, margin):
+    super(HingeLoss, self).__init__()
+    self.device = device
+    self.margin = margin
+
+  def forward(self, x, y):
+    y_rounded = torch.round(y)  # Map [0, 1] -> {0, 1}
+    y_transformed = -1 * (1 - 2 * y_rounded)  # Map {0, 1} -> {-1, 1}
+    return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
 
 
 def get_loss(config, margin=0, device='cuda:0'):
-    if config.mode in ['train', 'lipsim', 'vanilla-eval']:
-        return RMSELoss()
-    elif config.mode == 'train-night':
-        return HingeLoss(margin=margin, device=device)
+  if config.mode in ['train', 'lipsim', 'vanilla-eval']:
+    return RMSELoss()
+  elif config.mode == 'train-night':
+    return HingeLoss(margin=margin, device=device)
 
 
 def get_scheduler(optimizer, config, num_steps):
-    """Return a learning rate scheduler schedulers."""
-    if config.scheduler == 'cosine':
-        scheduler = lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=num_steps)
-    elif config.scheduler == 'interp':
-        scheduler = TriangularLRScheduler(
-            optimizer, num_steps, config.lr)
-    elif config.scheduler == 'multi_step_lr':
-        if config.decay is not None:
-            steps_by_epochs = num_steps / config.epochs
-            milestones = np.array(list(map(int, config.decay.split('-'))))
-            milestones = list(np.int32(milestones * steps_by_epochs))
-        else:
-            milestones = list(map(int, [1 / 10 * num_steps, 5 / 10 * num_steps, 8.5 / 10 * num_steps]))
-        scheduler = lr_scheduler.MultiStepLR(
-            optimizer, milestones=milestones, gamma=config.gamma)
+  """Return a learning rate scheduler schedulers."""
+  if config.scheduler == 'cosine':
+    scheduler = lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=num_steps)
+  elif config.scheduler == 'interp':
+    scheduler = TriangularLRScheduler(
+        optimizer, num_steps, config.lr)
+  elif config.scheduler == 'multi_step_lr':
+    if config.decay is not None:
+      steps_by_epochs = num_steps / config.epochs
+      milestones = np.array(list(map(int, config.decay.split('-'))))
+      milestones = list(np.int32(milestones * steps_by_epochs))
     else:
-        ValueError("Scheduler not reconized")
-    warmup_scheduler = None
-    if config.warmup_scheduler > 0:
-        warmup_period = int(num_steps * config.warmup_scheduler)
-        warmup_scheduler = warmup.LinearWarmup(optimizer, warmup_period)
-    return scheduler, warmup_scheduler
+      milestones = list(map(int, [1 / 10 * num_steps, 5 / 10 * num_steps, 8.5 / 10 * num_steps]))
+    scheduler = lr_scheduler.MultiStepLR(
+      optimizer, milestones=milestones, gamma=config.gamma)
+  else:
+    ValueError("Scheduler not reconized")
+  warmup_scheduler = None
+  if config.warmup_scheduler > 0:
+    warmup_period = int(num_steps * config.warmup_scheduler)
+    warmup_scheduler = warmup.LinearWarmup(optimizer, warmup_period)
+  return scheduler, warmup_scheduler
 
 
 def get_optimizer(config, params):
-    """Returns the optimizer that should be used based on params."""
-    lr, wd = config.lr, config.wd
-    betas = (config.beta1, config.beta2)
-    if config.optimizer == 'sgd':
-        opt = torch.optim.SGD(params, lr=lr, weight_decay=wd, momentum=0.9, nesterov=config.nesterov)
-    elif config.optimizer == 'adam':
-        opt = torch.optim.Adam(params, lr=lr, weight_decay=wd, betas=betas)
-    elif config.optimizer == 'adamw':
-        opt = torch.optim.AdamW(params, lr=lr, weight_decay=wd, betas=betas)
-    else:
-        raise ValueError("Optimizer was not recognized")
-    return opt
+  """Returns the optimizer that should be used based on params."""
+  lr, wd = config.lr, config.wd
+  betas = (config.beta1, config.beta2)
+  if config.optimizer == 'sgd':
+    opt = torch.optim.SGD(params, lr=lr, weight_decay=wd, momentum=0.9, nesterov=config.nesterov)
+  elif config.optimizer == 'adam':
+    opt = torch.optim.Adam(params, lr=lr, weight_decay=wd, betas=betas)
+  elif config.optimizer == 'adamw':
+    opt = torch.optim.AdamW(params, lr=lr, weight_decay=wd, betas=betas)
+  else:
+    raise ValueError("Optimizer was not recognized")
+  return opt
 
 
 class TriangularLRScheduler:
 
-    def __init__(self, optimizer, num_steps, lr):
-        self.optimizer = optimizer
-        self.num_steps = num_steps
-        self.lr = lr
+  def __init__(self, optimizer, num_steps, lr):
+    self.optimizer = optimizer
+    self.num_steps = num_steps
+    self.lr = lr
 
-    def step(self, t):
-        lr = np.interp([t],
-                       [0, self.num_steps * 2 // 5, self.num_steps * 4 // 5, self.num_steps],
-                       [0, self.lr, self.lr / 20.0, 0])[0]
-        self.optimizer.param_groups[0].update(lr=lr)
+  def step(self, t):
+    lr = np.interp([t],
+                   [0, self.num_steps * 2 // 5, self.num_steps * 4 // 5, self.num_steps],
+                   [0, self.lr, self.lr / 20.0, 0])[0]
+    self.optimizer.param_groups[0].update(lr=lr)
+
+

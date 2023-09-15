@@ -22,8 +22,7 @@ def override_args(config, depth, num_channels, depth_linear, n_features):
 
 def set_config(config):
     if config.model_name == 'small':
-        # config = override_args(config, 20, 45, 7, 2048)  # depth, num_channels, depth_linear, n_features
-        config = override_args(config, 20, 45, 7, 512)  # depth, num_channels, depth_linear, n_features
+        config = override_args(config, 20, 45, 7, 1024)  # depth, num_channels, depth_linear, n_features
     elif config.model_name == 'medium':
         config = override_args(config, 30, 60, 10, 2048)
     elif config.model_name == 'large':
@@ -33,6 +32,10 @@ def set_config(config):
     elif config.model_name is None and \
             not all([config.depth, config.num_channels, config.depth_linear, config.n_features]):
         ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
+
+    # cluster constraint
+    if config.constraint and config.partition != 'gpu_p5':
+      config.constraint = f"v100-{config.constraint}g"
 
     # process argments
     if config.data_dir is None:
@@ -69,15 +72,15 @@ def set_config(config):
 def main(config):
     config = set_config(config)
 
-    ncpus = 48
+    ncpus = 40
     # default: set tasks_per_node equal to number of gpus
     tasks_per_node = config.ngpus
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
-        tasks_per_node = 1
+      tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
 
     executor = submitit.AutoExecutor(
-        folder=config.train_dir, cluster=cluster)
+      folder=config.train_dir, cluster=cluster)
 
     executor.update_parameters(
       gpus_per_node=config.ngpus,
@@ -85,6 +88,7 @@ def main(config):
       tasks_per_node=tasks_per_node,
       cpus_per_task=ncpus // tasks_per_node,
       stderr_to_stdout=True,
+      exclusive=True,
       slurm_account=config.account,
       slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
       slurm_partition=config.partition,
@@ -95,14 +99,13 @@ def main(config):
     )
 
     if config.mode == 'train':
-        trainer = Trainer(config)
-        job = executor.submit(trainer)
-        job_id = job.job_id
-
+      trainer = Trainer(config)
+      job = executor.submit(trainer)
+      job_id = job.job_id
     elif config.mode in ['eval', 'eval_best', 'attack', 'certified']:
-        evaluate = Evaluator(config)
-        job = executor.submit(evaluate)
-        job_id = job.job_id
+      evaluate = Evaluator(config)
+      job = executor.submit(evaluate)
+      job_id = job.job_id
 
     folder = config.train_dir.split('/')[-1]
     print(f"Submitted batch job {job_id} in folder {folder}")
@@ -113,13 +116,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--account", type=str, default='dci@v100',
                         help="Account to use for slurm.")
-    # parser.add_argument("--gres", type=str, default='gpu:a100:2',
-    #                     help=".")
     parser.add_argument("--ngpus", type=int, default=4,
                         help="Number of GPUs to use.")
     parser.add_argument("--nnodes", type=int, default=1,
                         help="Number of nodes.")
-    parser.add_argument("--timeout", type=int, default=120,
+    parser.add_argument("--timeout", type=int, default=1200,
                         help="Time of the Slurm job in minutes for training.")  # 1440
     parser.add_argument("--partition", type=str, default="gpu_p13",
                         help="Partition to use for Slurm.")
@@ -179,9 +180,11 @@ if __name__ == '__main__':
     parser.add_argument("--first_layer", type=str, default="padding_channels")
     parser.add_argument("--last_layer", type=str, default="pooling_linear")
 
+    parser.add_argument("--path_embedding", type=str,
+                        default='/gpfsscratch/rech/dci/uuc79vj/imagenet_dreamsim')
     parser.add_argument("--dreamsim_path", type=str,
                         default='/gpfswork/rech/dci/uuc79vj/lipsim/dreamsim_ckpts')
-    parser.add_argument("--teacher_model_name", type=str, default='dino_vitb16',
+    parser.add_argument("--teacher_model_name", type=str, default='ensemble',
                         help='dino_vitb16 open_clip_vitb32 clip_vitb32')
 
     # parse all arguments

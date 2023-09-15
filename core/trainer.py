@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import pprint
@@ -20,9 +21,9 @@ from core.models import N_CLASSES
 from core.data.readers import readers_config
 from core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 
-from core.models.dreamsim.model import dreamsim
+# from core.models.dreamsim.model import dreamsim
 
-
+os.environ["NCCL_DEBUG"] = "INFO"
 
 
 class Trainer:
@@ -102,22 +103,21 @@ class Trainer:
     # ditributed settings
     self.world_size = 1
     self.is_distributed = False
-    if self.num_nodes > 1 or self.num_tasks > 1 or self.ngpus > 1:
-        self.is_distributed = True
-        self.world_size = self.num_nodes * self.ngpus
+    if self.num_nodes > 1 or self.num_tasks > 1:
+      self.is_distributed = True
+      self.world_size = self.num_nodes * self.ngpus
     if self.num_nodes > 1:
-        logging.info(
-            f"Distributed Training on {self.num_nodes} nodes")
+      logging.info(f"Distributed Training on {self.num_nodes} nodes")
     elif self.num_nodes == 1 and self.num_tasks > 1:
-        logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
+      logging.info(f"Single node Distributed Training with {self.num_tasks} tasks")
     else:
-        assert self.num_nodes == 1 and self.num_tasks == 1
-        logging.info("Single node training.")
+      assert self.num_nodes == 1 and self.num_tasks == 1
+      logging.info("Single node training.")
 
     if not self.is_distributed:
-        self.batch_size = self.config.batch_size * self.ngpus
+      self.batch_size = self.config.batch_size * self.ngpus
     else:
-        self.batch_size = self.config.batch_size
+      self.batch_size = self.config.batch_size
 
     self.global_batch_size = self.batch_size * self.world_size
     logging.info('World Size={} => Total batch size {}'.format(
@@ -142,15 +142,14 @@ class Trainer:
     if self.local_rank == 0:
       logging.info(f'Number of parameters to train: {param_size}')
 
-    self.teacher_model, _ = dreamsim(pretrained=True,
-      dreamsim_type=self.config.teacher_model_name, cache_dir=self.config.dreamsim_path)
-    self.teacher_model = self.teacher_model.cuda()
-
+    # self.teacher_model, _ = dreamsim(pretrained=True,
+    #   dreamsim_type=self.config.teacher_model_name, cache_dir=self.config.dreamsim_path)
+    # self.teacher_model = self.teacher_model.cuda()
 
     # setup distributed process if training is distributed
     # and use DistributedDataParallel for distributed training
     if self.is_distributed:
-      utils.setup_distributed_training(self.world_size, self.local_rank)
+      utils.setup_distributed_training(self.world_size, self.rank)
       self.model = DistributedDataParallel(
         self.model, device_ids=[self.local_rank], output_device=self.local_rank)
       if self.local_rank == 0:
@@ -249,17 +248,19 @@ class Trainer:
   def one_step_training(self, data, epoch, step):
     self.optimizer.zero_grad()
     batch_start_time = time.time()
-    images, _ = data
+    images, embeddings = data
     original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
     original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
+    embeddings = embeddings.cuda()
     if step == 0 and self.local_rank == 0:
       logging.info(f'images {original_imgs.shape}')
+      logging.info(f'embeddings {embeddings.shape}')
     original_out = self.model(original_imgs)
     jittered_out = self.model(jittered_imgs)
     if step == 0 and self.local_rank == 0:
-        logging.info(f'outputs {original_out.shape}')
-    teacher_out = self.teacher_model.embed(original_imgs)
-    loss = self.criterion(original_out, teacher_out) + self.criterion(jittered_out, teacher_out)
+      logging.info(f'outputs {original_out.shape}')
+    # teacher_out = self.teacher_model.embed(original_imgs)
+    loss = self.criterion(original_out, embeddings) + self.criterion(jittered_out, embeddings)
     loss.backward()
     self.process_gradients(step)
     self.optimizer.step()
@@ -279,3 +280,6 @@ class Trainer:
         self.message.add("grad", grad_norm, format=".4f")
       self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
       logging.info(self.message.get_message())
+
+
+
