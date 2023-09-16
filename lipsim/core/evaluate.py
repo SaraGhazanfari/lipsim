@@ -32,7 +32,8 @@ class Evaluator:
     def __init__(self, config):
         self.config = config
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        self.dino_model, _ = dreamsim(pretrained=True, dreamsim_type='dino_vitb16', cache_dir='./checkpoints')
+        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
+                                          cache_dir='./checkpoints')
         self.criterion = utils.get_loss(self.config)
 
     def load_ckpt(self, ckpt_path=None):
@@ -66,18 +67,19 @@ class Evaluator:
         else:
             self.batch_size = self.config.batch_size
 
-        # load reader
-        self.means = (0.0000, 0.0000, 0.0000)
-        self.stds = (1.0000, 1.0000, 1.0000)
-        self.n_classes = N_CLASSES[self.config.teacher_model_name]
+        if self.config.mode != 'SSA':
+            # load reader
+            self.means = (0.0000, 0.0000, 0.0000)
+            self.stds = (1.0000, 1.0000, 1.0000)
+            self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
-        # load model
-        self.model = L2LipschitzNetwork(self.config, self.n_classes)
-        self.model = NormalizedModel(self.model, self.means, self.stds)
-        self.model = torch.nn.DataParallel(self.model)
-        self.model = self.model.cuda()
+            # load model
+            self.model = L2LipschitzNetwork(self.config, self.n_classes)
+            self.model = NormalizedModel(self.model, self.means, self.stds)
+            self.model = torch.nn.DataParallel(self.model)
+            self.model = self.model.cuda()
+            self.load_ckpt()
 
-        self.load_ckpt()
         if self.config.mode == 'lipsim':
             return self.model
         elif self.config.mode == 'eval':
@@ -86,21 +88,21 @@ class Evaluator:
             self.dreamsim_eval()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
-        elif self.config.mode() == 'SSA':
+        elif self.config.mode == 'SSA':
             self.SSA_eval()
 
         logging.info('Done with batched inference.')
 
     def SSA_eval(self):
         Reader = readers_config[self.config.dataset]
-        ssa = SSAH(self.model, num_iteration=150, learning_rate=0.001, dataset='imagenet_val')
+        ssa = SSAH(self.dreamsim_model.embed, num_iteration=150, learning_rate=0.001, dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
         data_loader, _ = self.reader.get_dataloader()
         for batch_n, data in enumerate(data_loader):
             inputs, _ = data
             adv_inputs = ssa(inputs)
-            dist_list.append(self.dino_model.embed(inputs, adv_inputs).detach())
+            dist_list.append(self.dreamsim_model.embed(inputs, adv_inputs).detach())
 
         torch.save(dist_list, f='dists.pt')
         logging.info('finished')
@@ -127,7 +129,7 @@ class Evaluator:
         inputs = inputs.cuda()
 
         outputs = self.model(inputs)
-        dino_outputs = self.dino_model.embed(inputs)
+        dino_outputs = self.dreamsim_model.embed(inputs)
         batch_loss = self.criterion(outputs, dino_outputs).item()
         return batch_loss
 
