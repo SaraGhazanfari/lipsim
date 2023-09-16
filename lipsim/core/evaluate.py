@@ -104,6 +104,7 @@ class Evaluator:
             inputs = inputs.cuda()
             adv_inputs = ssa(inputs)
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
+            print(dist_list[-1])
 
         torch.save(dist_list, f='dists.pt')
         logging.info('finished')
