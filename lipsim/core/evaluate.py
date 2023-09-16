@@ -102,7 +102,7 @@ class Evaluator:
         for batch_n, data in tqdm(enumerate(data_loader)):
             inputs, _ = data
             adv_inputs = ssa(inputs.cuda())
-            dist_list.append(self.dreamsim_model.embed(inputs, adv_inputs).detach())
+            dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
 
         torch.save(dist_list, f='dists.pt')
         logging.info('finished')
