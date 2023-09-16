@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.optim as optim
 from torchvision.transforms import transforms
+from tqdm import tqdm
 
 from lipsim.core.utils import DWT_2D_tiny, IDWT_2D_tiny
 
@@ -100,7 +101,7 @@ class SSAH(nn.Module):
 
         lowFre_loss = nn.SmoothL1Loss(reduction='sum')
 
-        for step in range(self.num_iteration):
+        for step in tqdm(range(self.num_iteration)):
             optimizer.zero_grad()
 
             adv = 0.5 * (torch.tanh(modifier) + 1)
