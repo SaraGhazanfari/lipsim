@@ -8,6 +8,9 @@ from lipsim.core.trainer import Trainer
 from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")
+eval_choices = ['eval', 'dreamsim', 'lipsim', 'lpips', 'SSA']
+mode_choices = eval_choices.copy()
+mode_choices.extend(['train', 'train-night'])
 
 
 def override_args(config, depth, num_channels, depth_linear, n_features):
@@ -32,7 +35,7 @@ def set_config(config):
         ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
 
     # process argments
-    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips', 'SSA']
+
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
@@ -45,9 +48,9 @@ def set_config(config):
         config.train_dir = f'{path}/{config.train_dir}'
         os.makedirs(config.train_dir, exist_ok=True)
         os.makedirs(f'{config.train_dir}/checkpoints', exist_ok=True)
-    elif config.mode in eval_mode and config.train_dir is not None:
+    elif config.mode in eval_choices and config.train_dir is not None:
         config.train_dir = f'{path}/{config.train_dir}'
-    elif config.mode in eval_mode and config.train_dir is None:
+    elif config.mode in eval_choices and config.train_dir is None:
         ValueError("--train_dir must be defined.")
 
     if config.mode == 'attack' and config.attack is None:
@@ -60,7 +63,7 @@ def main(config):
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
-    elif config.mode in ['lipsim', 'eval', 'dreamsim', 'lpips', 'SSA']:
+    elif config.mode in eval_choices:
         evaluate = Evaluator(config)
         return evaluate()
 
@@ -70,7 +73,7 @@ if __name__ == '__main__':
 
     # parameters training or eval
     parser.add_argument("--mode", type=str, default="train",
-                        choices=['train', 'train-night', 'dreamsim', 'lipsim', 'lpips'])
+                        choices=eval_choices)
     parser.add_argument("--train_dir", type=str, help="Name of the training directory.")
     parser.add_argument("--data_dir", type=str, help="Name of the data directory.")
     parser.add_argument("--dataset", type=str, default='imagenet-1k', help="Dataset to use, imagenet-1k, night")
