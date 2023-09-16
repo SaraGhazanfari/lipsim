@@ -46,8 +46,9 @@ class SSAH(nn.Module):
         self.alpha = alpha
         self.lambda_lf = lambda_lf
 
-        self.encoder_fea = nn.Sequential(*list(self.model.children())[:-1]).to(self.device)
-        self.encoder_fea = nn.DataParallel(self.encoder_fea)
+        # self.encoder_fea = nn.Sequential(*list(self.model.children())[:-1]).to(self.device)
+        # self.encoder_fea = nn.DataParallel(self.encoder_fea)
+
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1)).to(self.device)
         self.model = nn.DataParallel(self.model)
 
@@ -57,7 +58,7 @@ class SSAH(nn.Module):
         self.IDWT = IDWT_2D_tiny(wavename=wave)
 
     def fea_extract(self, inputs: torch.Tensor) -> torch.Tensor:
-        fea = self.encoder_fea(inputs)
+        fea = self.model(inputs)
         b, c, h, w = fea.shape
         fea = self.avg_pool(fea).view(b, c)
         return fea
