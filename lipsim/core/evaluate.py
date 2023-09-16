@@ -99,7 +99,7 @@ class Evaluator:
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
         data_loader, _ = self.reader.get_dataloader()
-        for batch_n, data in enumerate(data_loader):
+        for batch_n, data in tqdm(data_loader):
             inputs, _ = data
             adv_inputs = ssa(inputs.cuda())
             dist_list.append(self.dreamsim_model.embed(inputs, adv_inputs).detach())
