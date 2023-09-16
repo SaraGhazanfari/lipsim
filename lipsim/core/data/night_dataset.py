@@ -48,6 +48,9 @@ class NightDataset(Dataset):
         img_right = self.preprocess_fn(Image.open(os.path.join(self.root_dir, self.csv.iloc[idx, 6])))
         return img_ref, img_left, img_right, p, id
 
+
+
     def get_dataloader(self):
+        shuffle = True if self.split == 'train' else False
         return DataLoader(self, batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=False), len(self.csv)
+                          num_workers=self.num_workers, shuffle=shuffle), len(self.csv)

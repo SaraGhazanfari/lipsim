@@ -32,7 +32,7 @@ def set_config(config):
         ValueError("Choose --model-name 'small' 'medium' 'large' 'xlarge'")
 
     # process argments
-    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips']
+    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips', 'SSA']
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
@@ -60,7 +60,7 @@ def main(config):
     if config.mode == 'train':
         trainer = Trainer(config)
         trainer()
-    elif config.mode in ['lipsim', 'eval', 'dreamsim', 'lpips']:
+    elif config.mode in ['lipsim', 'eval', 'dreamsim', 'lpips', 'SSA']:
         evaluate = Evaluator(config)
         return evaluate()
 

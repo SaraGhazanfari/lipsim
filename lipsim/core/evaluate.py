@@ -3,6 +3,7 @@ import logging
 from os.path import join
 from tqdm import tqdm
 from lipsim.core import utils
+from lipsim.core.attack.ssa_attack import SSAH
 from lipsim.core.data import NightDataset, BAPPSDataset
 from lipsim.core.models import N_CLASSES
 
@@ -85,8 +86,24 @@ class Evaluator:
             self.dreamsim_eval()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
+        elif self.config.mode() == 'SSA':
+            self.SSA_eval()
 
         logging.info('Done with batched inference.')
+
+    def SSA_eval(self):
+        Reader = readers_config[self.config.dataset]
+        ssa = SSAH(self.model, num_iteration=150, learning_rate=0.001, dataset='imagenet_val')
+        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
+        dist_list = list()
+        data_loader, _ = self.reader.get_dataloader()
+        for batch_n, data in enumerate(data_loader):
+            inputs, _ = data
+            adv_inputs = ssa(inputs)
+            dist_list.append(self.dino_model.embed(inputs, adv_inputs).detach())
+
+        torch.save(dist_list, f='dists.pt')
+        logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
