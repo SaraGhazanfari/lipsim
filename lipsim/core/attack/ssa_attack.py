@@ -46,11 +46,8 @@ class SSAH(nn.Module):
         self.alpha = alpha
         self.lambda_lf = lambda_lf
 
-        # self.encoder_fea = nn.Sequential(*list(self.model.children())[:-1]).to(self.device)
-        # self.encoder_fea = nn.DataParallel(self.encoder_fea)
-
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1)).to(self.device)
-        self.model = nn.DataParallel(self.model)
+        #self.model = nn.DataParallel(self.model)
 
         self.normalize_fn = normalize_fn(self.dataset)
 
@@ -59,8 +56,6 @@ class SSAH(nn.Module):
 
     def fea_extract(self, inputs: torch.Tensor) -> torch.Tensor:
         fea = self.model(inputs)
-        b, c, h, w = fea.shape
-        fea = self.avg_pool(fea).view(b, c)
         return fea
 
     def cal_sim(self, adv, inputs):
@@ -107,7 +102,6 @@ class SSAH(nn.Module):
 
         for step in range(self.num_iteration):
             optimizer.zero_grad()
-            self.encoder_fea.zero_grad()
 
             adv = 0.5 * (torch.tanh(modifier) + 1)
             adv_fea = self.fea_extract(self.normalize_fn(adv))
