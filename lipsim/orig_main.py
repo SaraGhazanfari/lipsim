@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument("--first_layer", type=str, default="padding_channels")
     parser.add_argument("--last_layer", type=str, default="pooling_linear")
     parser.add_argument("--teacher_model_name", type=str, default='dino_vitb16',
-                        help='dino_vitb16 open_clip_vitb32 clip_vitb32')
+                        help='dino_vitb16 open_clip_vitb32 clip_vitb32 ensemble')
 
     # parse all arguments
     config = parser.parse_args()
