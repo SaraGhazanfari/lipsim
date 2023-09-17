@@ -56,7 +56,7 @@ class SSAH(nn.Module):
         print('num_iteration:', num_iteration, ' learning_rate:', learning_rate, ' alpha:', alpha, ' margin', m)
 
     def fea_extract(self, inputs: torch.Tensor) -> torch.Tensor:
-        fea = self.model.embed(inputs)
+        fea = self.model.module.embed(inputs)
         return fea
 
     def cal_sim(self, adv, inputs):
