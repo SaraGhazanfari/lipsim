@@ -47,8 +47,6 @@ class SSAH(nn.Module):
         self.alpha = alpha
         self.lambda_lf = lambda_lf
 
-        self.model = nn.DataParallel(self.model, device_ids=[0, 1])
-
         self.normalize_fn = normalize_fn(self.dataset)
 
         self.DWT = DWT_2D_tiny(wavename=wave)
@@ -56,7 +54,7 @@ class SSAH(nn.Module):
         print('num_iteration:', num_iteration, ' learning_rate:', learning_rate, ' alpha:', alpha, ' margin', m)
 
     def fea_extract(self, inputs: torch.Tensor) -> torch.Tensor:
-        fea = self.model.module.embed(inputs)
+        fea = self.model(inputs)
         return fea
 
     def cal_sim(self, adv, inputs):

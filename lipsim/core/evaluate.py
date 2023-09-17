@@ -95,7 +95,7 @@ class Evaluator:
 
     def SSA_eval(self):
         Reader = readers_config[self.config.dataset]
-        ssa = SSAH(self.dreamsim_model, dataset='imagenet_val')
+        ssa = SSAH(self.dreamsim_model.embed(), dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
         l2_list = list()
@@ -108,6 +108,12 @@ class Evaluator:
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
             l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
             linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1)))
+            if batch_n % 100 == 99:
+                torch.save(dist_list, f='dists.pt')
+                torch.save(l2_list, f='l2_dists.pt')
+                torch.save(linf_list, f='linf_dists.pt')
+                logging.info('saved')
+
         torch.save(dist_list, f='dists.pt')
         torch.save(l2_list, f='l2_dists.pt')
         torch.save(linf_list, f='linf_dists.pt')
