@@ -47,7 +47,6 @@ class SSAH(nn.Module):
         self.alpha = alpha
         self.lambda_lf = lambda_lf
 
-        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1)).to(self.device)
         # self.model = nn.DataParallel(self.model)
 
         self.normalize_fn = normalize_fn(self.dataset)
@@ -93,7 +92,7 @@ class SSAH(nn.Module):
         inputs_ll = self.IDWT(inputs_ll)
 
         # changes of variables
-        eps = 3e-7
+        eps = 3e-3
         modifier = torch.arctanh(inputs * (2 - eps * 2) - 1 + eps)
         modifier = Variable(modifier, requires_grad=True)
         modifier = modifier.to(self.device)
