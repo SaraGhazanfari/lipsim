@@ -98,16 +98,19 @@ class Evaluator:
         ssa = SSAH(self.dreamsim_model.embed, dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
-        L2_list = list()
+        l2_list = list()
+        linf_list = list()
         data_loader, _ = self.reader.get_dataloader()
         for batch_n, data in tqdm(enumerate(data_loader)):
             inputs, _ = data
             inputs = inputs.cuda()
             adv_inputs = ssa(inputs)
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
-            L2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
+            l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
+            linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1)))
             print(dist_list[-1])
-            print('l2: ', dist_list[-1])
+            print('l2: ', l2_list[-1])
+            print('linf: ', linf_list[-1])
 
             torch.save(dist_list, f='dists.pt')
             logging.info('finished')
