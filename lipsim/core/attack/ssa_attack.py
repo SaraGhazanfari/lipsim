@@ -126,7 +126,7 @@ class SSAH(nn.Module):
 
             adv_cost = torch.sum(torch.clamp(w_p * sim_pos - w_n * sim_neg, min=0))
             lowFre_cost = lowFre_loss(adv_ll, inputs_ll)
-            total_cost = self.alpha * adv_cost + self.lambda_lf * lowFre_cost
+            total_cost = self.alpha * adv_cost #+ self.lambda_lf * lowFre_cost
 
             optimizer.zero_grad()
             total_cost.backward()
