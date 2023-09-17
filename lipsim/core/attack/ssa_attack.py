@@ -28,12 +28,12 @@ class SSAH(nn.Module):
     def __init__(self,
                  model: nn.Module,
                  num_iteration: int = 200,
-                 learning_rate: float = 0.01, #0.0001,
+                 learning_rate: float = 0.01,  # 0.0001,
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
-                 m: float = 0, #0.2,
-                 alpha: float = 100,  # 1,
+                 m: float = 0,  # 0.2,
+                 alpha: float = 1,
                  lambda_lf: float = 10,  # 0.1,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
@@ -128,7 +128,7 @@ class SSAH(nn.Module):
             lowFre_cost = lowFre_loss(adv_ll, inputs_ll)
             if adv_cost == 0:
                 break
-            total_cost = self.alpha * adv_cost #+ self.lambda_lf * lowFre_cost
+            total_cost = self.alpha * adv_cost  # + self.lambda_lf * lowFre_cost
 
             optimizer.zero_grad()
             total_cost.backward()
