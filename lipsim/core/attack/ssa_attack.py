@@ -33,8 +33,8 @@ class SSAH(nn.Module):
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
                  m: float = 0.2,
-                 alpha: float = 1,
-                 lambda_lf: float = 0.1,
+                 alpha: float = 2,
+                 lambda_lf: float = 0.2,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
         self.model = model
@@ -92,7 +92,7 @@ class SSAH(nn.Module):
         inputs_ll = self.IDWT(inputs_ll)
 
         # changes of variables
-        eps = 3e-3
+        eps = 3e-7
         modifier = torch.arctanh(inputs * (2 - eps * 2) - 1 + eps)
         modifier = Variable(modifier, requires_grad=True)
         modifier = modifier.to(self.device)
