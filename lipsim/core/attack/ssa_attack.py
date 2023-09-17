@@ -27,14 +27,14 @@ class SSAH(nn.Module):
 
     def __init__(self,
                  model: nn.Module,
-                 num_iteration: int = 200,
-                 learning_rate: float = 0.01,  # 0.0001,
+                 num_iteration: int = 50,
+                 learning_rate: float = 0.1,  # 0.0001,
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
                  m: float = 0,  # 0.2,
-                 alpha: float = 1,
-                 lambda_lf: float = 10,  # 0.1,
+                 alpha: float = 10,
+                 lambda_lf: float = 1,  # 0.1,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
         self.model = model
@@ -53,6 +53,7 @@ class SSAH(nn.Module):
 
         self.DWT = DWT_2D_tiny(wavename=wave)
         self.IDWT = IDWT_2D_tiny(wavename=wave)
+        print('num_iteration:', num_iteration, 'learning_rate:', learning_rate, 'alpha:', alpha)
 
     def fea_extract(self, inputs: torch.Tensor) -> torch.Tensor:
         fea = self.model(inputs)
