@@ -98,118 +98,121 @@ class Evaluator:
         ssa = SSAH(self.dreamsim_model.embed, num_iteration=150, learning_rate=0.001, dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
+        L2_list = list()
         data_loader, _ = self.reader.get_dataloader()
         for batch_n, data in tqdm(enumerate(data_loader)):
             inputs, _ = data
             inputs = inputs.cuda()
             adv_inputs = ssa(inputs)
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
+            L2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
             print(dist_list[-1])
+            print('l2: ', dist_list[-1])
 
-        torch.save(dist_list, f='dists.pt')
-        logging.info('finished')
+            torch.save(dist_list, f='dists.pt')
+            logging.info('finished')
 
-    def vanilla_eval(self):
-        Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        loss = 0
-        data_loader, _ = self.reader.get_dataloader()
-        with torch.no_grad():
-            for batch_n, data in enumerate(data_loader):
-                inputs, _ = data
-                batch_loss = self.one_step_eval(inputs)
-                loss += batch_loss
-                print('batch_num: {batch_n}, loss: {loss}'.format(batch_n=batch_n, loss=batch_loss))
-                sys.stdout.flush()
+        def vanilla_eval(self):
+            Reader = readers_config[self.config.dataset]
+            self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
+            loss = 0
+            data_loader, _ = self.reader.get_dataloader()
+            with torch.no_grad():
+                for batch_n, data in enumerate(data_loader):
+                    inputs, _ = data
+                    batch_loss = self.one_step_eval(inputs)
+                    loss += batch_loss
+                    print('batch_num: {batch_n}, loss: {loss}'.format(batch_n=batch_n, loss=batch_loss))
+                    sys.stdout.flush()
 
-        avg_loss = loss / self.reader.n_test_files
+            avg_loss = loss / self.reader.n_test_files
 
-        self.message.add('test loss', avg_loss, format='.5f')
-        logging.info(self.message.get_message())
+            self.message.add('test loss', avg_loss, format='.5f')
+            logging.info(self.message.get_message())
 
-    def one_step_eval(self, inputs):
-        inputs = inputs.cuda()
+        def one_step_eval(self, inputs):
+            inputs = inputs.cuda()
 
-        outputs = self.model(inputs)
-        dino_outputs = self.dreamsim_model.embed(inputs)
-        batch_loss = self.criterion(outputs, dino_outputs).item()
-        return batch_loss
+            outputs = self.model(inputs)
+            dino_outputs = self.dreamsim_model.embed(inputs)
+            batch_loss = self.criterion(outputs, dino_outputs).item()
+            return batch_loss
 
-    def dreamsim_eval(self):
-        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').get_dataloader()
-        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
-                                                                         batch_size=self.config.batch_size,
-                                                                         split='test_no_imagenet').get_dataloader()
-        imagenet_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
-        torch.cuda.empty_cache()
-        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
-        overall_score = (imagenet_score * dataset_size +
-                         no_imagenet_score * no_imagenet_dataset_size) / (dataset_size + no_imagenet_dataset_size)
-        logging.info(f"Overall 2AFC score: {str(overall_score)}")
+        def dreamsim_eval(self):
+            data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                                     split='test_imagenet').get_dataloader()
+            no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+                                                                             batch_size=self.config.batch_size,
+                                                                             split='test_no_imagenet').get_dataloader()
+            imagenet_score = self.get_2afc_score_eval(data_loader)
+            logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+            torch.cuda.empty_cache()
+            no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
+            logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+            overall_score = (imagenet_score * dataset_size +
+                             no_imagenet_score * no_imagenet_dataset_size) / (dataset_size + no_imagenet_dataset_size)
+            logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
-    def lpips_eval(self):
-        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
-                        'frameinterp']:
-            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset).get_dataloader(
-                batch_size=self.config.batch_size)
-            twoafc_score = self.get_2afc_score_eval(data_loader)
-            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
-        return twoafc_score
+        def lpips_eval(self):
+            for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                            'frameinterp']:
+                data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+                                           split='val', dataset=dataset).get_dataloader(
+                    batch_size=self.config.batch_size)
+                twoafc_score = self.get_2afc_score_eval(data_loader)
+                logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
+            return twoafc_score
 
-    def get_2afc_score_eval(self, test_loader):
-        logging.info("Evaluating NIGHTS dataset.")
-        d0s = []
-        d1s = []
-        targets = []
-        # with torch.no_grad()
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
-            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
-            d0s.append(dist_0)
-            d1s.append(dist_1)
-            targets.append(target)
+        def get_2afc_score_eval(self, test_loader):
+            logging.info("Evaluating NIGHTS dataset.")
+            d0s = []
+            d1s = []
+            targets = []
+            # with torch.no_grad()
+            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
+                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                    img_right.cuda(), target.cuda()
+                dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
+                d0s.append(dist_0)
+                d1s.append(dist_1)
+                targets.append(target)
 
-        twoafc_score = get_2afc_score(d0s, d1s, targets)
-        return twoafc_score
+            twoafc_score = get_2afc_score(d0s, d1s, targets)
+            return twoafc_score
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right):
-        cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        embed_ref = self.model(img_ref).detach()
-        embed_x0 = self.model(img_left).detach()
-        embed_x1 = self.model(img_right).detach()
-        dist_0 = 1 - cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1
+        def get_cosine_score_between_images(self, img_ref, img_left, img_right):
+            cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+            embed_ref = self.model(img_ref).detach()
+            embed_x0 = self.model(img_left).detach()
+            embed_x1 = self.model(img_right).detach()
+            dist_0 = 1 - cos_sim(embed_ref, embed_x0)
+            dist_1 = 1 - cos_sim(embed_ref, embed_x1)
+            return dist_0, dist_1
 
-    def generate_attack(self, img_ref):
-        linf_eps = 0.03
-        l2_eps = 1.0
-        if self.config.attack == 'PGD_L2':
-            adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=l2_eps, nb_iter=200, rand_init=True,
-                                    targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-        elif self.config.attack == 'PGD_Linf':
-            adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=linf_eps, nb_iter=50,
-                                      eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1.,
-                                      targeted=False)
-        else:
-            return Exception()
-        img_ref_adv = adversary(img_ref, self.model(img_ref))
+        def generate_attack(self, img_ref):
+            linf_eps = 0.03
+            l2_eps = 1.0
+            if self.config.attack == 'PGD_L2':
+                adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=l2_eps, nb_iter=200, rand_init=True,
+                                        targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
+            elif self.config.attack == 'PGD_Linf':
+                adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=linf_eps, nb_iter=50,
+                                          eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1.,
+                                          targeted=False)
+            else:
+                return Exception()
+            img_ref_adv = adversary(img_ref, self.model(img_ref))
 
-        return img_ref_adv
+            return img_ref_adv
 
-    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
-        if self.config.attack:
-            img_ref = self.generate_attack(img_ref)
-        dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
-        if len(dist_0.shape) < 1:
-            dist_0 = dist_0.unsqueeze(0)
-            dist_1 = dist_1.unsqueeze(0)
-        dist_0 = dist_0.unsqueeze(1)
-        dist_1 = dist_1.unsqueeze(1)
-        target = target.unsqueeze(1)
-        return dist_0, dist_1, target
+        def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
+            if self.config.attack:
+                img_ref = self.generate_attack(img_ref)
+            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+            if len(dist_0.shape) < 1:
+                dist_0 = dist_0.unsqueeze(0)
+                dist_1 = dist_1.unsqueeze(0)
+            dist_0 = dist_0.unsqueeze(1)
+            dist_1 = dist_1.unsqueeze(1)
+            target = target.unsqueeze(1)
+            return dist_0, dist_1, target
