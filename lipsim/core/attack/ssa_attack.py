@@ -27,8 +27,8 @@ class SSAH(nn.Module):
 
     def __init__(self,
                  model: nn.Module,
-                 num_iteration: int = 150,
-                 learning_rate: float = 0.001,
+                 num_iteration: int = 200,
+                 learning_rate: float = 0.0001,
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
@@ -48,7 +48,7 @@ class SSAH(nn.Module):
         self.lambda_lf = lambda_lf
 
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1)).to(self.device)
-        #self.model = nn.DataParallel(self.model)
+        # self.model = nn.DataParallel(self.model)
 
         self.normalize_fn = normalize_fn(self.dataset)
 
