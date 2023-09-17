@@ -27,8 +27,8 @@ class SSAH(nn.Module):
 
     def __init__(self,
                  model: nn.Module,
-                 num_iteration: int = 50,
-                 learning_rate: float = 0.1, #0.0001,
+                 num_iteration: int = 200,
+                 learning_rate: float = 0.0001,
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
