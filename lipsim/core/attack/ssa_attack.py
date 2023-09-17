@@ -126,6 +126,7 @@ class SSAH(nn.Module):
 
             adv_cost = torch.sum(torch.clamp(w_p * sim_pos - w_n * sim_neg, min=0))
             lowFre_cost = lowFre_loss(adv_ll, inputs_ll)
+            print(adv_cost)
             if adv_cost == 0:
                 break
             total_cost = self.alpha * adv_cost  # + self.lambda_lf * lowFre_cost
