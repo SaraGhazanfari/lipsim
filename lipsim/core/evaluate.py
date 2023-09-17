@@ -108,12 +108,10 @@ class Evaluator:
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
             l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
             linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1)))
-            print(dist_list[-1])
-            print('l2: ', l2_list[-1])
-            print('linf: ', linf_list[-1])
-
             torch.save(dist_list, f='dists.pt')
-            logging.info('finished')
+            torch.save(l2_list, f='l2_dists.pt')
+            torch.save(linf_list, f='linf_dists.pt')
+        logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
