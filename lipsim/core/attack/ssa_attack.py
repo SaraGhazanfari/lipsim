@@ -32,7 +32,7 @@ class SSAH(nn.Module):
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
-                 m: float = 0.2,
+                 m: float = 0.4,
                  alpha: float = 2,
                  lambda_lf: float = 0.2,
                  wave: str = 'haar', ) -> None:
