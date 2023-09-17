@@ -47,7 +47,7 @@ class SSAH(nn.Module):
         self.alpha = alpha
         self.lambda_lf = lambda_lf
 
-        self.model = nn.DataParallel(self.model, device_ids=[0, 1, 2, 3])
+        self.model = nn.DataParallel(self.model, device_ids=[0, 1])
 
         self.normalize_fn = normalize_fn(self.dataset)
 
