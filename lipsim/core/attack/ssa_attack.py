@@ -32,7 +32,7 @@ class SSAH(nn.Module):
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
-                 m: float = 0.2,
+                 m: float = 0,  # 0.2
                  alpha: float = 10,
                  lambda_lf: float = 1,  # 0.1,
                  wave: str = 'haar', ) -> None:
@@ -128,8 +128,8 @@ class SSAH(nn.Module):
             adv_cost = torch.sum(torch.clamp(w_p * sim_pos - w_n * sim_neg, min=0))
             lowFre_cost = lowFre_loss(adv_ll, inputs_ll)
             print(adv_cost)
-            if adv_cost == 0:
-                break
+            # if adv_cost == 0:
+            #     break
             total_cost = self.alpha * adv_cost  # + self.lambda_lf * lowFre_cost
 
             optimizer.zero_grad()
