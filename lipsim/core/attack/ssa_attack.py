@@ -33,7 +33,7 @@ class SSAH(nn.Module):
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
                  m: float = 0, #0.2,
-                 alpha: float = 10,  # 1,
+                 alpha: float = 100,  # 1,
                  lambda_lf: float = 10,  # 0.1,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
