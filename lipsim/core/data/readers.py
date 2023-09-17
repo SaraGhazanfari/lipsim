@@ -50,7 +50,7 @@ class ImagenetDataset(Dataset):
         self.n_classes = 768
         self.height, self.width = 224, 500
         self.n_train_files = 1_281_167
-        self.n_test_files = 50_1000
+        self.n_test_files = 50_000
         self.img_size = (None, 3, 224, 500)
         self.split = 'train' if self.is_training else 'val'
 
@@ -76,9 +76,10 @@ class ImagenetDataset(Dataset):
             ])
         }
 
-    def get_dataloader(self):
+    def get_dataloader(self, shuffle=None):
         sampler = None
-        shuffle = True if self.is_training and not self.is_distributed else False
+        if not shuffle:
+            shuffle = True if self.is_training and not self.is_distributed else False
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
         if self.is_distributed:
             sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
