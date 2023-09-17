@@ -32,9 +32,9 @@ class SSAH(nn.Module):
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
-                 m: float = 0.1,
-                 alpha: float = 2,
-                 lambda_lf: float = 0.2,
+                 m: float = 0.2,
+                 alpha: float = 100,  # 1,
+                 lambda_lf: float = 10,  # 0.1,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
         self.model = model
