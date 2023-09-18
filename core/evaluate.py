@@ -2,13 +2,14 @@ import glob
 import logging
 from os.path import join
 from tqdm import tqdm
+
+from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 from lipsim.core.attack.ssa_attack import SSAH
-from lipsim.core.data import NightDataset, BAPPSDataset
+from core.data import NightDataset, BAPPSDataset
 from lipsim.core.models import N_CLASSES
 
 from lipsim.core.data.readers import readers_config
-from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 from dreamsim import dreamsim
 import torch.nn as nn
 import torch
@@ -147,18 +148,10 @@ class Evaluator:
 
     def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').get_dataloader()
-        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
-                                                                         batch_size=self.config.batch_size,
-                                                                         split='test_no_imagenet').get_dataloader()
+                                                 split='test').get_dataloader()
         imagenet_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        logging.info(f"Overall 2AFC score: {str(imagenet_score)}")
         torch.cuda.empty_cache()
-        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
-        overall_score = (imagenet_score * dataset_size +
-                         no_imagenet_score * no_imagenet_dataset_size) / (dataset_size + no_imagenet_dataset_size)
-        logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',

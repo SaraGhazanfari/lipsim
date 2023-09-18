@@ -5,8 +5,8 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from lipsim.core.data import NightDataset, BAPPSDataset
-from lipsim.core.data.coco_datast import COCODataset
+from core.data import NightDataset, BAPPSDataset
+from core.data.coco_datast import COCODataset
 
 
 class DataAugmentationDINO(object):
