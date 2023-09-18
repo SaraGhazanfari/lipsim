@@ -209,7 +209,7 @@ class Evaluator:
         return metric_model
 
     def generate_attack(self, img_ref, img_0, img_1, target):
-        attack_method, attack_norm = self.config.attack_type.split('-')
+        attack_method, attack_norm = self.config.attack.split('-')
 
         if attack_method == 'AA':
             adversary = AutoAttack(self.model_wrapper(), norm=attack_norm, eps=self.config.eps, version='standard',
