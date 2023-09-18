@@ -6,6 +6,8 @@ import argparse
 from datetime import datetime
 from os.path import exists, realpath
 import submitit
+
+from core.evaluate import Evaluator
 from core.trainer import Trainer
 # from lipsim.core.evaluate import Evaluator
 
@@ -43,7 +45,6 @@ def set_config(config):
       config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
       ValueError("the following arguments are required: --data_dir")
-    eval_mode = ['eval', 'eval_best', 'certified', 'attack']
     os.makedirs('./trained_models', exist_ok=True)
     path = realpath('./trained_models')
     if config.mode == 'train' and config.train_dir is None:
@@ -108,7 +109,9 @@ def main(config):
       evaluate = Evaluator(config)
       job = executor.submit(evaluate)
       job_id = job.job_id
-
+    elif config.mode in ['dreamsim']:
+        evaluate = Evaluator(config)
+        evaluate()
     folder = config.train_dir.split('/')[-1]
     print(f"Submitted batch job {job_id} in folder {folder}")
 
