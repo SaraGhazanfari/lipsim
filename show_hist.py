@@ -37,8 +37,8 @@ if __name__ == '__main__':
     for tensor_element in dreamsim_list:
         dreamsim_final_list.extend(tensor_element.tolist())
     print('dreamsim list is ready')
-    l2_list = torch.load('compressed_l2_dists.pt', map_location=torch.device('cpu'))
-    print('l2 list is loaded')
+    l2_list = torch.load('compressed_linf_dists.pt', map_location=torch.device('cpu'))
+    print('linf list is loaded')
     l2_final_list = list()
     # for idx, tensor_element in enumerate(l2_list):
     #     l2_list[idx] = torch.norm(tensor_element, p=float('inf'), dim=(1, 2)).tolist()
