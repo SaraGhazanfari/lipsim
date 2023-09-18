@@ -34,6 +34,8 @@ class NightDataset(Dataset):
         elif split == 'test_no_imagenet':
             self.csv = self.csv[self.csv['split'] == 'test']
             self.csv = self.csv[self.csv['is_imagenet'] == False]
+        elif split == 'test':
+            self.csv = self.csv[self.csv['split'] == 'test']
         else:
             raise ValueError(f'Invalid split: {split}')
 
@@ -47,8 +49,6 @@ class NightDataset(Dataset):
         img_left = self.preprocess_fn(Image.open(os.path.join(self.root_dir, self.csv.iloc[idx, 5])))
         img_right = self.preprocess_fn(Image.open(os.path.join(self.root_dir, self.csv.iloc[idx, 6])))
         return img_ref, img_left, img_right, p, id
-
-
 
     def get_dataloader(self):
         shuffle = True if self.split == 'train' else False
