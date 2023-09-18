@@ -29,7 +29,7 @@ class NightDataset(Dataset):
         if self.split == "train" or self.split == "val":
             self.csv = self.csv[self.csv["split"] == split]
         elif split == 'test_imagenet':
-            self.csv = self.csv[self.csv['split'] == split]
+            self.csv = self.csv[self.csv['split'] == 'test']
             self.csv = self.csv[self.csv['is_imagenet'] == True]
         elif split == 'test_no_imagenet':
             self.csv = self.csv[self.csv['split'] == 'test']
