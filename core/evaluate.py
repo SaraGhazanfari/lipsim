@@ -3,6 +3,7 @@ import logging
 from os.path import join
 from tqdm import tqdm
 
+from autoattack import AutoAttack
 from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 from lipsim.core.attack.ssa_attack import SSAH
@@ -159,7 +160,7 @@ class Evaluator:
         no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
         logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
         overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
-                    dataset_size + no_imagenet_dataset_size)
+                dataset_size + no_imagenet_dataset_size)
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
@@ -198,25 +199,42 @@ class Evaluator:
         dist_1 = 1 - cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
 
-    def generate_attack(self, img_ref):
-        linf_eps = 0.03
-        l2_eps = 1.0
-        if self.config.attack == 'PGD_L2':
-            adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=l2_eps, nb_iter=200, rand_init=True,
-                                    targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-        elif self.config.attack == 'PGD_Linf':
-            adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=linf_eps, nb_iter=50,
-                                      eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1.,
-                                      targeted=False)
-        else:
-            return Exception()
-        img_ref_adv = adversary(img_ref, self.model(img_ref))
+    def model_wrapper(self):
+        def metric_model(img):
+            img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(1)
+            dist_0 = self.model(img_ref, img_0)
+            dist_1 = self.model(img_ref, img_1)
+            return torch.stack((dist_1, dist_0), dim=1)
 
-        return img_ref_adv
+        return metric_model
+
+    def generate_attack(self, img_ref, img_0, img_1, target):
+        attack_method, attack_norm = self.config.attack_type.split('-')
+
+        if attack_method == 'AA':
+            adversary = AutoAttack(self.model_wrapper(), norm=attack_norm, eps=self.config.eps, version='standard',
+                                   device='cuda')
+            adversary.attacks_to_run = ['apgd-ce']
+            img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1), target.long(),
+                                                        bs=img_ref.shape[0])
+            img_ref = img_ref[:, 0, :, :].squeeze(1)
+        elif attack_method == 'PGD':
+            if attack_norm == 'L2':
+                adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=200,
+                                        rand_init=True,
+                                        targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
+
+            else:  # attack_type == 'Linf':
+                adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=50,
+                                          eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1., targeted=False)
+
+            img_ref = adversary(img_ref, self.model(img_ref))
+
+        return img_ref
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
-            img_ref = self.generate_attack(img_ref)
+            img_ref = self.generate_attack(img_ref, img_left, img_right, target)
         dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
