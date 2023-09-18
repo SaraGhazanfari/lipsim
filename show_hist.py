@@ -30,5 +30,6 @@ def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=250,
 
 if __name__ == '__main__':
     dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
+    dreamsim_list = np.array([tensor_element.tolist() for tensor_element in dreamsim_list])
     # l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
     plot_histogram(dreamsim_list, dreamsim_list, 'fig.pdf')
