@@ -190,9 +190,11 @@ class Evaluator:
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right):
+    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False):
         cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        embed_ref = self.model(img_ref).detach()
+        embed_ref = self.model(img_ref)
+        if not requires_grad:
+            embed_ref = embed_ref.detach()
         embed_x0 = self.model(img_left).detach()
         embed_x1 = self.model(img_right).detach()
         dist_0 = 1 - cos_sim(embed_ref, embed_x0)
