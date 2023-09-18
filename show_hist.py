@@ -29,23 +29,21 @@ def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=3600,
 
 
 if __name__ == '__main__':
-    dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
-    dreamsim_final_list = list()
-    for tensor_element in dreamsim_list:
-        print(tensor_element)
-        dreamsim_final_list.extend(tensor_element.tolist())
-        break
-    print('dreamsim list is ready')
+    # dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
+    # dreamsim_final_list = list()
+    # for tensor_element in dreamsim_list:
+    #     print(tensor_element)
+    #     dreamsim_final_list.extend(tensor_element.tolist())
+    # print('dreamsim list is ready')
     l2_list = torch.load('l2_dists_part_2.pt', map_location=torch.device('cpu'))
     print('l2 list is loaded')
     l2_final_list = list()
-    for idx, tensor_element in enumerate(l2_list[:250]):
+    for idx, tensor_element in enumerate(l2_list):
         print(idx, '/', len(l2_list))
         print(tensor_element)
-        l2_list[idx] = torch.round(tensor_element, decimals=4).tolist()
-        break
-    # torch.save(l2_list[:250], 'compressed_l2_dists_part_1.pt')
-    # torch.save(l2_list[250:], 'l2_dists_part_2.pt')
+        l2_list[idx] = torch.mean(tensor_element, dim=(1, 2)).tolist()
+
+    torch.save(l2_list, 'compressed_l2_dists.pt')
 
     # for idx, tensor_element in enumerate(l2_list):
     #     print(idx, '/', len(l2_list))
