@@ -90,7 +90,7 @@ class Evaluator:
             self.dreamsim_eval()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
-        elif self.config.mode == 'SSA':
+        elif self.config.mode == 'ssa':
             self.SSA_eval()
 
         logging.info('Done with batched inference.')
