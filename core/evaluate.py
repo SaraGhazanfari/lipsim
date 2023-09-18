@@ -202,8 +202,7 @@ class Evaluator:
     def model_wrapper(self):
         def metric_model(img):
             img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(1)
-            dist_0 = self.model(img_ref, img_0)
-            dist_1 = self.model(img_ref, img_1)
+            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_0, img_1)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
