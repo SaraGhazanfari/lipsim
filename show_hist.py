@@ -39,8 +39,8 @@ if __name__ == '__main__':
     print('l2 list is loaded')
     l2_final_list = list()
     for idx, tensor_element in enumerate(l2_list):
-        l2_list[idx] = torch.mean(tensor_element, dim=(1, 2)).tolist()
-        print(idx, '/', len(l2_list), l2_list[idx].shape)
+        l2_list[idx] = torch.norm(tensor_element, p=2, dim=(1, 2)).tolist()
+        print(idx, '/', len(l2_list), len(l2_list[idx]))
 
     torch.save(l2_list, 'compressed_l2_dists.pt')
 
