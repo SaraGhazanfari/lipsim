@@ -5,8 +5,8 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
 
-from lipsim.core.models import N_CLASSES
-from lipsim.core.utils import get_preprocess_fn
+from core.models import N_CLASSES
+from core.utils import get_preprocess_fn
 from torch.utils.data import DataLoader
 
 
