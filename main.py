@@ -9,6 +9,7 @@ import submitit
 
 from core.evaluate import Evaluator
 from core.trainer import Trainer
+
 # from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")
@@ -37,14 +38,14 @@ def set_config(config):
 
     # cluster constraint
     if config.constraint and config.partition != 'gpu_p5':
-      config.constraint = f"v100-{config.constraint}g"
+        config.constraint = f"v100-{config.constraint}g"
 
     # process argments
     eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips']
     if config.data_dir is None:
-      config.data_dir = os.environ.get('DATADIR', None)
+        config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
-      ValueError("the following arguments are required: --data_dir")
+        ValueError("the following arguments are required: --data_dir")
     os.makedirs('./trained_models', exist_ok=True)
     path = realpath('./trained_models')
     if config.mode == 'train' and config.train_dir is None:
@@ -79,38 +80,39 @@ def main(config):
     # default: set tasks_per_node equal to number of gpus
     tasks_per_node = config.ngpus
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
-      tasks_per_node = 1
+        tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
 
     executor = submitit.AutoExecutor(
-      folder=config.train_dir, cluster=cluster)
+        folder=config.train_dir, cluster=cluster)
 
     executor.update_parameters(
-      gpus_per_node=config.ngpus,
-      nodes=config.nnodes,
-      tasks_per_node=tasks_per_node,
-      cpus_per_task=ncpus // tasks_per_node,
-      stderr_to_stdout=True,
-      exclusive=True,
-      slurm_account=config.account,
-      slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-      slurm_partition=config.partition,
-      slurm_qos=config.qos,
-      slurm_constraint=config.constraint,
-      slurm_signal_delay_s=0,
-      timeout_min=config.timeout,
+        gpus_per_node=config.ngpus,
+        nodes=config.nnodes,
+        tasks_per_node=tasks_per_node,
+        cpus_per_task=ncpus // tasks_per_node,
+        stderr_to_stdout=True,
+        exclusive=True,
+        slurm_account=config.account,
+        slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
+        slurm_partition=config.partition,
+        slurm_qos=config.qos,
+        slurm_constraint=config.constraint,
+        slurm_signal_delay_s=0,
+        timeout_min=config.timeout,
     )
 
     if config.mode == 'train':
-      trainer = Trainer(config)
-      job = executor.submit(trainer)
-      job_id = job.job_id
+        trainer = Trainer(config)
+        job = executor.submit(trainer)
+        job_id = job.job_id
     elif config.mode in ['eval', 'eval_best', 'attack', 'certified']:
-      evaluate = Evaluator(config)
-      job = executor.submit(evaluate)
-      job_id = job.job_id
+        evaluate = Evaluator(config)
+        job = executor.submit(evaluate)
+        job_id = job.job_id
     elif config.mode in ['dreamsim']:
         evaluate = Evaluator(config)
+        job_id = ''
         evaluate()
     folder = config.train_dir.split('/')[-1]
     print(f"Submitted batch job {job_id} in folder {folder}")
