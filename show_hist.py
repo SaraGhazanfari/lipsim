@@ -33,5 +33,8 @@ if __name__ == '__main__':
     dreamsim_final_list = list()
     for tensor_element in dreamsim_list:
         dreamsim_final_list.extend(tensor_element.tolist())
-    # l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
-    plot_histogram(dreamsim_final_list, dreamsim_final_list, 'fig.pdf')
+    l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
+    l2_final_list = list()
+    for tensor_element in l2_list:
+        l2_final_list.extend(torch.round(tensor_element, decimals=4).tolist())
+    plot_histogram(dreamsim_final_list, l2_final_list, 'fig.pdf')
