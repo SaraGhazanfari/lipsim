@@ -100,28 +100,20 @@ class Evaluator:
         ssa = SSAH(self.dreamsim_model.embed, dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
-        l2_list = list()
-        linf_list = list()
         data_loader, _ = self.reader.get_dataloader(shuffle=True)
         for batch_n, data in tqdm(enumerate(data_loader)):
             inputs, _ = data
             inputs = inputs.cuda()
-            adv_inputs = ssa(inputs)
+            self.model = self.dreamsim_model.embed
+            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
-            l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1, 2, 3)))
-            linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1, 2, 3)))
             print(dist_list[-1])
-            print(l2_list[-1])
-            print(linf_list[-1])
+
             if batch_n % 100 == 99:
                 torch.save(dist_list, f='dists.pt')
-                torch.save(l2_list, f='l2_dists.pt')
-                torch.save(linf_list, f='linf_dists.pt')
                 logging.info('saved')
 
         torch.save(dist_list, f='dists.pt')
-        torch.save(l2_list, f='l2_dists.pt')
-        torch.save(linf_list, f='linf_dists.pt')
         logging.info('finished')
 
     def vanilla_eval(self):
