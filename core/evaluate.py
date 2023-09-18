@@ -4,9 +4,9 @@ from os.path import join
 from tqdm import tqdm
 
 from autoattack import AutoAttack
+from core.attack.ssa_attack import SSAH
 from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
-from lipsim.core.attack.ssa_attack import SSAH
 from core.data import NightDataset, BAPPSDataset
 from lipsim.core.models import N_CLASSES
 
@@ -108,8 +108,11 @@ class Evaluator:
             inputs = inputs.cuda()
             adv_inputs = ssa(inputs)
             dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
-            l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1)))
-            linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1)))
+            l2_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1, 2, 3)))
+            linf_list.append(torch.norm(inputs - adv_inputs, p=float('inf'), dim=(1, 2, 3)))
+            print(dist_list[-1])
+            print(l2_list[-1])
+            print(linf_list[-1])
             if batch_n % 100 == 99:
                 torch.save(dist_list, f='dists.pt')
                 torch.save(l2_list, f='l2_dists.pt')
