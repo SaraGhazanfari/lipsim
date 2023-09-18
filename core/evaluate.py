@@ -69,7 +69,7 @@ class Evaluator:
         else:
             self.batch_size = self.config.batch_size
 
-        if self.config.mode != 'SSA':
+        if self.config.mode != 'ssa':
             # load reader
             self.means = (0.0000, 0.0000, 0.0000)
             self.stds = (1.0000, 1.0000, 1.0000)
