@@ -29,23 +29,21 @@ def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=3600,
 
 
 if __name__ == '__main__':
-    # dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
-    # dreamsim_final_list = list()
-    # for tensor_element in dreamsim_list:
-    #     print(tensor_element)
-    #     dreamsim_final_list.extend(tensor_element.tolist())
-    # print('dreamsim list is ready')
-    l2_list = torch.load('linf_dists.pt', map_location=torch.device('cpu'))
-    print('linf list is loaded')
-    l2_final_list = list()
-    for idx, tensor_element in enumerate(l2_list):
-        l2_list[idx] = torch.norm(tensor_element, p=float('inf'), dim=(1, 2)).tolist()
-        print(idx, '/', len(l2_list), len(l2_list[idx]))
-
-    torch.save(l2_list, 'compressed_linf_dists.pt')
+    dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
+    dreamsim_final_list = list()
+    for tensor_element in dreamsim_list:
+        print(tensor_element)
+        dreamsim_final_list.extend(tensor_element.tolist())
+    print('dreamsim list is ready')
+    l2_list = torch.load('compressed_l2_dists.pt', map_location=torch.device('cpu'))
+    print('l2 list is loaded')
+    # l2_final_list = list()
+    # for idx, tensor_element in enumerate(l2_list):
+    #     l2_list[idx] = torch.norm(tensor_element, p=float('inf'), dim=(1, 2)).tolist()
+    #     print(idx, '/', len(l2_list), len(l2_list[idx]))
 
     # for idx, tensor_element in enumerate(l2_list):
     #     print(idx, '/', len(l2_list))
     #     l2_final_list.extend(tensor_element)
     #
-    # plot_histogram(dreamsim_final_list, l2_final_list, 'fig.pdf')
+    plot_histogram(dreamsim_final_list, l2_list, 'fig.pdf')
