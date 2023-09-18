@@ -101,6 +101,7 @@ class Evaluator:
         dist_list = list()
         data_loader, _ = self.reader.get_dataloader(shuffle=True)
         for batch_n, data in tqdm(enumerate(data_loader)):
+            print(batch_n, '/', len(data_loader))
             inputs, _ = data
             inputs = inputs.cuda()
             self.model = self.dreamsim_model.embed
