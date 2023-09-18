@@ -35,7 +35,7 @@ if __name__ == '__main__':
     #     print(tensor_element)
     #     dreamsim_final_list.extend(tensor_element.tolist())
     # print('dreamsim list is ready')
-    l2_list = torch.load('l2_dists_part_2.pt', map_location=torch.device('cpu'))
+    l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
     print('l2 list is loaded')
     l2_final_list = list()
     for idx, tensor_element in enumerate(l2_list):
