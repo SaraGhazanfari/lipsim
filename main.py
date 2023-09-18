@@ -110,7 +110,7 @@ def main(config):
         evaluate = Evaluator(config)
         job = executor.submit(evaluate)
         job_id = job.job_id
-    elif config.mode in ['dreamsim']:
+    elif config.mode in ['dreamsim', 'ssa']:
         evaluate = Evaluator(config)
         job_id = ''
         evaluate()
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
     # parameters training or eval
     parser.add_argument("--mode", type=str, default="train",
-                        choices=['train', 'certified', 'attack', 'eval', 'dreamsim'])
+                        choices=['train', 'certified', 'attack', 'eval', 'dreamsim', 'ssa'])
     parser.add_argument("--train_dir", type=str, help="Name of the training directory.")
     parser.add_argument("--data_dir", type=str, help="Name of the data directory.")
     parser.add_argument("--dataset", type=str, default='imagenet', help="Dataset to use")
