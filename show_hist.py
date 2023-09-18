@@ -40,7 +40,9 @@ if __name__ == '__main__':
     for idx, tensor_element in enumerate(l2_list[:250]):
         print(idx, '/', len(l2_list))
         l2_list[idx] = torch.round(tensor_element, decimals=4).tolist()
-    torch.save(l2_list, 'compressed_l2_dists_part_1.pt')
+    torch.save(l2_list[:250], 'compressed_l2_dists_part_1.pt')
+    torch.save(l2_list[250:], 'l2_dists_part_2.pt')
+
     # for idx, tensor_element in enumerate(l2_list):
     #     print(idx, '/', len(l2_list))
     #     l2_final_list.extend(tensor_element)
