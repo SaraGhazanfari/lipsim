@@ -27,13 +27,13 @@ class SSAH(nn.Module):
 
     def __init__(self,
                  model: nn.Module,
-                 num_iteration: int = 50,
-                 learning_rate: float = 0.1,  # 0.0001,
+                 num_iteration: int = 100,
+                 learning_rate: float = 0.01,
                  device: torch.device = torch.device('cuda'),
                  Targeted: bool = False,
                  dataset: str = 'cifar10',
                  m: float = 0,  # 0.2
-                 alpha: float = 10,
+                 alpha: float = 1,
                  lambda_lf: float = 1,  # 0.1,
                  wave: str = 'haar', ) -> None:
         super(SSAH, self).__init__()
