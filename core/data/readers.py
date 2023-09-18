@@ -161,7 +161,7 @@ class ImagenetEmbeddingReader(BaseReader):
 readers_config = {
   'imagenet': ImagenetReader,
   'imagenet_embedding': ImagenetEmbeddingReader,
-  # 'night': NightDataset,
-  # 'bapps': BAPPSDataset,
-  # 'coco': COCODataset
+  'night': NightDataset,
+  'bapps': BAPPSDataset,
+  'coco': COCODataset
 }
