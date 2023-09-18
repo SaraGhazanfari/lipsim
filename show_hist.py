@@ -4,8 +4,8 @@ import numpy as np
 import torch
 
 
-def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=5000,
-                   y_bins_slot=200, x_bins_max=1.8, x_bins_slot=0.2,
+def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=3600,
+                   y_bins_slot=500, x_bins_max=1.8, x_bins_slot=0.2,
                    label_size=20):
     sns.set(style="darkgrid")
     bins = np.arange(0, x_bins_max, x_bins_slot)
