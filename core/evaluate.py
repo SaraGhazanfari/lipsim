@@ -97,7 +97,6 @@ class Evaluator:
 
     def SSA_eval(self):
         Reader = readers_config[self.config.dataset]
-        ssa = SSAH(self.dreamsim_model.embed, dataset='imagenet_val')
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dist_list = list()
         data_loader, _ = self.reader.get_dataloader(shuffle=True)
