@@ -148,10 +148,18 @@ class Evaluator:
 
     def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test').get_dataloader()
+                                                 split='test_imagenet').get_dataloader()
+        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+                                                                         batch_size=self.config.batch_size,
+                                                                         split='test_no_imagenet').get_dataloader()
         imagenet_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"Overall 2AFC score: {str(imagenet_score)}")
+        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
         torch.cuda.empty_cache()
+        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
+        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+        overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
+                    dataset_size + no_imagenet_dataset_size)
+        logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
