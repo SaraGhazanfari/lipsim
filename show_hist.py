@@ -35,14 +35,14 @@ if __name__ == '__main__':
     #     print(tensor_element)
     #     dreamsim_final_list.extend(tensor_element.tolist())
     # print('dreamsim list is ready')
-    l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
-    print('l2 list is loaded')
+    l2_list = torch.load('linf_dists.pt', map_location=torch.device('cpu'))
+    print('linf list is loaded')
     l2_final_list = list()
     for idx, tensor_element in enumerate(l2_list):
-        l2_list[idx] = torch.norm(tensor_element, p=2, dim=(1, 2)).tolist()
+        l2_list[idx] = torch.norm(tensor_element, p=float('inf'), dim=(1, 2)).tolist()
         print(idx, '/', len(l2_list), len(l2_list[idx]))
 
-    torch.save(l2_list, 'compressed_l2_dists.pt')
+    torch.save(l2_list, 'compressed_linf_dists.pt')
 
     # for idx, tensor_element in enumerate(l2_list):
     #     print(idx, '/', len(l2_list))
