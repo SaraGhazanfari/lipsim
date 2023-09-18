@@ -152,6 +152,7 @@ class Evaluator:
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
+        print(len(data_loader), len(no_imagenet_data_loader))
         imagenet_score = self.get_2afc_score_eval(data_loader)
         logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
         torch.cuda.empty_cache()
