@@ -37,10 +37,10 @@ if __name__ == '__main__':
     l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
     print('l2 list is loaded')
     l2_final_list = list()
-    for idx, tensor_element in enumerate(l2_list):
+    for idx, tensor_element in enumerate(l2_list[:250]):
         print(idx, '/', len(l2_list))
         l2_list[idx] = torch.round(tensor_element, decimals=4).tolist()
-    torch.save(l2_list, 'compressed_l2_dists.pt')
+    torch.save(l2_list, 'compressed_l2_dists_part_1.pt')
     # for idx, tensor_element in enumerate(l2_list):
     #     print(idx, '/', len(l2_list))
     #     l2_final_list.extend(tensor_element)
