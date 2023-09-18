@@ -32,16 +32,16 @@ if __name__ == '__main__':
     dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
     dreamsim_final_list = list()
     for tensor_element in dreamsim_list:
-        print(type(tensor_element))
+        print(tensor_element)
         dreamsim_final_list.extend(tensor_element.tolist())
         break
     print('dreamsim list is ready')
-    l2_list = torch.load('l2_dists.pt', map_location=torch.device('cpu'))
+    l2_list = torch.load('l2_dists_part_2.pt', map_location=torch.device('cpu'))
     print('l2 list is loaded')
     l2_final_list = list()
     for idx, tensor_element in enumerate(l2_list[:250]):
         print(idx, '/', len(l2_list))
-        print(type(tensor_element))
+        print(tensor_element)
         l2_list[idx] = torch.round(tensor_element, decimals=4).tolist()
         break
     # torch.save(l2_list[:250], 'compressed_l2_dists_part_1.pt')
