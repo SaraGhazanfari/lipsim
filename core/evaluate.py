@@ -123,7 +123,7 @@ class Evaluator:
         running_accuracy = np.zeros(4)
         running_certified = np.zeros(4)
         running_inputs = 0
-        lip_cst = 1.
+        lip_cst = 2.
         eps_list = np.array([36, 72, 108, 255])
         eps_float_list = eps_list / 255
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
@@ -133,6 +133,7 @@ class Evaluator:
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == target
+            print(outputs)
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
