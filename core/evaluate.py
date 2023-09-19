@@ -99,10 +99,7 @@ class Evaluator:
     def SSA_eval(self):
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        dreamsim_dist_list = list()
-        open_clip_list = list()
-        clip_list = list()
-        dino_list = list()
+        dreamsim_dist_list, dino_list, open_clip_list, clip_list = list(), list(), list(), list()
 
         dataset = self.reader.get_dataset()
         for i in range(len(dataset)):
@@ -115,10 +112,12 @@ class Evaluator:
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
             input_embed = self.dreamsim_model.embed(inputs).detach()
             adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
-            dreamsim_dist_list.append(1 - self.cos_sim(input_embed, adv_input_embed))
-            dino_list.append(1 - self.cos_sim(input_embed[:768], adv_input_embed[:768]))
-            open_clip_list.append(1 - self.cos_sim(input_embed[768: 768 + 512], adv_input_embed[:768 + 512]))
-            clip_list.append(1 - self.cos_sim(input_embed[768 + 512:], adv_input_embed[768 + 512:]))
+            dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
+            dino_list.append((1 - self.cos_sim(input_embed[:768], adv_input_embed[:768])).item())
+            open_clip_list.append((1 - self.cos_sim(input_embed[768: 768 + 512], adv_input_embed[:768 + 512])).item())
+            clip_list.append((1 - self.cos_sim(input_embed[768 + 512:], adv_input_embed[768 + 512:])).item())
+
+            print(dreamsim_dist_list[-1], dino_list[-1], open_clip_list[-1], clip_list[-1])
 
         torch.save(dreamsim_dist_list, f='dreamsim_list.pt')
         torch.save(dino_list, f='dino_list.pt')
