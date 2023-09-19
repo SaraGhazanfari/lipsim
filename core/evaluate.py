@@ -276,8 +276,8 @@ class Evaluator:
         embed_ref = self.model(img_ref)
         if not requires_grad:
             embed_ref = embed_ref.detach()
-        embed_x0 = self.model(img_left).detach()
-        embed_x1 = self.model(img_right).detach()
+        embed_x0 = self.model(img_left).detach()[:768]
+        embed_x1 = self.model(img_right).detach()[:768]
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
