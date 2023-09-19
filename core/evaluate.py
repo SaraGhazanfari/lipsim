@@ -112,11 +112,28 @@ class Evaluator:
 
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
-        # no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
-        #                                                                  batch_size=self.config.batch_size,
-        #                                                                  split='test_no_imagenet').get_dataloader()
+        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+                                                                         batch_size=self.config.batch_size,
+                                                                         split='test_no_imagenet').get_dataloader()
+        imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
+        no_imagenet_accuracy, no_imagenet_certified = self.get_certified_accuracy(no_imagenet_data_loader)
+        overall_accuracy = (imagenet_accuracy * dataset_size + no_imagenet_accuracy * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        eps_list = np.array([36, 72, 108, 255])
+        eps_float_list = eps_list / 255
+        for i, eps_float in enumerate(eps_float_list):
+            self.message.add('eps', eps_float, format='.5f')
+            self.message.add('imagenet accuracy', imagenet_accuracy[i], format='.5f')
+            self.message.add('imagenet certified', imagenet_certified[i], format='.5f')
 
-        self.get_certified_accuracy(data_loader)
+            self.message.add('no imagenet accuracy', no_imagenet_accuracy[i], format='.5f')
+            self.message.add('no imagenet certified', no_imagenet_certified[i], format='.5f')
+
+            self.message.add('Overall accuracy', overall_accuracy[i], format='.5f')
+            self.message.add('Overall certified', overall_certified[i], format='.5f')
+            logging.info(self.message.get_message())
 
     def get_certified_accuracy(self, data_loader):
         self.model.eval()
@@ -146,11 +163,8 @@ class Evaluator:
 
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
-        for i, eps_float in enumerate(eps_float_list):
-            self.message.add('eps', eps_float, format='.5f')
-            self.message.add('accuracy', accuracy[i], format='.5f')
-            self.message.add('certified', certified[i], format='.5f')
-            logging.info(self.message.get_message())
+
+        return accuracy, certified
 
     def distance_attack_eval(self):
         Reader = readers_config[self.config.dataset]
