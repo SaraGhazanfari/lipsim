@@ -106,11 +106,11 @@ def main(config):
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
-    elif config.mode in ['eval', 'eval_best', 'attack', 'certified']:
+    elif config.mode in ['eval', 'eval_best', 'attack']:
         evaluate = Evaluator(config)
         job = executor.submit(evaluate)
         job_id = job.job_id
-    elif config.mode in ['dreamsim', 'ssa']:
+    elif config.mode in ['dreamsim', 'ssa', 'certified']:
         evaluate = Evaluator(config)
         job_id = ''
         evaluate()

@@ -2,7 +2,7 @@ import glob
 import logging
 import time
 from os.path import join
-
+import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
@@ -101,11 +101,57 @@ class Evaluator:
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'ssa':
-            self.SSA_eval()
+            self.distance_attack_eval()
+        elif self.config.mode == 'certified':
+            self.certified_eval()
 
         logging.info('Done with batched inference.')
 
-    def SSA_eval(self):
+    @torch.no_grad()
+    def certified_eval(self):
+
+        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                                 split='test_imagenet').get_dataloader()
+        # no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+        #                                                                  batch_size=self.config.batch_size,
+        #                                                                  split='test_no_imagenet').get_dataloader()
+
+        self.get_certified_accuracy(data_loader)
+
+    def get_certified_accuracy(self, data_loader):
+        self.model.eval()
+        running_accuracy = np.zeros(4)
+        running_certified = np.zeros(4)
+        running_inputs = 0
+        lip_cst = 1.
+        eps_list = np.array([36, 72, 108, 255])
+        eps_float_list = eps_list / 255
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left=img_left, img_right=img_right)
+            outputs = torch.stack((dist_1, dist_0), dim=1)
+            predicted = outputs.argmax(axis=1)
+            correct = outputs.max(1)[1] == target
+            fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
+            mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
+            fy_fi[mask] = torch.inf
+            radius = (fy_fi / lip_cst).min(dim=1)[0]
+            for i, eps_float in enumerate(eps_float_list):
+                certified = radius > eps_float
+                running_certified[i] += torch.sum(correct & certified).item()
+                running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
+            running_inputs += img_ref.size(0)
+
+        accuracy = running_accuracy / running_inputs
+        certified = running_certified / running_inputs
+        for i, eps_float in enumerate(eps_float_list):
+            self.message.add('eps', eps_float, format='.5f')
+            self.message.add('accuracy', accuracy[i], format='.5f')
+            self.message.add('certified', certified[i], format='.5f')
+            logging.info(self.message.get_message())
+
+    def distance_attack_eval(self):
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list, dino_list, open_clip_list, clip_list = list(), list(), list(), list()
