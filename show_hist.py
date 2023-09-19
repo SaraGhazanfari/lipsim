@@ -4,11 +4,11 @@ import numpy as np
 import torch
 
 
-def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=100,
-                   y_bins_slot=5, x_bins_max=1.8, x_bins_slot=0.2,
+def plot_histogram(dreamsim_list, l2_list, open_clip_list, save_path, y_bins_max=250,
+                   y_bins_slot=20, x_bins_max=1.8, x_bins_slot=0.2,
                    label_size=20):
     # Config for dreamsim
-    # y_bins_max = 3600,
+    # y_bins_max =250,
     # y_bins_slot = 500
     sns.set(style="darkgrid")
     bins = np.arange(0, x_bins_max, x_bins_slot)
@@ -17,9 +17,12 @@ def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=100,
     plt.rcParams['font.size'] = 2
 
     fig, ax = plt.subplots(figsize=(10, 7))
-    sns.histplot(data=dreamsim_list, color="#008080", label="LPIPS", kde=True, bins=100)
-    sns.histplot(data=l2_list, color="red",
-                 label="R-LPIPS", kde=True, bins=100)
+    sns.histplot(data=dreamsim_list, color="#008080", label="DreamsimEn", kde=True, bins=100)
+    sns.histplot(data=l2_list, color="#FCA592",
+                 label="Dino", kde=True, bins=100)
+
+    sns.histplot(data=open_clip_list, color="#FCE492",
+                 label="OpenClip", kde=True, bins=100)
     plt.xlabel("")
     plt.ylabel("")
     plt.legend(fontsize=22)
@@ -32,20 +35,10 @@ def plot_histogram(dreamsim_list, l2_list, save_path, y_bins_max=100,
 
 
 if __name__ == '__main__':
-    dreamsim_list = torch.load('dists.pt', map_location=torch.device('cpu'))
-    dreamsim_final_list = list()
-    for tensor_element in dreamsim_list:
-        dreamsim_final_list.extend(tensor_element.tolist())
+    dreamsim_list = torch.load('dist_dir/dreamsim_list.pt', map_location=torch.device('cpu'))
     print('dreamsim list is ready')
-    l2_list = torch.load('compressed_linf_dists.pt', map_location=torch.device('cpu'))
-    print('linf list is loaded')
-    l2_final_list = list()
-    # for idx, tensor_element in enumerate(l2_list):
-    #     l2_list[idx] = torch.norm(tensor_element, p=float('inf'), dim=(1, 2)).tolist()
-    #     print(idx, '/', len(l2_list), len(l2_list[idx]))
-
-    for idx, tensor_element in enumerate(l2_list):
-        print(idx, '/', len(l2_list))
-        l2_final_list.extend(tensor_element)
-
-    plot_histogram(dreamsim_final_list, l2_final_list, 'fig.pdf')
+    dino_list = torch.load('dist_dir/dino_list.pt', map_location=torch.device('cpu'))
+    print('dino list is loaded')
+    open_clip_list = torch.load('dist_dir/open_clip_list.pt', map_location=torch.device('cpu'))
+    print('open_clip list is loaded')
+    plot_histogram(dreamsim_list, dino_list, open_clip_list, 'fig.pdf')
