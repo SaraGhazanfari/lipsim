@@ -5,7 +5,7 @@ from os.path import join
 from tqdm import tqdm
 
 from autoattack import AutoAttack
-from core.attack.ssa_attack import SSAH
+
 from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 from core.data import NightDataset, BAPPSDataset
@@ -119,6 +119,7 @@ class Evaluator:
             clip_list.append((1 - self.cos_sim(input_embed[:, 768 + 512:], adv_input_embed[:, 768 + 512:])).item())
             end_time = int((time.time() - start_time)/60)
             print('time: ', end_time, dreamsim_dist_list[-1], dino_list[-1], open_clip_list[-1], clip_list[-1])
+            sys.stdout.flush()
 
         torch.save(dreamsim_dist_list, f='dreamsim_list.pt')
         torch.save(dino_list, f='dino_list.pt')
