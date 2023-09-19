@@ -114,10 +114,10 @@ class Evaluator:
         print(len(dataset))
         start_time = time.time()
         for i in range(len(dataset)):
-            if i % 100 != 0:
+            if i % 10 != 0:
                 continue
             (inputs, _) = dataset[i]
-            img_name = int(i / 100)
+            img_name = int(i / 10)
 
             inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
