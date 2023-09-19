@@ -110,7 +110,7 @@ class Evaluator:
                 continue
             print(str(i))
             (inputs, _) = dataset[i]
-            inputs = inputs.cuda()
+            inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
             input_embed = self.dreamsim_model.embed(inputs).detach()
