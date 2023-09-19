@@ -90,7 +90,7 @@ class ImagenetDataset(Dataset):
 
     def get_dataset(self):
         dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
-        print(len(dataset), split)
+        print(len(dataset), self.split)
         return dataset
 
 
