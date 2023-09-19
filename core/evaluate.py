@@ -112,6 +112,7 @@ class Evaluator:
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
             input_embed = self.dreamsim_model.embed(inputs).detach()
             adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
+            print(dreamsim_dist_list[-1])
             dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
             dino_list.append((1 - self.cos_sim(input_embed[:768], adv_input_embed[:768])).item())
             open_clip_list.append((1 - self.cos_sim(input_embed[768: 768 + 512], adv_input_embed[:768 + 512])).item())
