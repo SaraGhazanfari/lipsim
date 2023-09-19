@@ -111,6 +111,7 @@ class Evaluator:
         dreamsim_dist_list, dino_list, open_clip_list, clip_list = list(), list(), list(), list()
 
         dataset = self.reader.get_dataset()
+        print(len(dataset))
         start_time = time.time()
         for i in range(len(dataset)):
             if i % 100 != 0:
