@@ -2,6 +2,8 @@ import glob
 import logging
 import time
 from os.path import join
+
+from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from autoattack import AutoAttack
@@ -27,6 +29,12 @@ def get_2afc_score(d0s, d1s, targets):
     scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
     twoafc_score = torch.mean(scores)
     return twoafc_score
+
+
+def show_images(img_ref, img_name):
+    plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
+    plt.axis('off')
+    plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
 
 
 class Evaluator:
@@ -108,16 +116,19 @@ class Evaluator:
             if i % 100 != 0:
                 continue
             (inputs, _) = dataset[i]
+            show_images(inputs, img_name=f'original_{i}.pdf')
             inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
+            show_images(adv_inputs, img_name=f'adv_{i}.pdf')
             input_embed = self.dreamsim_model.embed(inputs).detach()
             adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
             dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
             dino_list.append((1 - self.cos_sim(input_embed[:, :768], adv_input_embed[:, :768])).item())
-            open_clip_list.append((1 - self.cos_sim(input_embed[:, 768: 768 + 512], adv_input_embed[:, 768:768 + 512])).item())
+            open_clip_list.append(
+                (1 - self.cos_sim(input_embed[:, 768: 768 + 512], adv_input_embed[:, 768:768 + 512])).item())
             clip_list.append((1 - self.cos_sim(input_embed[:, 768 + 512:], adv_input_embed[:, 768 + 512:])).item())
-            end_time = int((time.time() - start_time)/60)
+            end_time = int((time.time() - start_time) / 60)
             print('time: ', end_time, dreamsim_dist_list[-1], dino_list[-1], open_clip_list[-1], clip_list[-1])
             sys.stdout.flush()
 
