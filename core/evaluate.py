@@ -108,7 +108,7 @@ class Evaluator:
         for i in range(len(dataset)):
             if i % 100 != 0:
                 continue
-            logging.info(str(i))
+            print(str(i))
             (inputs, _) = dataset[i]
             inputs = inputs.cuda()
             self.model = self.dreamsim_model.embed
