@@ -1,5 +1,6 @@
 import glob
 import logging
+import time
 from os.path import join
 from tqdm import tqdm
 
@@ -102,10 +103,10 @@ class Evaluator:
         dreamsim_dist_list, dino_list, open_clip_list, clip_list = list(), list(), list(), list()
 
         dataset = self.reader.get_dataset()
+        start_time = time.time()
         for i in range(len(dataset)):
             if i % 100 != 0:
                 continue
-            print(str(i))
             (inputs, _) = dataset[i]
             inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
@@ -116,8 +117,8 @@ class Evaluator:
             dino_list.append((1 - self.cos_sim(input_embed[:, :768], adv_input_embed[:, :768])).item())
             open_clip_list.append((1 - self.cos_sim(input_embed[:, 768: 768 + 512], adv_input_embed[:, 768:768 + 512])).item())
             clip_list.append((1 - self.cos_sim(input_embed[:, 768 + 512:], adv_input_embed[:, 768 + 512:])).item())
-
-            print(dreamsim_dist_list[-1], dino_list[-1], open_clip_list[-1], clip_list[-1])
+            end_time = int((time.time() - start_time)/60)
+            print('time: ', end_time, dreamsim_dist_list[-1], dino_list[-1], open_clip_list[-1], clip_list[-1])
 
         torch.save(dreamsim_dist_list, f='dreamsim_list.pt')
         torch.save(dino_list, f='dino_list.pt')
