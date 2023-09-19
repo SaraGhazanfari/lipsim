@@ -150,7 +150,6 @@ class Evaluator:
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == target
-            print(outputs)
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
