@@ -88,6 +88,10 @@ class ImagenetDataset(Dataset):
                                  num_workers=self.num_workers, pin_memory=True, drop_last=True)
         return data_loader, sampler
 
+    def get_dataset(self):
+        dataset = datasets.ImageFolder(self.config.data_dir, transform=self.transform[self.split])
+        return dataset
+
 
 readers_config = {
     'imagenet-1k': ImagenetDataset,

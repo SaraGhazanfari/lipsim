@@ -37,6 +37,7 @@ class Evaluator:
         self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
                                           cache_dir='./checkpoints')
         self.criterion = utils.get_loss(self.config)
+        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
     def load_ckpt(self, ckpt_path=None):
         if ckpt_path is None:
@@ -98,22 +99,31 @@ class Evaluator:
     def SSA_eval(self):
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        dist_list = list()
-        data_loader, _ = self.reader.get_dataloader(shuffle=True)
-        for batch_n, data in tqdm(enumerate(data_loader)):
-            print(batch_n, '/', len(data_loader))
-            inputs, _ = data
+        dreamsim_dist_list = list()
+        open_clip_list = list()
+        clip_list = list()
+        dino_list = list()
+
+        dataset = self.reader.get_dataset()
+        for i in range(len(dataset)):
+            if i % 100 != 0:
+                continue
+            logging.info(str(i))
+            (inputs, _) = dataset[i]
             inputs = inputs.cuda()
             self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
-            dist_list.append(self.dreamsim_model(inputs, adv_inputs).detach())
-            print(dist_list[-1])
+            input_embed = self.dreamsim_model.embed(inputs).detach()
+            adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
+            dreamsim_dist_list.append(1 - self.cos_sim(input_embed, adv_input_embed))
+            dino_list.append(1 - self.cos_sim(input_embed[:768], adv_input_embed[:768]))
+            open_clip_list.append(1 - self.cos_sim(input_embed[768: 768 + 512], adv_input_embed[:768 + 512]))
+            clip_list.append(1 - self.cos_sim(input_embed[768 + 512:], adv_input_embed[768 + 512:]))
 
-            if batch_n % 100 == 99:
-                torch.save(dist_list, f='dists.pt')
-                logging.info('saved')
-
-        torch.save(dist_list, f='dists.pt')
+        torch.save(dreamsim_dist_list, f='dreamsim_list.pt')
+        torch.save(dino_list, f='dino_list.pt')
+        torch.save(open_clip_list, f='open_clip_list.pt')
+        torch.save(clip_list, f='clip_list.pt')
         logging.info('finished')
 
     def vanilla_eval(self):
@@ -186,14 +196,14 @@ class Evaluator:
         return twoafc_score
 
     def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False):
-        cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+
         embed_ref = self.model(img_ref)
         if not requires_grad:
             embed_ref = embed_ref.detach()
         embed_x0 = self.model(img_left).detach()
         embed_x1 = self.model(img_right).detach()
-        dist_0 = 1 - cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - cos_sim(embed_ref, embed_x1)
+        dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
+        dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
 
     def model_wrapper(self):
