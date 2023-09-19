@@ -41,7 +41,7 @@ def set_config(config):
         config.constraint = f"v100-{config.constraint}g"
 
     # process argments
-    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips']
+    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips', 'certified']
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
