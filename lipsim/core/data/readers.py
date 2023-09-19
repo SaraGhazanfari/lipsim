@@ -52,7 +52,7 @@ class ImagenetDataset(Dataset):
         self.n_train_files = 1_281_167
         self.n_test_files = 50_000
         self.img_size = (None, 3, 224, 500)
-        self.split = 'train' if self.is_training else 'val'
+        self.split = 'train' if self.is_training else 'test'
 
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
@@ -71,6 +71,10 @@ class ImagenetDataset(Dataset):
                 local_crops_number=8
             ),
             'val': transforms.Compose([
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+            ]),
+            'test': transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
             ])
