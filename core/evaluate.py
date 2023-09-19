@@ -117,11 +117,14 @@ class Evaluator:
             if i % 100 != 0:
                 continue
             (inputs, _) = dataset[i]
-            show_images(inputs, img_name=f'original/{i}')
+            img_name = int(i / 100)
+
             inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
-            show_images(adv_inputs, img_name=f'adv/{i}')
+            if img_name < 30:
+                show_images(inputs, img_name=f'original/{i}')
+                show_images(adv_inputs, img_name=f'adv/{img_name}')
             input_embed = self.dreamsim_model.embed(inputs).detach()
             adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
             dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())

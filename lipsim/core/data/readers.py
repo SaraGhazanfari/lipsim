@@ -1,10 +1,10 @@
 import torch
 from PIL import Image
-from torchvision import transforms, datasets
+from torchvision import transforms
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from torchvision.datasets import ImageNet
+from torchvision.datasets import ImageFolder
 
 from core.data import NightDataset, BAPPSDataset
 from core.data.coco_datast import COCODataset
@@ -85,7 +85,7 @@ class ImagenetDataset(Dataset):
         sampler = None
         if not shuffle:
             shuffle = True if self.is_training and not self.is_distributed else False
-        dataset = ImageNet(self.config.data_dir, split=self.split, transform=self.transform[self.split])
+        dataset = ImageFolder(self.config.data_dir + '/' + self.split, transform=self.transform[self.split])
         if self.is_distributed:
             sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
 
@@ -94,7 +94,7 @@ class ImagenetDataset(Dataset):
         return data_loader, sampler
 
     def get_dataset(self):
-        dataset = ImageNet(self.config.data_dir, split=self.split, transform=self.transform[self.split])
+        dataset = ImageFolder(self.config.data_dir + '/' + self.split, transform=self.transform[self.split])
         print(len(dataset), self.split)
         return dataset
 
