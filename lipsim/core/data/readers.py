@@ -85,7 +85,7 @@ class ImagenetDataset(Dataset):
         sampler = None
         if not shuffle:
             shuffle = True if self.is_training and not self.is_distributed else False
-        dataset = ImageFolder(self.config.data_dir + '/' + self.split, transform=self.transform[self.split])
+        dataset = ImageFolder(self.config.data_dir + self.split, transform=self.transform[self.split])
         if self.is_distributed:
             sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
 
@@ -94,7 +94,7 @@ class ImagenetDataset(Dataset):
         return data_loader, sampler
 
     def get_dataset(self):
-        dataset = ImageFolder(self.config.data_dir + '/' + self.split, transform=self.transform[self.split])
+        dataset = ImageFolder(self.config.data_dir + self.split, transform=self.transform[self.split])
         print(len(dataset), self.split)
         return dataset
 
