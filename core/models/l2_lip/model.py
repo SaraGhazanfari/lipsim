@@ -19,12 +19,12 @@ class NormalizedModel(nn.Module):
 
 class Projection(nn.Module):
 
-  def __init__(self, n_classes):
-    super(Projection, self).__init__()
-    self.v = 1/np.sqrt(n_classes)
+    def __init__(self, n_classes):
+        super(Projection, self).__init__()
+        self.v = 1 / np.sqrt(n_classes)
 
-  def forward(self, x):
-    return torch.clamp(x, -self.v, self.v)
+    def forward(self, x):
+        return torch.clamp(x, -self.v, self.v)
 
 
 class L2LipschitzNetwork(nn.Module):
@@ -54,16 +54,29 @@ class L2LipschitzNetwork(nn.Module):
         in_channels = self.num_channels * 14 * 14
         for _ in range(self.depth_linear):
             layers_linear.append(
-              SDPBasedLipschitzLinearLayer(in_channels, self.n_features)
+                SDPBasedLipschitzLinearLayer(in_channels, self.n_features)
             )
         self.linear = nn.Sequential(*layers_linear)
         self.base = nn.Sequential(*[self.conv1, self.convs, self.linear])
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
-        self.projection = Projection(self.n_classes)
 
     def forward(self, x):
         x = self.base(x)
         x = self.last(x)
-        x = self.projection(x)
         return x
 
+
+class LipSimNetwork(nn.Module):
+    def __init__(self, config, n_classes, backbone):
+        super(LipSimNetwork, self).__init__()
+        self.config = config
+        self.n_classes = n_classes
+        self.backbone = backbone
+        self.finetuning_layer = SDPBasedLipschitzLinearLayer(self.n_features, self.n_features)
+        self.last = PoolingLinear(self.n_features, self.n_classes, agg="trunc")
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.finetuning_layer(x)
+        x = self.last(x)
+        return x

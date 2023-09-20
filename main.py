@@ -110,6 +110,9 @@ def main(config):
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
+    elif config.mode == 'finetune':
+        trainer = Trainer(config)
+        trainer.finetune_func()
     elif config.mode in ['eval', 'eval_best', 'attack']:
         evaluate = Evaluator(config)
         job = executor.submit(evaluate)
