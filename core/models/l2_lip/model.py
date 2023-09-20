@@ -37,7 +37,7 @@ class L2LipschitzNetwork(nn.Module):
         self.n_features = config.n_features
         self.conv_size = config.conv_size
         self.n_classes = n_classes
-        self.finetune = True if self.config.mode == 'finetune' else False
+        self.finetune = True if config.mode == 'finetune' else False
 
         imsize = 224
         self.conv1 = PaddingChannels(self.num_channels, 3, "zero")
