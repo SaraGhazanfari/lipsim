@@ -62,7 +62,7 @@ def set_config(config):
         config.train_dir = f'{path}/{folder}'
         os.makedirs(config.train_dir)
         os.makedirs(f'{config.train_dir}/checkpoints')
-    elif config.mode == 'train' and config.train_dir is not None:
+    elif config.mode in ['train', 'finetune'] and config.train_dir is not None:
         config.start_new_model = False
         config.train_dir = f'{path}/{config.train_dir}'
         assert exists(config.train_dir)
