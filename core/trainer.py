@@ -414,9 +414,9 @@ class Trainer:
 
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                outputs = self.get_cosine_score_between_images(img_ref, img_left, img_right)
-                print(target.shape, outputs.shape)
-                loss = self.criterion(target, outputs)
+                dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+                logit = dist_0 - dist_1
+                loss = self.criterion(logit.squeeze(), target)
                 loss.backward()
                 self.process_gradients(global_step)
                 self.optimizer.step()
@@ -453,4 +453,4 @@ class Trainer:
         embed_x1 = self.model(img_right)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
-        return torch.stack((dist_1, dist_0), dim=1)
+        return dist_0, dist_1
