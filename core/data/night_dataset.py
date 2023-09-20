@@ -22,6 +22,7 @@ class NightDataset(Dataset):
         self.split = split
         self.batch_size = batch_size
         self.interpolation = interpolation
+        self.n_train_files = 15941
         self.preprocess_fn = get_preprocess_fn(preprocess, 224, self.interpolation)
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
