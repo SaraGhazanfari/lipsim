@@ -295,7 +295,7 @@ class Evaluator:
             img_ref = img_ref[:, 0, :, :].squeeze(1)
         elif attack_method == 'PGD':
             if attack_norm == 'L2':
-                adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=1000,
+                adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=200,
                                         rand_init=True,
                                         targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
