@@ -37,6 +37,7 @@ class L2LipschitzNetwork(nn.Module):
         self.n_features = config.n_features
         self.conv_size = config.conv_size
         self.n_classes = n_classes
+        self.finetune = True if self.config.mode == 'finetune' else False
 
         imsize = 224
         self.conv1 = PaddingChannels(self.num_channels, 3, "zero")
@@ -60,9 +61,9 @@ class L2LipschitzNetwork(nn.Module):
         self.base = nn.Sequential(*[self.conv1, self.convs, self.linear])
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
 
-    def forward(self, x, finetune=False):
+    def forward(self, x):
         x = self.base(x)
-        if not finetune:
+        if not self.finetune:
             x = self.last(x)
         return x
 
@@ -78,7 +79,7 @@ class LipSimNetwork(nn.Module):
         self.last = PoolingLinear(self.n_features, self.n_classes, agg="trunc")
 
     def forward(self, x):
-        x = self.backbone(x, finetune=True)
+        x = self.backbone(x)
         x = self.finetuning_layer(x)
         x = self.last(x)
         norm_2 = torch.norm(x, p=2, dim=(1))
