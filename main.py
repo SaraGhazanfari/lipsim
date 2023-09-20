@@ -14,6 +14,10 @@ from core.trainer import Trainer
 
 warnings.filterwarnings("ignore")
 
+eval_mode = ['certified', 'attack', 'eval', 'dreamsim', 'ssa']
+all_mode = ['train', 'finetune']
+all_mode.extend(eval_mode)
+
 
 def override_args(config, depth, num_channels, depth_linear, n_features):
     config.depth = depth
@@ -41,7 +45,7 @@ def set_config(config):
         config.constraint = f"v100-{config.constraint}g"
 
     # process argments
-    eval_mode = ['eval', 'dreamsim', 'lipsim', 'lpips', 'certified']
+
     if config.data_dir is None:
         config.data_dir = os.environ.get('DATADIR', None)
     if config.data_dir is None:
@@ -141,8 +145,7 @@ if __name__ == '__main__':
                         help="Activate debug mode.")
 
     # parameters training or eval
-    parser.add_argument("--mode", type=str, default="train",
-                        choices=['train', 'certified', 'attack', 'eval', 'dreamsim', 'ssa'])
+    parser.add_argument("--mode", type=str, default="train", choices=all_mode)
     parser.add_argument("--train_dir", type=str, help="Name of the training directory.")
     parser.add_argument("--data_dir", type=str, help="Name of the data directory.")
     parser.add_argument("--dataset", type=str, default='imagenet', help="Dataset to use")
