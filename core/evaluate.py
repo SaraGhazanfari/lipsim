@@ -140,7 +140,7 @@ class Evaluator:
         running_accuracy = np.zeros(4)
         running_certified = np.zeros(4)
         running_inputs = 0
-        lip_cst = 2.
+        lip_cst = np.sqrt(2)
         eps_list = np.array([36, 72, 108, 255])
         eps_float_list = eps_list / 255
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
@@ -174,15 +174,15 @@ class Evaluator:
         print(len(dataset))
         start_time = time.time()
         for i in range(len(dataset)):
-            if i % 10 != 0:
+            if i % 100 != 0:
                 continue
             (inputs, _) = dataset[i]
-            img_name = int(i / 10)
+            img_name = int(i / 100)
 
             inputs = inputs.cuda().unsqueeze(0)
             self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
-            if img_name < 30:
+            if img_name < 100 and self.config.eps == 3.0:
                 show_images(inputs, img_name=f'original/{i}')
                 show_images(adv_inputs, img_name=f'adv/{img_name}')
             input_embed = self.dreamsim_model.embed(inputs).detach()
