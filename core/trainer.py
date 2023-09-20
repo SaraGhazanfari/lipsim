@@ -372,7 +372,7 @@ class Trainer:
         self.saved_ckpts = set([0])
 
         data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                            split='train').get_dataloader()
+                                      split='train').get_dataloader()
         sampler = None
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
@@ -427,7 +427,7 @@ class Trainer:
                 examples_per_second *= self.world_size
                 self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
                 global_step += 1
-
+            self.dreamsim_eval()
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
 
@@ -454,3 +454,56 @@ class Trainer:
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
+
+    def dreamsim_eval(self):
+        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                                 split='test_imagenet').get_dataloader()
+        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+                                                                         batch_size=self.config.batch_size,
+                                                                         split='test_no_imagenet').get_dataloader()
+        print(len(data_loader), len(no_imagenet_data_loader))
+        imagenet_score = self.get_2afc_score_eval(data_loader)
+        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        torch.cuda.empty_cache()
+        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
+        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+        overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        logging.info(f"Overall 2AFC score: {str(overall_score)}")
+
+    def get_2afc_score_eval(self, test_loader):
+        logging.info("Evaluating NIGHTS dataset.")
+        d0s = []
+        d1s = []
+        targets = []
+        with torch.no_grad():
+            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
+                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                    img_right.cuda(), target.cuda()
+                dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
+                d0s.append(dist_0)
+                d1s.append(dist_1)
+                targets.append(target)
+
+        twoafc_score = get_2afc_score(d0s, d1s, targets)
+        return twoafc_score
+
+    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
+
+        dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+        if len(dist_0.shape) < 1:
+            dist_0 = dist_0.unsqueeze(0)
+            dist_1 = dist_1.unsqueeze(0)
+        dist_0 = dist_0.unsqueeze(1).detach()
+        dist_1 = dist_1.unsqueeze(1).detach()
+        target = target.unsqueeze(1).detach()
+        return dist_0, dist_1, target
+
+
+def get_2afc_score(d0s, d1s, targets):
+    d0s = torch.cat(d0s, dim=0)
+    d1s = torch.cat(d1s, dim=0)
+    targets = torch.cat(targets, dim=0)
+    scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
+    twoafc_score = torch.mean(scores)
+    return twoafc_score
