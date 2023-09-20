@@ -371,8 +371,9 @@ class Trainer:
         # define set for saved ckpt
         self.saved_ckpts = set([0])
 
-        data_loader, sampler = NightDataset(config=self.config, batch_size=self.config.batch_size,
+        data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                             split='train').get_dataloader()
+        sampler = None
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
 
