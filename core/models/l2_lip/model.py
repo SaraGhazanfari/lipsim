@@ -79,4 +79,5 @@ class LipSimNetwork(nn.Module):
         x = self.backbone(x)
         x = self.finetuning_layer(x)
         x = self.last(x)
-        return x
+        norm_2 = torch.norm(x, p=2, dim=(1))
+        return x / norm_2
