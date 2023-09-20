@@ -17,7 +17,6 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
 
 from core import utils
-from core.models import N_CLASSES
 from core.data.readers import readers_config
 from core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 
@@ -131,7 +130,7 @@ class Trainer:
                          is_distributed=self.is_distributed)
     if self.local_rank == 0:
         logging.info(f"Using dataset: {self.config.dataset}")
-    self.n_classes = N_CLASSES[self.config.teacher_model_name]
+    self.n_classes = self.reader.n_classes
 
     # load model
     self.model = L2LipschitzNetwork(self.config, self.n_classes)
@@ -245,10 +244,21 @@ class Trainer:
       torch.nn.utils.clip_grad_value_(
         self.model.parameters(), self.config.gradient_clip_by_value)
 
+  def process_embedding(self, embeddings):
+    if self.config.teacher_model_name == 'ensemble':
+      return embeddings
+    elif self.config.teacher_model_name == 'dino_vitb16':
+      return embeddings[:, :768]
+    elif self.config.teacher_model_name == 'open_clip_vitb32':
+      return embeddings[:, 768:768+512]
+    elif self.config.teacher_model_name == 'clip_vitb32':
+      return embeddings[:, 768+512:]
+
   def one_step_training(self, data, epoch, step):
     self.optimizer.zero_grad()
     batch_start_time = time.time()
     images, embeddings = data
+    embeddings = self.process_embedding(embeddings)
     original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
     original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
     embeddings = embeddings.cuda()

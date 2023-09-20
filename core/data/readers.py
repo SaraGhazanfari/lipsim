@@ -128,7 +128,12 @@ class ImagenetEmbeddingReader(BaseReader):
     self.config = config
     self.batch_size = batch_size
     self.is_training = is_training
-    self.n_classes = 1792
+    self.n_classes = {
+      'ensemble': 1792,
+      'dino_vitb16': 768,
+      'open_clip_vitb32': 512,
+      'clip_vitb32': 512,
+    }[config.teacher_model_name]
     self.n_train_files = 1_281_167
     self.n_test_files = 50_1000
     self.img_size = (None, 3, 224, 500)

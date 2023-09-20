@@ -59,11 +59,11 @@ class L2LipschitzNetwork(nn.Module):
         self.linear = nn.Sequential(*layers_linear)
         self.base = nn.Sequential(*[self.conv1, self.convs, self.linear])
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
-        self.projection = Projection(self.n_classes)
+        # self.projection = Projection(self.n_classes)
 
     def forward(self, x):
         x = self.base(x)
         x = self.last(x)
-        x = self.projection(x)
+        # x = self.projection(x)
         return x
 

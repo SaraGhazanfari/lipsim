@@ -5,12 +5,12 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
 
-from core.models import N_CLASSES
 from core.utils import get_preprocess_fn
 from torch.utils.data import DataLoader
 
 
 class NightDataset(Dataset):
+
     def __init__(self, config, batch_size, is_training=True, is_distributed=False, num_workers=4,
                  split: str = "test_imagenet",
                  interpolation: transforms.InterpolationMode = transforms.InterpolationMode.BICUBIC,
@@ -25,7 +25,12 @@ class NightDataset(Dataset):
         self.preprocess_fn = get_preprocess_fn(preprocess, 224, self.interpolation)
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
-        self.n_classes = N_CLASSES[config.teacher_model_name]
+        self.n_classes = {
+          'ensemble': 1792,
+          'dino_vitb16': 768,
+          'open_clip_vitb32': 512,
+          'clip_vitb32': 512,
+        }[config.teacher_model_name]
         if self.split == "train" or self.split == "val":
             self.csv = self.csv[self.csv["split"] == split]
         elif split == 'test_imagenet':
