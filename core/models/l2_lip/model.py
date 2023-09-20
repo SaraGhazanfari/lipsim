@@ -60,9 +60,10 @@ class L2LipschitzNetwork(nn.Module):
         self.base = nn.Sequential(*[self.conv1, self.convs, self.linear])
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
 
-    def forward(self, x):
+    def forward(self, x, finetune=False):
         x = self.base(x)
-        x = self.last(x)
+        if not finetune:
+            x = self.last(x)
         return x
 
 
@@ -77,7 +78,7 @@ class LipSimNetwork(nn.Module):
         self.last = PoolingLinear(self.n_features, self.n_classes, agg="trunc")
 
     def forward(self, x):
-        x = self.backbone(x)
+        x = self.backbone(x, finetune=True)
         x = self.finetuning_layer(x)
         x = self.last(x)
         norm_2 = torch.norm(x, p=2, dim=(1))
