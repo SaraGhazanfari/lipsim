@@ -72,6 +72,7 @@ class LipSimNetwork(nn.Module):
         self.config = config
         self.n_classes = n_classes
         self.backbone = backbone
+        self.n_features = self.config.n_features
         self.finetuning_layer = SDPBasedLipschitzLinearLayer(self.n_features, self.n_features)
         self.last = PoolingLinear(self.n_features, self.n_classes, agg="trunc")
 
