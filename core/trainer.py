@@ -415,6 +415,7 @@ class Trainer:
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
                 outputs = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+                print(target.shape, outputs.shape)
                 loss = self.criterion(target, outputs)
                 loss.backward()
                 self.process_gradients(global_step)
