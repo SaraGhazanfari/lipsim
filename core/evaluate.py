@@ -146,7 +146,8 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
-            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left=img_left, img_right=img_right)
+            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left=img_left, img_right=img_right,
+                                                                  requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == target
@@ -264,13 +265,20 @@ class Evaluator:
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False):
+    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False,
+                                        requires_normalization=False):
 
         embed_ref = self.model(img_ref)
         if not requires_grad:
             embed_ref = embed_ref.detach()
         embed_x0 = self.model(img_left).detach()
         embed_x1 = self.model(img_right).detach()
+        if requires_normalization:
+            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+            embed_x0 = embed_x0 / norm_x_0
+            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
+            embed_x1 = embed_x1 / norm_x_1
+
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
