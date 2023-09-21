@@ -140,7 +140,7 @@ class Evaluator:
         running_accuracy = np.zeros(4)
         running_certified = np.zeros(4)
         running_inputs = 0
-        lip_cst = np.sqrt(2)
+        lip_cst = 2
         eps_list = np.array([36, 72, 108, 255])
         eps_float_list = eps_list / 255
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
@@ -156,7 +156,7 @@ class Evaluator:
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
-            radius = (fy_fi / bound).min(dim=1)[0]
+            radius = (fy_fi / lip_cst).min(dim=1)[0]
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
