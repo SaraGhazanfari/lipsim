@@ -369,6 +369,8 @@ class Trainer:
                 logging.info('Model defined with DistributedDataParallel')
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+
+        self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
         self._load_state()
         # define set for saved ckpt
         self.saved_ckpts = set([0])
@@ -385,7 +387,7 @@ class Trainer:
             n_files = self.reader.n_train_files
 
         # define optimizer
-        self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
+
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
