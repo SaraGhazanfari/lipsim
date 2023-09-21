@@ -405,6 +405,7 @@ class Trainer:
         self.best_accuracy = [0., 0.]
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         epoch_id = 0
+        self.dreamsim_eval()
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)

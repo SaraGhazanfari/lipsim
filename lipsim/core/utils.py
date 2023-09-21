@@ -179,7 +179,7 @@ class HingeLoss(torch.nn.Module):
         return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
 
 
-def get_loss(config, margin=0.25, device='cuda:0'):
+def get_loss(config, margin=0, device='cuda:0'):
     if config.mode in ['train', 'lipsim', 'vanilla-eval']:
         return RMSELoss()
     elif config.mode == 'train-night':
