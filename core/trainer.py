@@ -350,6 +350,7 @@ class Trainer:
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        self._load_state()
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
         # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
