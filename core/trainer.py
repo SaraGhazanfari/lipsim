@@ -350,12 +350,12 @@ class Trainer:
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
-        self._load_state()
+
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
         # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
-        # self.model = self.model.cuda()
-
+        self.model = self.model.cuda()
+        self._load_state()
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
