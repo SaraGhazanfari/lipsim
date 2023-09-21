@@ -419,6 +419,7 @@ class Trainer:
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
                 dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                         requires_grad=True,
                                                                          requires_normalization=True)
                 logit = dist_0 - dist_1
                 loss = self.criterion(logit.squeeze(), target)
@@ -555,10 +556,12 @@ class Trainer:
                                         requires_normalization=False):
 
         embed_ref = self.model(img_ref)
+        embed_x0 = self.model(img_left)
+        embed_x1 = self.model(img_right)
         if not requires_grad:
             embed_ref = embed_ref.detach()
-        embed_x0 = self.model(img_left).detach()
-        embed_x1 = self.model(img_right).detach()
+            embed_x0 = embed_x0.detach()
+            embed_x1 = embed_x1.detach()
         if requires_normalization:
             norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
             embed_ref = embed_ref / norm_ref
