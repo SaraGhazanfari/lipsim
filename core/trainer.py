@@ -371,9 +371,9 @@ class Trainer:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
+        self.saved_ckpts = set([0])
         self._load_state()
         # define set for saved ckpt
-        self.saved_ckpts = set([0])
 
         data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                       split='train').get_dataloader()
@@ -387,7 +387,6 @@ class Trainer:
             n_files = self.reader.n_train_files
 
         # define optimizer
-
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
