@@ -146,15 +146,16 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
-            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left=img_left, img_right=img_right,
-                                                                  requires_normalization=True)
+            dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
+                                                                         img_right=img_right,
+                                                                         requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == target
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
-            radius = (fy_fi / lip_cst).min(dim=1)[0]
+            radius = (fy_fi / bound).min(dim=1)[0]
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
@@ -284,7 +285,7 @@ class Evaluator:
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1))
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1
+        return dist_0, dist_1, bound
 
     def model_wrapper(self):
         def metric_model(img):
