@@ -201,6 +201,8 @@ if __name__ == '__main__':
     parser.add_argument("--teacher_model_name", type=str, default='ensemble',
                         help='dino_vitb16 open_clip_vitb32 clip_vitb32')
 
+    parser.add_argument("--margin", type=float, default=0)
+
     # parse all arguments
     config = parser.parse_args()
     config.cmd = f"python3 {' '.join(sys.argv)}"

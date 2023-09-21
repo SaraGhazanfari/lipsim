@@ -171,7 +171,7 @@ def get_loss(config, margin=0, device='cuda:0'):
     if config.mode in ['train', 'lipsim', 'vanilla-eval']:
         return RMSELoss()
     elif config.mode == 'finetune':
-        return HingeLoss(margin=margin, device=device)
+        return HingeLoss(margin=config.margin, device=device)
 
 
 def get_scheduler(optimizer, config, num_steps):
