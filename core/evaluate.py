@@ -274,6 +274,8 @@ class Evaluator:
         embed_x0 = self.model(img_left).detach()
         embed_x1 = self.model(img_right).detach()
         if requires_normalization:
+            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
+            embed_ref = embed_ref / norm_ref
             norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
             embed_x0 = embed_x0 / norm_x_0
             norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)

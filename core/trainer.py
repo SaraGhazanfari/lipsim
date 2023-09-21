@@ -418,7 +418,8 @@ class Trainer:
 
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+                dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                      requires_normalization=True)
                 logit = dist_0 - dist_1
                 loss = self.criterion(logit.squeeze(), target)
                 loss.backward()
@@ -451,10 +452,19 @@ class Trainer:
         if global_step == 20 and self.is_master:
             self._print_approximated_train_time(start_time)
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right):
+    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_normalization=False):
         embed_ref = self.model(img_ref)
         embed_x0 = self.model(img_left)
         embed_x1 = self.model(img_right)
+
+        if requires_normalization:
+            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
+            embed_ref = embed_ref / norm_ref
+            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+            embed_x0 = embed_x0 / norm_x_0
+            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
+            embed_x1 = embed_x1 / norm_x_1
+
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1
