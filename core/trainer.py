@@ -40,7 +40,7 @@ class Trainer:
         checkpoints = sorted(
             [ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)
         path_last_ckpt = join(self.train_dir, 'checkpoints', checkpoints[-1])
-        self.checkpoint = torch.load(path_last_ckpt, map_location=self.model.device)
+        self.checkpoint = torch.load(path_last_ckpt)  # , map_location=self.model.device)
         self.model.load_state_dict(self.checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
         self.saved_ckpts.add(self.checkpoint['epoch'])
@@ -354,6 +354,7 @@ class Trainer:
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
         # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
+        self._load_state()
         self.model = self.model.cuda()
 
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
@@ -368,7 +369,7 @@ class Trainer:
                 logging.info('Model defined with DistributedDataParallel')
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-        self._load_state()
+
         # define set for saved ckpt
         self.saved_ckpts = set([0])
 
