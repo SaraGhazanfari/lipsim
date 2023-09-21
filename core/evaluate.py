@@ -156,7 +156,7 @@ class Evaluator:
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
-            radius = (fy_fi / lip_cst).min(dim=1)[0]
+            radius = (fy_fi / bound).min(dim=1)[0]
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
