@@ -408,7 +408,7 @@ class Trainer:
         self.best_accuracy = [0., 0.]
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         epoch_id = 0
-        self.dreamsim_eval()
+        self.complete_eval()
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
@@ -418,8 +418,8 @@ class Trainer:
 
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                      requires_normalization=True)
+                dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                         requires_normalization=True)
                 logit = dist_0 - dist_1
                 loss = self.criterion(logit.squeeze(), target)
                 loss.backward()
@@ -433,7 +433,7 @@ class Trainer:
                 examples_per_second *= self.world_size
                 self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
                 global_step += 1
-            self.dreamsim_eval()
+            self.complete_eval()
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
 
@@ -453,24 +453,7 @@ class Trainer:
         if global_step == 20 and self.is_master:
             self._print_approximated_train_time(start_time)
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_normalization=False):
-        embed_ref = self.model(img_ref)
-        embed_x0 = self.model(img_left)
-        embed_x1 = self.model(img_right)
-
-        if requires_normalization:
-            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-            embed_ref = embed_ref / norm_ref
-            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-            embed_x0 = embed_x0 / norm_x_0
-            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-            embed_x1 = embed_x1 / norm_x_1
-
-        dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1
-
-    def dreamsim_eval(self):
+    def complete_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
@@ -485,6 +468,26 @@ class Trainer:
         overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
+
+        imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
+        no_imagenet_accuracy, no_imagenet_certified = self.get_certified_accuracy(no_imagenet_data_loader)
+        overall_accuracy = (imagenet_accuracy * dataset_size + no_imagenet_accuracy * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        eps_list = np.array([36, 72, 108, 255])
+        eps_float_list = eps_list / 255
+        for i, eps_float in enumerate(eps_float_list):
+            self.message.add('eps', eps_float, format='.5f')
+            self.message.add('imagenet accuracy', imagenet_accuracy[i], format='.5f')
+            self.message.add('imagenet certified', imagenet_certified[i], format='.5f')
+
+            self.message.add('no imagenet accuracy', no_imagenet_accuracy[i], format='.5f')
+            self.message.add('no imagenet certified', no_imagenet_certified[i], format='.5f')
+
+            self.message.add('Overall accuracy', overall_accuracy[i], format='.5f')
+            self.message.add('Overall certified', overall_certified[i], format='.5f')
+            logging.info(self.message.get_message())
 
     def get_2afc_score_eval(self, test_loader):
         logging.info("Evaluating NIGHTS dataset.")
@@ -505,7 +508,7 @@ class Trainer:
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
 
-        dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)
@@ -513,6 +516,61 @@ class Trainer:
         dist_1 = dist_1.unsqueeze(1).detach()
         target = target.unsqueeze(1).detach()
         return dist_0, dist_1, target
+
+    def get_certified_accuracy(self, data_loader):
+        self.model.eval()
+        running_accuracy = np.zeros(4)
+        running_certified = np.zeros(4)
+        running_inputs = 0
+        lip_cst = 2
+        eps_list = np.array([36, 72, 108, 255])
+        eps_float_list = eps_list / 255
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+
+            dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
+                                                                         img_right=img_right,
+                                                                         requires_normalization=True)
+
+            outputs = torch.stack((dist_1, dist_0), dim=1)
+            predicted = outputs.argmax(axis=1)
+            correct = outputs.max(1)[1] == target
+            fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
+            mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
+            fy_fi[mask] = torch.inf
+            radius = (fy_fi / bound).min(dim=1)[0]
+            for i, eps_float in enumerate(eps_float_list):
+                certified = radius > eps_float
+                running_certified[i] += torch.sum(correct & certified).item()
+                running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
+            running_inputs += img_ref.size(0)
+
+        accuracy = running_accuracy / running_inputs
+        certified = running_certified / running_inputs
+
+        return accuracy, certified
+
+    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False,
+                                        requires_normalization=False):
+
+        embed_ref = self.model(img_ref)
+        if not requires_grad:
+            embed_ref = embed_ref.detach()
+        embed_x0 = self.model(img_left).detach()
+        embed_x1 = self.model(img_right).detach()
+        if requires_normalization:
+            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
+            embed_ref = embed_ref / norm_ref
+            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+            embed_x0 = embed_x0 / norm_x_0
+            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
+            embed_x1 = embed_x1 / norm_x_1
+
+        bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
+        dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
+        dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
+        return dist_0, dist_1, bound
 
 
 def get_2afc_score(d0s, d1s, targets):
