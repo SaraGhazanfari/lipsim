@@ -354,7 +354,7 @@ class Trainer:
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
         # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
-        self._load_state()
+
         self.model = self.model.cuda()
 
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
@@ -369,7 +369,7 @@ class Trainer:
                 logging.info('Model defined with DistributedDataParallel')
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-
+        self._load_state()
         # define set for saved ckpt
         self.saved_ckpts = set([0])
 
