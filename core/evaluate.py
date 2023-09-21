@@ -146,6 +146,7 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
+
             dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
                                                                          img_right=img_right,
                                                                          requires_normalization=True)
@@ -155,6 +156,7 @@ class Evaluator:
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
+            print(fy_fi.shape, bound.shape)
             radius = (fy_fi / bound).min(dim=1)[0]
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
@@ -282,7 +284,7 @@ class Evaluator:
             norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
             embed_x1 = embed_x1 / norm_x_1
 
-        bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1))
+        bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
@@ -290,7 +292,7 @@ class Evaluator:
     def model_wrapper(self):
         def metric_model(img):
             img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(1)
-            dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
+            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
@@ -321,7 +323,7 @@ class Evaluator:
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
             img_ref = self.generate_attack(img_ref, img_left, img_right, target)
-        dist_0, dist_1 = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)
