@@ -471,7 +471,9 @@ class Trainer:
         # logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
         imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
+        torch.cuda.empty_cache()
         no_imagenet_accuracy, no_imagenet_certified = self.get_certified_accuracy(no_imagenet_data_loader)
+        torch.cuda.empty_cache()
         overall_accuracy = (imagenet_accuracy * dataset_size + no_imagenet_accuracy * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
         overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
