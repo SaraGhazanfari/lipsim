@@ -149,14 +149,14 @@ class Trainer:
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
-        if self.is_distributed:
-            utils.setup_distributed_training(self.world_size, self.rank)
-            self.model = DistributedDataParallel(
-                self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-            if self.local_rank == 0:
-                logging.info('Model defined with DistributedDataParallel')
-        else:
-            self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        # if self.is_distributed:
+        #     utils.setup_distributed_training(self.world_size, self.rank)
+        #     self.model = DistributedDataParallel(
+        #         self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+        #     if self.local_rank == 0:
+        #         logging.info('Model defined with DistributedDataParallel')
+        # else:
+        #     self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
 
         # define set for saved ckpt
         self.saved_ckpts = set([0])
