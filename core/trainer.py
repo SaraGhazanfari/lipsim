@@ -521,33 +521,34 @@ class Trainer:
         return dist_0, dist_1, target
 
     def get_certified_accuracy(self, data_loader):
-        self.model.eval()
+        # self.model.eval()
         running_accuracy = np.zeros(4)
         running_certified = np.zeros(4)
         running_inputs = 0
         lip_cst = 2
         eps_list = np.array([36, 72, 108, 255])
         eps_float_list = eps_list / 255
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
+        with torch.no_grad():
+            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                    img_right.cuda(), target.cuda()
 
-            dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
-                                                                         img_right=img_right,
-                                                                         requires_normalization=True)
+                dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
+                                                                             img_right=img_right,
+                                                                             requires_normalization=True)
 
-            outputs = torch.stack((dist_1, dist_0), dim=1)
-            predicted = outputs.argmax(axis=1)
-            correct = outputs.max(1)[1] == target
-            fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
-            mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
-            fy_fi[mask] = torch.inf
-            radius = (fy_fi / bound).min(dim=1)[0]
-            for i, eps_float in enumerate(eps_float_list):
-                certified = radius > eps_float
-                running_certified[i] += torch.sum(correct & certified).item()
-                running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
-            running_inputs += img_ref.size(0)
+                outputs = torch.stack((dist_1, dist_0), dim=1)
+                predicted = outputs.argmax(axis=1)
+                correct = outputs.max(1)[1] == target
+                fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
+                mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
+                fy_fi[mask] = torch.inf
+                radius = (fy_fi / bound).min(dim=1)[0]
+                for i, eps_float in enumerate(eps_float_list):
+                    certified = radius > eps_float
+                    running_certified[i] += torch.sum(correct & certified).item()
+                    running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
+                running_inputs += img_ref.size(0)
 
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
