@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     description="LipSim similarity metric",
     url="https://github.com/SaraGhazanfari/lipsim",
-    packages=find_packages(include=['lipsim', 'lipsim.*', 'core', 'core.*']),
+    packages=find_packages(include=['lipsim', 'lipsim.*', 'core', 'core.*', 'autoattack', 'autoattack.*']),
     install_requires=[
         "dreamsim",
         "pytorch-warmup",
