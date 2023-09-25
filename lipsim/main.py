@@ -14,7 +14,7 @@ from core.trainer import Trainer
 
 warnings.filterwarnings("ignore")
 
-eval_mode = ['certified', 'attack', 'eval', 'dreamsim', 'ssa']
+eval_mode = ['certified', 'attack', 'eval', 'dreamsim', 'ssa', 'lipsim']
 all_mode = ['train', 'finetune']
 all_mode.extend(eval_mode)
 
