@@ -117,10 +117,11 @@ def main(config):
         evaluate = Evaluator(config)
         job = executor.submit(evaluate)
         job_id = job.job_id
-    elif config.mode in ['dreamsim', 'ssa', 'certified']:
+    elif config.mode in ['dreamsim', 'ssa', 'certified', 'lipsim']:
         evaluate = Evaluator(config)
         job_id = ''
-        evaluate()
+        model = evaluate()
+        return model
     folder = config.train_dir.split('/')[-1]
     print(f"Submitted batch job {job_id} in folder {folder}")
 
