@@ -79,18 +79,18 @@ class Evaluator:
         else:
             self.batch_size = self.config.batch_size
 
-        if self.config.mode != 'ssa':
-            # load reader
-            self.means = (0.0000, 0.0000, 0.0000)
-            self.stds = (1.0000, 1.0000, 1.0000)
-            self.n_classes = N_CLASSES[self.config.teacher_model_name]
+        # if self.config.mode != 'ssa':
+        # load reader
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
-            # load model
-            self.model = L2LipschitzNetwork(self.config, self.n_classes)
-            self.model = NormalizedModel(self.model, self.means, self.stds)
-            self.model = torch.nn.DataParallel(self.model)
-            self.model = self.model.cuda()
-            self.load_ckpt()
+        # load model
+        self.model = L2LipschitzNetwork(self.config, self.n_classes)
+        self.model = NormalizedModel(self.model, self.means, self.stds)
+        self.model = torch.nn.DataParallel(self.model)
+        self.model = self.model.cuda()
+        self.load_ckpt()
 
         if self.config.mode == 'lipsim':
             return self.model
@@ -183,13 +183,12 @@ class Evaluator:
             img_name = int(i / 100)
 
             inputs = inputs.cuda().unsqueeze(0)
-            self.model = self.dreamsim_model.embed
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
             if img_name < 100 and self.config.eps == 3.0:
                 show_images(inputs, img_name=f'original/{i}')
                 show_images(adv_inputs, img_name=f'adv/{img_name}')
-            input_embed = self.dreamsim_model.embed(inputs).detach()
-            adv_input_embed = self.dreamsim_model.embed(adv_inputs).detach()
+            input_embed = self.model(inputs).detach()
+            adv_input_embed = self.model(adv_inputs).detach()
             dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
             end_time = int((time.time() - start_time) / 60)
             print('time: ', end_time, dreamsim_dist_list[-1])
