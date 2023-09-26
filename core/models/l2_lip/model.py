@@ -37,6 +37,7 @@ class L2LipschitzNetwork(nn.Module):
         self.n_features = config.n_features
         self.conv_size = config.conv_size
         self.n_classes = n_classes
+        self.config = config
 
         imsize = 224
         self.conv1 = PaddingChannels(self.num_channels, 3, "zero")
@@ -63,6 +64,8 @@ class L2LipschitzNetwork(nn.Module):
     def forward(self, x):
         x = self.base(x)
         x = self.last(x)
+        if self.config.mode == 'ssa':
+            x = x / torch.norm(x, p=2, dim=(1))
         return x
 
 
