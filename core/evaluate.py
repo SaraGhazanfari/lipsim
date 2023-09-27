@@ -42,10 +42,10 @@ class Evaluator:
 
     def __init__(self, config):
         self.config = config
-        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-                                          cache_dir='./checkpoints', device=device)
+                                          cache_dir='./checkpoints', device=self.device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
@@ -90,8 +90,8 @@ class Evaluator:
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
-        self.model = self.model.cuda()
-        self.load_ckpt()
+        self.model = self.model.to(self.device)
+        # self.load_ckpt()
 
         if self.config.mode == 'lipsim':
             return self.model
@@ -171,11 +171,12 @@ class Evaluator:
 
     def distance_attack_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').get_dataloader()
+                                                 split='test_imagenet',num_workers=0).get_dataloader()
+
         self.model = self.dreamsim_model.embed
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
+            img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
+                img_right.to(self.device), target.to(self.device)
             adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
                                     nb_iter=1000,
                                     rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
