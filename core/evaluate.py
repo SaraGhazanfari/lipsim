@@ -42,9 +42,10 @@ class Evaluator:
 
     def __init__(self, config):
         self.config = config
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-                                          cache_dir='./checkpoints')
+                                          cache_dir='./checkpoints', device=device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
 
@@ -169,33 +170,58 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
-        Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        dreamsim_dist_list = list()
+        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                                 split='test_imagenet').get_dataloader()
+        self.model = self.dreamsim_model.embed
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+            adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
+                                    nb_iter=1000,
+                                    rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
-        dataset = self.reader.get_dataset()
-        print(len(dataset))
-        start_time = time.time()
-        for i in range(len(dataset)):
-            if i % 100 != 0:
-                continue
-            (inputs, _) = dataset[i]
-            img_name = int(i / 100)
+            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
+                                                                     requires_normalization=False)
+            img_ref = adversary(img_ref, dist_0)
+            adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=False,
+                                                                     requires_normalization=False)
+            print(dist_0 - adv_dist_0)
 
-            inputs = inputs.cuda().unsqueeze(0)
-            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
-            if img_name < 100 and self.config.eps == 3.0:
-                show_images(inputs, img_name=f'original/{i}')
-                show_images(adv_inputs, img_name=f'adv/{img_name}')
-            input_embed = self.model(inputs).detach()
-            adv_input_embed = self.model(adv_inputs).detach()
-            dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
-            end_time = int((time.time() - start_time) / 60)
-            print('time: ', end_time, dreamsim_dist_list[-1])
-            sys.stdout.flush()
+    def dist_wrapper(self, img_0, img_1):
+        def metric_model(img_ref):
+            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
+            return dist_0
 
-        torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-        logging.info('finished')
+        return metric_model
+
+    # def distance_attack_eval(self):
+    #     Reader = readers_config[self.config.dataset]
+    #     self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
+    #     dreamsim_dist_list = list()
+    #
+    #     dataset = self.reader.get_dataset()
+    #     print(len(dataset))
+    #     start_time = time.time()
+    #     for i in range(len(dataset)):
+    #         if i % 100 != 0:
+    #             continue
+    #         (inputs, _) = dataset[i]
+    #         img_name = int(i / 100)
+    #
+    #         inputs = inputs.cuda().unsqueeze(0)
+    #         adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
+    #         if img_name < 100 and self.config.eps == 3.0:
+    #             show_images(inputs, img_name=f'original/{i}')
+    #             show_images(adv_inputs, img_name=f'adv/{img_name}')
+    #         input_embed = self.model(inputs).detach()
+    #         adv_input_embed = self.model(adv_inputs).detach()
+    #         dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
+    #         end_time = int((time.time() - start_time) / 60)
+    #         print('time: ', end_time, dreamsim_dist_list[-1])
+    #         sys.stdout.flush()
+    #
+    #     torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+    #     logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
