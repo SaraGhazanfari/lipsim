@@ -172,7 +172,7 @@ class Evaluator:
     def distance_attack_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
-
+        dreamsim_list = list()
         self.model = self.dreamsim_model.embed
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
@@ -184,9 +184,13 @@ class Evaluator:
             dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
                                                                      requires_normalization=False)
             img_ref = adversary(img_ref, dist_0)
-            adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=False,
-                                                                     requires_normalization=False)
+            adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                             requires_grad=False,
+                                                                             requires_normalization=False)
             print(dist_0 - adv_dist_0)
+            dreamsim_list.append(dist_0 - adv_dist_0)
+
+        torch.save(dreamsim_list, f=f'dreamsim_attack_list_{self.config.eps}.pt')
 
     def dist_wrapper(self, img_0, img_1):
         def metric_model(img_ref):
