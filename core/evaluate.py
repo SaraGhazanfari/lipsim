@@ -173,7 +173,7 @@ class Evaluator:
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         lipsim_list = list()
-        torch.save(lipsim_list, f=f'dreamsim_attack_list_{self.config.eps}.pt')
+        torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
 
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
