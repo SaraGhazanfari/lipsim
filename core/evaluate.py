@@ -173,6 +173,7 @@ class Evaluator:
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         dreamsim_list = list()
+        torch.save(dreamsim_list, f=f'dreamsim_attack_list_{self.config.eps}.pt')
         self.model = self.dreamsim_model.embed
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
