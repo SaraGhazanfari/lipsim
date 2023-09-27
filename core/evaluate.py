@@ -171,7 +171,7 @@ class Evaluator:
 
     def distance_attack_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet',num_workers=0).get_dataloader()
+                                                 split='test_imagenet').get_dataloader()
 
         self.model = self.dreamsim_model.embed
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
