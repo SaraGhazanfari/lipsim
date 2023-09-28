@@ -179,6 +179,8 @@ class Evaluator:
             img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
                 img_right.to(self.device), target.to(self.device)
             adv_dist_0, dist_0 = self.one_step_of_dist_attack(img_left, img_ref, img_right)
+            import gc
+            gc.collect()
             print(dist_0 - adv_dist_0)
             lipsim_list.append(dist_0 - adv_dist_0)
 
