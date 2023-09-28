@@ -178,20 +178,23 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
                 img_right.to(self.device), target.to(self.device)
-            adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
-                                    nb_iter=1000,
-                                    rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-
-            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
-                                                                     requires_normalization=False)
-            img_ref = adversary(img_ref, dist_0)
-            adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                             requires_grad=False,
-                                                                             requires_normalization=False)
+            adv_dist_0, dist_0 = self.one_step_of_dist_attack(img_left, img_ref, img_right)
             print(dist_0 - adv_dist_0)
             lipsim_list.append(dist_0 - adv_dist_0)
 
         torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
+
+    def one_step_of_dist_attack(self, img_left, img_ref, img_right):
+        adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
+                                nb_iter=1000,
+                                rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
+        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
+                                                                 requires_normalization=False)
+        img_ref = adversary(img_ref, dist_0)
+        adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                         requires_grad=False,
+                                                                         requires_normalization=False)
+        return adv_dist_0, dist_0
 
     def dist_wrapper(self, img_0, img_1):
         def metric_model(img_ref):
