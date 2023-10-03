@@ -228,9 +228,11 @@ class Evaluator:
                 show_images(adv_inputs, img_name=f'adv/{img_name}')
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
-            dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
+            dreamsim_dist_list.append(round((1 - self.cos_sim(input_embed, adv_input_embed)).item(), 4))
             end_time = int((time.time() - start_time) / 60)
+            print('-----------------------------------------------')
             print('time: ', end_time, dreamsim_dist_list[-1])
+            print('-----------------------------------------------')
             sys.stdout.flush()
 
         torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
