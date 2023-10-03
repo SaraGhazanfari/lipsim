@@ -211,27 +211,23 @@ class Evaluator:
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
         self.model = self.dreamsim_model.embed
-        dataset = self.reader.get_dataset()
-        print(len(dataset))
+        dataloader, _ = self.reader.get_dataloader()
         start_time = time.time()
-        for i in range(len(dataset)):
-            if i % 100 != 0:
-                continue
-            (inputs, _) = dataset[i]
-            img_name = int(i / 100)
-
+        for inputs, _ in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda().unsqueeze(0)
-            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=torch.zeros(inputs.shape[0]).cuda(),
+            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
+                                              target=torch.zeros(inputs.shape[0]).cuda(),
                                               target_model=self.dist_wrapper(), is_dist_attack=True)
-            if img_name < 100:
-                show_images(inputs, img_name=f'original/{i}')
-                show_images(adv_inputs, img_name=f'adv/{img_name}')
+            # show_images(inputs, img_name=f'original/{i}')
+            # show_images(adv_inputs, img_name=f'adv/{img_name}')
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
-            dreamsim_dist_list.append(round((1 - self.cos_sim(input_embed, adv_input_embed)).item(), 4))
+            cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
+
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
             print('time: ', end_time, dreamsim_dist_list[-1])
+            print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
 
@@ -340,7 +336,7 @@ class Evaluator:
         def metric_model(img):
             img_ref, img_0 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1)
             dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_0, img_0, requires_grad=True)
-            return torch.stack((1-dist_0, dist_0), dim=1)
+            return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
 
