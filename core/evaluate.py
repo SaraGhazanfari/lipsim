@@ -223,7 +223,7 @@ class Evaluator:
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
             cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-
+            dreamsim_dist_list.append(cos_dist)
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
             print('time: ', end_time, dreamsim_dist_list[-1])
