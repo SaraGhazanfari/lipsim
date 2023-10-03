@@ -197,7 +197,7 @@ class Evaluator:
                 print(perturb_size_list[-1])
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
-            print('time: ', end_time, dreamsim_dist_list[-1])
+            print('time: ', end_time)
             print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
