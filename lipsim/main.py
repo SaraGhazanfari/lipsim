@@ -179,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_checkpoint_epochs", type=int, default=1, help="Save checkpoint every epoch.")
 
     # specific parameters for eval
-    parser.add_argument("--attack", type=str, choices=['PGD-L2', 'PGD-Linf', 'AA-L2', 'AA-Linf'],
+    parser.add_argument("--attack", type=str, choices=['PGD-L2', 'PGD-Linf', 'AA-L2', 'AA-Linf', 'CW-L2', 'CW-Linf'],
                         help="Choose the attack.")
     parser.add_argument("--eps", type=float, default=36)
 
