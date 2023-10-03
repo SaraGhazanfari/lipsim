@@ -1,5 +1,6 @@
 import glob
 import logging
+import math
 import time
 from os.path import join
 import numpy as np
@@ -19,7 +20,7 @@ import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
-from advertorch.attacks import LinfPGDAttack, L2PGDAttack
+from advertorch.attacks import LinfPGDAttack, L2PGDAttack, CarliniWagnerL2Attack
 
 
 def get_2afc_score(d0s, d1s, targets):
@@ -169,70 +170,70 @@ class Evaluator:
 
         return accuracy, certified
 
-    def distance_attack_eval(self):
-        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').get_dataloader()
-        lipsim_list = list()
-        torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
-
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
-                img_right.to(self.device), target.to(self.device)
-            adv_dist_0, dist_0 = self.one_step_of_dist_attack(img_left, img_ref, img_right)
-            import gc
-            gc.collect()
-            print(dist_0 - adv_dist_0)
-            lipsim_list.append(dist_0 - adv_dist_0)
-
-        torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
-
-    def one_step_of_dist_attack(self, img_left, img_ref, img_right):
-        adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
-                                nb_iter=1000,
-                                rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
-                                                                 requires_normalization=False)
-        img_ref = adversary(img_ref, dist_0)
-        adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                         requires_grad=False,
-                                                                         requires_normalization=False)
-        return adv_dist_0, dist_0
-
-    def dist_wrapper(self, img_0, img_1):
-        def metric_model(img_ref):
-            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
-            return dist_0
-
-        return metric_model
-
     # def distance_attack_eval(self):
-    #     Reader = readers_config[self.config.dataset]
-    #     self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-    #     dreamsim_dist_list = list()
+    #     data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+    #                                              split='test_imagenet').get_dataloader()
+    #     lipsim_list = list()
+    #     torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
     #
-    #     dataset = self.reader.get_dataset()
-    #     print(len(dataset))
-    #     start_time = time.time()
-    #     for i in range(len(dataset)):
-    #         if i % 100 != 0:
-    #             continue
-    #         (inputs, _) = dataset[i]
-    #         img_name = int(i / 100)
+    #     for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+    #         img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
+    #             img_right.to(self.device), target.to(self.device)
+    #         adv_dist_0, dist_0 = self.one_step_of_dist_attack(img_left, img_ref, img_right)
+    #         import gc
+    #         gc.collect()
+    #         abs(dist_0 - adv_dist_0)
+    #         lipsim_list.append(dist_0 - adv_dist_0)
     #
-    #         inputs = inputs.cuda().unsqueeze(0)
-    #         adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=None)
-    #         if img_name < 100 and self.config.eps == 3.0:
-    #             show_images(inputs, img_name=f'original/{i}')
-    #             show_images(adv_inputs, img_name=f'adv/{img_name}')
-    #         input_embed = self.model(inputs).detach()
-    #         adv_input_embed = self.model(adv_inputs).detach()
-    #         dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
-    #         end_time = int((time.time() - start_time) / 60)
-    #         print('time: ', end_time, dreamsim_dist_list[-1])
-    #         sys.stdout.flush()
+    #     torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
     #
-    #     torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-    #     logging.info('finished')
+    # def one_step_of_dist_attack(self, img_left, img_ref, img_right):
+    #     # adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
+    #     #                         nb_iter=1000,
+    #     #                         rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
+    #     dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
+    #                                                         requires_normalization=False)
+    #     img_ref = self.generate_attack(img_ref=img_ref, img_0=img_left, img_1=img_right, target=dist_0)
+    #     adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
+    #                                                                      requires_grad=False,
+    #                                                                      requires_normalization=False)
+    #     return adv_dist_0, dist_0
+
+    # def dist_wrapper(self, img_0, img_1):
+    #     def metric_model(img_ref):
+    #         dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
+    #         return dist_0
+    #
+    #     return metric_model
+
+    def distance_attack_eval(self):
+        Reader = readers_config[self.config.dataset]
+        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
+        dreamsim_dist_list = list()
+        dataset = self.reader.get_dataset()
+        print(len(dataset))
+        start_time = time.time()
+        for i in range(len(dataset)):
+            if i % 100 != 0:
+                continue
+            (inputs, _) = dataset[i]
+            img_name = int(i / 100)
+
+            inputs = inputs.cuda().unsqueeze(0)
+            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=0,
+                                              target_model=self.dist_wrapper())
+            if img_name < 100:
+                show_images(inputs, img_name=f'original/{i}')
+                show_images(adv_inputs, img_name=f'adv/{img_name}')
+            input_embed = self.model(inputs).detach()
+            adv_input_embed = self.model(adv_inputs).detach()
+            dreamsim_dist_list.append((1 - self.cos_sim(input_embed, adv_input_embed)).item())
+            end_time = int((time.time() - start_time) / 60)
+            print('time: ', end_time, dreamsim_dist_list[-1])
+            sys.stdout.flush()
+
+        torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+        logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
@@ -332,32 +333,45 @@ class Evaluator:
 
         return metric_model
 
-    def generate_attack(self, img_ref, img_0, img_1, target):
+    def dist_wrapper(self):
+        def metric_model(img):
+            img_ref, img_0 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1)
+            dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_0, img_0, requires_grad=True)
+            return dist_0
+
+        return metric_model
+
+    def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
         attack_method, attack_norm = self.config.attack.split('-')
 
         if attack_method == 'AA':
-            adversary = AutoAttack(self.model_wrapper(), norm=attack_norm, eps=self.config.eps, version='standard',
+            adversary = AutoAttack(target_model, norm=attack_norm, eps=self.config.eps, version='standard',
                                    device='cuda')
             adversary.attacks_to_run = ['apgd-ce']
-            img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1), target.long(),
-                                                        bs=img_ref.shape[0])
+            if is_dist_attack:
+                img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
+                                                            bs=img_ref.shape[0])
+            else:
+                img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1), target.long(),
+                                                            bs=img_ref.shape[0])
             img_ref = img_ref[:, 0, :, :].squeeze(1)
+
         elif attack_method == 'PGD':
             if attack_norm == 'L2':
-                adversary = L2PGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=1000,
+                adversary = L2PGDAttack(target_model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=1000,
                                         rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
             else:  # attack_type == 'Linf':
-                adversary = LinfPGDAttack(self.model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=50,
+                adversary = LinfPGDAttack(target_model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=50,
                                           eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1., targeted=False)
 
-            img_ref = adversary(img_ref, self.model(img_ref))
+            img_ref = adversary(img_ref, target_model(img_ref))
 
         return img_ref
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
-            img_ref = self.generate_attack(img_ref, img_left, img_right, target)
+            img_ref = self.generate_attack(img_ref, img_left, img_right, target, target_model=self.model_wrapper())
         dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
