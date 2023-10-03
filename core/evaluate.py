@@ -210,6 +210,7 @@ class Evaluator:
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
+        self.model = self.dreamsim_model
         dataset = self.reader.get_dataset()
         print(len(dataset))
         start_time = time.time()
