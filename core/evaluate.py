@@ -221,7 +221,7 @@ class Evaluator:
             img_name = int(i / 100)
 
             inputs = inputs.cuda().unsqueeze(0)
-            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=torch.zeros(inputs.shape[0]),
+            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=torch.zeros(inputs.shape[0]).cuda(),
                                               target_model=self.dist_wrapper(), is_dist_attack=True)
             if img_name < 100:
                 show_images(inputs, img_name=f'original/{i}')
