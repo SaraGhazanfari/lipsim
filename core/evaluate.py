@@ -207,23 +207,30 @@ class Evaluator:
     #     return metric_model
 
     def distance_attack_eval(self):
+        attack_method, _ = self.config.attack.split('-')
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
+        perturb_size_list = list()
         self.model = self.dreamsim_model.embed
         dataloader, _ = self.reader.get_dataloader()
         start_time = time.time()
+        torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+        torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda()
+
+            target_model = self.dist_2_wrapper(inputs) if attack_method == 'CW' else self.dist_wrapper()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
-                                              target_model=self.dist_wrapper(), is_dist_attack=True)
-            # show_images(inputs, img_name=f'original/{i}')
-            # show_images(adv_inputs, img_name=f'adv/{img_name}')
+                                              target_model=target_model, is_dist_attack=True)
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
             cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
             dreamsim_dist_list.append(cos_dist)
+            if attack_method == 'CW':
+                perturb_size_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1, 2, 3)))
+                print(perturb_size_list[-1])
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
             print('time: ', end_time, dreamsim_dist_list[-1])
@@ -232,6 +239,8 @@ class Evaluator:
             sys.stdout.flush()
 
         torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+        if attack_method == 'CW':
+            torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
         logging.info('finished')
 
     def vanilla_eval(self):
@@ -340,6 +349,13 @@ class Evaluator:
 
         return metric_model
 
+    def dist_2_wrapper(self, img_ref):
+        def metric_model(img):
+            dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img, img, requires_grad=True)
+            return torch.stack((1 - dist_0, dist_0), dim=1)
+
+        return metric_model
+
     def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
         attack_method, attack_norm = self.config.attack.split('-')
 
@@ -354,6 +370,13 @@ class Evaluator:
                 img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1), target.long(),
                                                             bs=img_ref.shape[0])
             img_ref = img_ref[:, 0, :, :].squeeze(1)
+
+        if attack_method == 'CW':
+            adversary = CarliniWagnerL2Attack(target_model, 2, confidence=0, targeted=False, learning_rate=0.01,
+                                              binary_search_steps=9, max_iterations=10000, abort_early=True,
+                                              initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
+
+            img_ref = adversary(img_ref, target_model(img_ref))
 
         elif attack_method == 'PGD':
             if attack_norm == 'L2':
