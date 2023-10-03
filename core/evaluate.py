@@ -222,7 +222,7 @@ class Evaluator:
 
             inputs = inputs.cuda().unsqueeze(0)
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None, target=0,
-                                              target_model=self.dist_wrapper())
+                                              target_model=self.dist_wrapper(), is_dist_attack=True)
             if img_name < 100:
                 show_images(inputs, img_name=f'original/{i}')
                 show_images(adv_inputs, img_name=f'adv/{img_name}')
