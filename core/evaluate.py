@@ -214,7 +214,7 @@ class Evaluator:
         dataloader, _ = self.reader.get_dataloader()
         start_time = time.time()
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
-            inputs = inputs.cuda().unsqueeze(0)
+            inputs = inputs.cuda()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
                                               target_model=self.dist_wrapper(), is_dist_attack=True)
