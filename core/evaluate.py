@@ -170,42 +170,6 @@ class Evaluator:
 
         return accuracy, certified
 
-    # def distance_attack_eval(self):
-    #     data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-    #                                              split='test_imagenet').get_dataloader()
-    #     lipsim_list = list()
-    #     torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
-    #
-    #     for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-    #         img_ref, img_left, img_right, target = img_ref.to(self.device), img_left.to(self.device), \
-    #             img_right.to(self.device), target.to(self.device)
-    #         adv_dist_0, dist_0 = self.one_step_of_dist_attack(img_left, img_ref, img_right)
-    #         import gc
-    #         gc.collect()
-    #         abs(dist_0 - adv_dist_0)
-    #         lipsim_list.append(dist_0 - adv_dist_0)
-    #
-    #     torch.save(lipsim_list, f=f'lipsim_attack_list_{self.config.eps}.pt')
-    #
-    # def one_step_of_dist_attack(self, img_left, img_ref, img_right):
-    #     # adversary = L2PGDAttack(self.dist_wrapper(img_left, img_right), loss_fn=nn.MSELoss(), eps=self.config.eps,
-    #     #                         nb_iter=1000,
-    #     #                         rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-    #     dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right, requires_grad=True,
-    #                                                         requires_normalization=False)
-    #     img_ref = self.generate_attack(img_ref=img_ref, img_0=img_left, img_1=img_right, target=dist_0)
-    #     adv_dist_0, adv_dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
-    #                                                                      requires_grad=False,
-    #                                                                      requires_normalization=False)
-    #     return adv_dist_0, dist_0
-
-    # def dist_wrapper(self, img_0, img_1):
-    #     def metric_model(img_ref):
-    #         dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
-    #         return dist_0
-    #
-    #     return metric_model
-
     def distance_attack_eval(self):
         attack_method, _ = self.config.attack.split('-')
         Reader = readers_config[self.config.dataset]
@@ -376,7 +340,7 @@ class Evaluator:
                                               binary_search_steps=9, max_iterations=10000, abort_early=True,
                                               initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
 
-            img_ref = adversary(img_ref, target_model(img_ref))
+            img_ref = adversary(img_ref, target.long())
 
         elif attack_method == 'PGD':
             if attack_norm == 'L2':
