@@ -338,7 +338,7 @@ class Evaluator:
         def metric_model(img):
             img_ref, img_0 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1)
             dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_0, img_0, requires_grad=True)
-            return dist_0
+            return torch.stack((1-dist_0, dist_0), dim=1)
 
         return metric_model
 
