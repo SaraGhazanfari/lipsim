@@ -213,7 +213,7 @@ class Evaluator:
         self.model = self.dreamsim_model.embed
         dataloader, _ = self.reader.get_dataloader()
         start_time = time.time()
-        for inputs, _ in tqdm(enumerate(dataloader)):
+        for idx, (inputs, _) in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda().unsqueeze(0)
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
