@@ -192,25 +192,23 @@ class Evaluator:
         torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda()
-            show_images(torch.tensor([1,2,3]), inputs, inputs, base_idx=idx)
-            break
-            # adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
-            #                                   target=torch.zeros(inputs.shape[0]).cuda(),
-            #                                   target_model=self.dist_wrapper(), is_dist_attack=True)
-            # input_embed = self.model(inputs).detach()
-            # adv_input_embed = self.model(adv_inputs).detach()
-            # cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-            # dreamsim_dist_list.append(cos_dist[cos_dist > 0.5])
-            # end_time = int((time.time() - start_time) / 60)
-            # print('-----------------------------------------------')
-            # print('time: ', end_time)
-            # print(cos_dist[cos_dist > 0.5])
-            # print('-----------------------------------------------')
-            # sys.stdout.flush()
-        #     show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=idx)
-        #     torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-        #
-        # logging.info('finished')
+            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
+                                              target=torch.zeros(inputs.shape[0]).cuda(),
+                                              target_model=self.dist_wrapper(), is_dist_attack=True)
+            input_embed = self.model(inputs).detach()
+            adv_input_embed = self.model(adv_inputs).detach()
+            cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
+            dreamsim_dist_list.append(cos_dist[cos_dist > 0.5])
+            end_time = int((time.time() - start_time) / 60)
+            print('-----------------------------------------------')
+            print('time: ', end_time)
+            print(cos_dist[cos_dist > 0.5])
+            print('-----------------------------------------------')
+            sys.stdout.flush()
+            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=idx)
+            torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+
+        logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
