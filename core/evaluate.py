@@ -37,7 +37,7 @@ def show_images(index_tensor, inputs, adv_inputs, last_idx):
         img = inputs[index_tensor[index]]
         adv_image = adv_inputs[index_tensor[index]]
         save_single_image(img, f'original/{last_idx + index}')
-        save_single_image(adv_image, f'adv/batch_{last_idx + index}')
+        save_single_image(adv_image, f'adv/{last_idx + index}')
 
 
 def save_single_image(img_ref, img_name):
