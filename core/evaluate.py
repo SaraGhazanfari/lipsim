@@ -206,7 +206,7 @@ class Evaluator:
             print('-----------------------------------------------')
             sys.stdout.flush()
 
-            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=last_idx)
+            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, last_idx=last_idx)
             torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
             last_idx += torch.where(cos_dist > 0.5)[0].shape[0]
 
