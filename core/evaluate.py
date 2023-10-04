@@ -193,7 +193,7 @@ class Evaluator:
             inputs = inputs.cuda()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
-                                              target_model=self.dist_wrapper(inputs), is_dist_attack=True)
+                                              target_model=self.dist_wrapper(), is_dist_attack=True)
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
             cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
