@@ -34,8 +34,8 @@ def get_2afc_score(d0s, d1s, targets):
 
 def show_images(index_tensor, inputs, adv_inputs, base_idx):
     for index in range(len(index_tensor)):
-        img = inputs[index_tensor[0][index], index_tensor[1][index]]
-        adv_image = adv_inputs[index_tensor[0][index], index_tensor[1][index]]
+        img = inputs[index_tensor[0][index]]
+        adv_image = adv_inputs[index_tensor[0][index]]
         save_single_image(img, f'original/batch_{base_idx}_{index}')
         save_single_image(adv_image, f'adv/batch_{base_idx}_{index}')
 
