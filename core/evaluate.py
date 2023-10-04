@@ -184,12 +184,11 @@ class Evaluator:
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
-        perturb_size_list = list()
+
         self.model = self.dreamsim_model.embed
         dataloader, _ = self.reader.get_dataloader()
         start_time = time.time()
-        torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-        torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
+
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
