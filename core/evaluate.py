@@ -32,12 +32,12 @@ def get_2afc_score(d0s, d1s, targets):
     return twoafc_score
 
 
-def show_images(index_tensor, inputs, adv_inputs, base_idx):
+def show_images(index_tensor, inputs, adv_inputs, last_idx):
     for index in range(index_tensor.shape[0]):
         img = inputs[index_tensor[index]]
         adv_image = adv_inputs[index_tensor[index]]
-        save_single_image(img, f'original/batch_{base_idx}_{index}')
-        save_single_image(adv_image, f'adv/batch_{base_idx}_{index}')
+        save_single_image(img, f'original/{last_idx + index}')
+        save_single_image(adv_image, f'adv/batch_{last_idx + index}')
 
 
 def save_single_image(img_ref, img_name):
@@ -180,7 +180,7 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
-
+        last_idx = 0
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
@@ -205,8 +205,10 @@ class Evaluator:
             print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
-            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=idx)
+
+            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=last_idx)
             torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
+            last_idx += torch.where(cos_dist > 0.5)[0].shape[0]
 
         logging.info('finished')
 
