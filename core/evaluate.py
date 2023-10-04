@@ -33,9 +33,9 @@ def get_2afc_score(d0s, d1s, targets):
 
 
 def show_images(index_tensor, inputs, adv_inputs, base_idx):
-    for index in range(len(index_tensor)):
-        img = inputs[index_tensor[0][index]]
-        adv_image = adv_inputs[index_tensor[0][index]]
+    for index in range(index_tensor.shape[0]):
+        img = inputs[index_tensor[index]]
+        adv_image = adv_inputs[index_tensor[index]]
         save_single_image(img, f'original/batch_{base_idx}_{index}')
         save_single_image(adv_image, f'adv/batch_{base_idx}_{index}')
 
@@ -204,7 +204,7 @@ class Evaluator:
             print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
-            show_images(torch.where(cos_dist > 0.5), inputs, adv_inputs, base_idx=idx)
+            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, base_idx=idx)
             torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
 
         logging.info('finished')
