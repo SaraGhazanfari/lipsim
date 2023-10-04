@@ -32,7 +32,15 @@ def get_2afc_score(d0s, d1s, targets):
     return twoafc_score
 
 
-def show_images(img_ref, img_name):
+def show_images(index_tensor, inputs, adv_inputs, base_idx):
+    for index in range(index_tensor.shape):
+        img = inputs[index_tensor[0][index], index_tensor[1][index]]
+        adv_image = adv_inputs[index_tensor[0][index], index_tensor[1][index]]
+        save_single_image(img, f'original/batch_{base_idx}_{index}')
+        save_single_image(adv_image, f'adv/batch_{base_idx}_{index}')
+
+
+def save_single_image(img_ref, img_name):
     plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
     plt.axis('off')
     plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
@@ -171,7 +179,7 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
-        attack_method, _ = self.config.attack.split('-')
+
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         dreamsim_dist_list = list()
@@ -183,28 +191,22 @@ class Evaluator:
         torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
             inputs = inputs.cuda()
-
-            target_model = self.dist_2_wrapper(inputs) if attack_method == 'CW' else self.dist_wrapper()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
-                                              target_model=target_model, is_dist_attack=True)
+                                              target_model=self.dist_wrapper(inputs), is_dist_attack=True)
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
             cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-            dreamsim_dist_list.append(cos_dist)
-            if attack_method == 'CW':
-                perturb_size_list.append(torch.norm(inputs - adv_inputs, p=2, dim=(1, 2, 3)))
-                print(perturb_size_list[-1])
+            dreamsim_dist_list.append(cos_dist[cos_dist > 0.5])
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
             print('time: ', end_time)
             print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
+            show_images(torch.where(cos_dist > 0.5), inputs, adv_inputs, base_idx=idx)
+            torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
 
-        torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-        if attack_method == 'CW':
-            torch.save(perturb_size_list, f=f'perturb_size_{self.config.eps}.pt')
         logging.info('finished')
 
     def vanilla_eval(self):
