@@ -44,7 +44,7 @@ def save_single_image(img_ref, img_name):
     plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
     plt.axis('off')
     plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
-    plt.savefig(f'{img_name}.jpg', bbox_inches='tight', pad_inches=0)
+    torch.save(img_ref, f'{img_name}.pt')
 
 
 class Evaluator:
