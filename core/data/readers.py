@@ -79,7 +79,7 @@ class BaseReader:
         loader = DataLoader(self.dataset,
                             batch_size=self.batch_size,
                             num_workers=self.num_workers,
-                            shuffle=True,  # self.is_training and not sampler,
+                            shuffle= self.is_training and not sampler,
                             pin_memory=False,
                             prefetch_factor=self.prefetch_factor,
                             sampler=sampler)
