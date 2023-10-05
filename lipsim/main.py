@@ -87,43 +87,42 @@ def main(config):
         tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
 
-    executor = submitit.AutoExecutor(
-        folder=config.train_dir, cluster=cluster)
-
-    executor.update_parameters(
-        gpus_per_node=config.ngpus,
-        nodes=config.nnodes,
-        tasks_per_node=tasks_per_node,
-        cpus_per_task=ncpus // tasks_per_node,
-        stderr_to_stdout=True,
-        exclusive=True,
-        slurm_account=config.account,
-        slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        slurm_partition=config.partition,
-        slurm_qos=config.qos,
-        slurm_constraint=config.constraint,
-        slurm_signal_delay_s=0,
-        timeout_min=config.timeout,
-    )
 
     if config.mode == 'train':
+        executor = submitit.AutoExecutor(
+            folder=config.train_dir, cluster=cluster)
+
+        executor.update_parameters(
+            gpus_per_node=config.ngpus,
+            nodes=config.nnodes,
+            tasks_per_node=tasks_per_node,
+            cpus_per_task=ncpus // tasks_per_node,
+            stderr_to_stdout=True,
+            exclusive=True,
+            slurm_account=config.account,
+            slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
+            slurm_partition=config.partition,
+            slurm_qos=config.qos,
+            slurm_constraint=config.constraint,
+            slurm_signal_delay_s=0,
+            timeout_min=config.timeout,
+        )
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'finetune':
         trainer = Trainer(config)
         trainer.finetune_func()
-    elif config.mode in ['eval', 'eval_best', 'attack']:
+    # elif config.mode in ['eval', 'eval_best', 'attack']:
+    #     Evaluator(config)
+    elif config.mode in eval_mode:
         evaluate = Evaluator(config)
-        job = executor.submit(evaluate)
-        job_id = job.job_id
-    elif config.mode in ['dreamsim', 'ssa', 'certified', 'lipsim']:
-        evaluate = Evaluator(config)
-        job_id = ''
         model = evaluate()
         return model
-    folder = config.train_dir.split('/')[-1]
-    print(f"Submitted batch job {job_id} in folder {folder}")
+
+
 
 
 if __name__ == '__main__':
