@@ -28,6 +28,6 @@ def plot_histogram(data_list, label_list, save_path, color_list=["#008080", "#FC
 
 if __name__ == '__main__':
     data_list = list()
-    data_list.append(torch.load('dist_dit/dino_list.pt', map_location=torch.device('cpu')))
+    data_list.append(torch.load('dist_dir/dino_list.pt', map_location=torch.device('cpu')))
     data_list.append(torch.load('dist_dir/clip_list.pt', map_location=torch.device('cpu')))
     plot_histogram(data_list=data_list, label_list=['DINO', 'CLIP'], save_path='fig.pdf')
