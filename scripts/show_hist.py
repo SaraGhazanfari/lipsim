@@ -5,7 +5,7 @@ import torch
 
 
 def plot_histogram(data_list, label_list, save_path, color_list=["#008080", "#FCA592", "yellow", "lightblue"],
-                   y_bins_max=250, y_bins_slot=20, x_bins_max=1.4, x_bins_slot=0.2, label_size=20):
+                   y_bins_max=250, y_bins_slot=20, x_bins_max=2.0, x_bins_slot=0.2, label_size=20):
     sns.set(style="darkgrid")
     bins = np.arange(0, x_bins_max, x_bins_slot)
     ybins = np.arange(0, y_bins_max, y_bins_slot)
