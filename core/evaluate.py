@@ -189,24 +189,23 @@ class Evaluator:
         start_time = time.time()
 
         for idx, (inputs, _) in tqdm(enumerate(dataloader)):
+            if idx * self.batch_size> 1100:
+                break
             inputs = inputs.cuda()
             adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
                                               target=torch.zeros(inputs.shape[0]).cuda(),
-                                              target_model=self.dist_wrapper(), is_dist_attack=True)
+                                              target_model=self.model, is_dist_attack=True)
             input_embed = self.model(inputs).detach()
             adv_input_embed = self.model(adv_inputs).detach()
             cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-            dreamsim_dist_list.append(cos_dist[cos_dist > 0.5])
+            dreamsim_dist_list.append(cos_dist)
             end_time = int((time.time() - start_time) / 60)
             print('-----------------------------------------------')
             print('time: ', end_time)
-            print(cos_dist[cos_dist > 0.5])
             print('-----------------------------------------------')
             sys.stdout.flush()
 
-            show_images(torch.where(cos_dist > 0.5)[0], inputs, adv_inputs, last_idx=last_idx)
-            torch.save(dreamsim_dist_list, f=f'dreamsim_list_{self.config.eps}.pt')
-            last_idx += torch.where(cos_dist > 0.5)[0].shape[0]
+            torch.save(dreamsim_dist_list, f=f'{self.config.teacher_model_name}_list_{self.config.eps}.pt')
 
         logging.info('finished')
 
