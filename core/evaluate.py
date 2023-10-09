@@ -182,8 +182,8 @@ class Evaluator:
 
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-
-        dino_v2_list = ['dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14', 'dinov2_vitg14']
+        # 'dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14',
+        dino_v2_list = ['dinov2_vitg14']
 
         for dino_name in dino_v2_list:
             dreamsim_dist_list = list()
