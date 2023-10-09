@@ -5,7 +5,7 @@ import torch
 
 
 def plot_histogram(data_list, label_list, save_path, color_list=["#008080", "#FCA592", "yellow", "lightblue"],
-                   y_bins_max=250, y_bins_slot=20, x_bins_max=2.0, x_bins_slot=0.2, label_size=20):
+                   y_bins_max=60, y_bins_slot=10, x_bins_max=2.0, x_bins_slot=0.2, label_size=20):
     sns.set(style="darkgrid")
     bins = np.arange(0, x_bins_max, x_bins_slot)
     ybins = np.arange(0, y_bins_max, y_bins_slot)
@@ -28,6 +28,11 @@ def plot_histogram(data_list, label_list, save_path, color_list=["#008080", "#FC
 
 if __name__ == '__main__':
     data_list = list()
-    data_list.append(torch.load('dist_dir/dino_list.pt', map_location=torch.device('cpu')))
-    data_list.append(torch.load('dist_dir/clip_list.pt', map_location=torch.device('cpu')))
+    name_list = ['dino_vitb16_list_1.0.pt', 'clip_vitb32_list_1.0.pt']
+    for name in name_list:
+        data_list.append(torch.load(name, map_location=torch.device('cpu')))
+        for idx, tensor in enumerate(data_list[-1]):
+            data_list[-1][idx] = tensor.tolist()
+        data_list[-1]  = [item for sublist in data_list[-1] for item in sublist]
+    
     plot_histogram(data_list=data_list, label_list=['DINO', 'CLIP'], save_path='fig.pdf')
