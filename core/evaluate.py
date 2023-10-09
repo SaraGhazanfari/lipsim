@@ -187,7 +187,7 @@ class Evaluator:
 
         for dino_name in dino_v2_list:
             dreamsim_dist_list = list()
-            self.model = torch.hub.load('facebookresearch/dinov2', dino_name)  # self.dreamsim_model.embed
+            self.model = torch.hub.load('facebookresearch/dinov2', dino_name).cuda()  # self.dreamsim_model.embed
             dataloader, _ = self.reader.get_dataloader()
             start_time = time.time()
 
