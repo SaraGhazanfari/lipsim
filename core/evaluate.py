@@ -179,35 +179,38 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
-        last_idx = 0
+
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        dreamsim_dist_list = list()
 
-        self.model = self.dreamsim_model.embed
-        dataloader, _ = self.reader.get_dataloader()
-        start_time = time.time()
+        dino_v2_list = ['dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14', 'dinov2_vitg14']
 
-        for idx, (inputs, _) in tqdm(enumerate(dataloader)):
-            if idx * self.batch_size> 1100:
-                break
-            inputs = inputs.cuda()
-            adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
-                                              target=torch.zeros(inputs.shape[0]).cuda(),
-                                              target_model=self.model, is_dist_attack=True)
-            input_embed = self.model(inputs).detach()
-            adv_input_embed = self.model(adv_inputs).detach()
-            cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-            dreamsim_dist_list.append(cos_dist)
-            end_time = int((time.time() - start_time) / 60)
-            print('-----------------------------------------------')
-            print('time: ', end_time)
-            print('-----------------------------------------------')
-            sys.stdout.flush()
+        for dino_name in dino_v2_list:
+            dreamsim_dist_list = list()
+            self.model = torch.hub.load('facebookresearch/dinov2', dino_name)  # self.dreamsim_model.embed
+            dataloader, _ = self.reader.get_dataloader()
+            start_time = time.time()
 
-            torch.save(dreamsim_dist_list, f=f'{self.config.teacher_model_name}_list_{self.config.eps}.pt')
+            for idx, (inputs, _) in tqdm(enumerate(dataloader)):
+                if idx * self.batch_size > 1100:
+                    break
+                inputs = inputs.cuda()
+                adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
+                                                  target=torch.zeros(inputs.shape[0]).cuda(),
+                                                  target_model=self.model, is_dist_attack=True)
+                input_embed = self.model(inputs).detach()
+                adv_input_embed = self.model(adv_inputs).detach()
+                cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
+                dreamsim_dist_list.append(cos_dist)
+                end_time = int((time.time() - start_time) / 60)
+                print('-----------------------------------------------')
+                print('time: ', end_time)
+                print('-----------------------------------------------')
+                sys.stdout.flush()
 
-        logging.info('finished')
+                torch.save(dreamsim_dist_list, f=f'{dino_name}_list_{self.config.eps}.pt')
+
+            logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
