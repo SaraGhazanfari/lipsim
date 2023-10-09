@@ -11,3 +11,4 @@ git+https://github.com/BorealisAI/advertorch.git
 pandas
 pywavelets
 seaborn
+datadings
