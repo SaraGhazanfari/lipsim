@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import pprint
 import socket
@@ -17,10 +16,10 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
 
-from core import utils
+from lipsim_utils import utils
 from core.data import NightDataset
 from core.data.readers import readers_config
-from core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, LipSimNetwork
+from core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 
 # from core.models.dreamsim.model import dreamsim
 

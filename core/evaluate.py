@@ -1,26 +1,27 @@
 import glob
 import logging
-import math
-import time
+import os
+
 from os.path import join
 import numpy as np
+from dreamsim.model import download_weights
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from autoattack import AutoAttack
-
+from core.attack.general_attack import GeneralAttack
 from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 from core.data import NightDataset, BAPPSDataset
 from lipsim.core.models import N_CLASSES
 
 from lipsim.core.data.readers import readers_config
-from dreamsim import dreamsim
+from dreamsim import PerceptualModel
 import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
-from advertorch.attacks import LinfPGDAttack, L2PGDAttack, CarliniWagnerL2Attack
+
+from lipsim_utils.visualization_utils import visualize_att_map
 
 
 def get_2afc_score(d0s, d1s, targets):
@@ -53,10 +54,15 @@ class Evaluator:
         self.config = config
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-                                          cache_dir='./checkpoints', device=self.device)
+        download_weights(cache_dir='./checkpoints', dreamsim_type=config.teacher_model_name)
+        self.dreamsim_model = PerceptualModel(config.teacher_model_name, device=self.device, load_dir='./checkpoints',
+                                              normalize_embeds=True)
+
+        # self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
+        #                                    cache_dir='./checkpoints', device=self.device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+        self.general_attack = GeneralAttack(config=config)
 
     def load_ckpt(self, ckpt_path=None):
         if ckpt_path is None:
@@ -179,38 +185,37 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
-
         Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
-        # 'dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14','dinov2_vitg14'
-        dino_v2_list = ['dinov2_vitl14']
+        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False, num_workers=0)
 
-        for dino_name in dino_v2_list:
-            dreamsim_dist_list = list()
-            self.model = torch.hub.load('facebookresearch/dinov2', dino_name).cuda()  # self.dreamsim_model.embed
-            dataloader, _ = self.reader.get_dataloader()
-            start_time = time.time()
+        dreamsim_dist_list = list()
+        dataloader, _ = self.reader.get_dataloader()
+        for idx, data in tqdm(enumerate(dataloader)):
+            if idx * self.batch_size > 5:
+                break
 
-            for idx, (inputs, _) in tqdm(enumerate(dataloader)):
-                if idx * self.batch_size > 1100:
-                    break
-                inputs = inputs.cuda()
-                adv_inputs = self.generate_attack(inputs, img_0=None, img_1=None,
-                                                  target=torch.zeros(inputs.shape[0]).cuda(),
-                                                  target_model=self.model, is_dist_attack=True)
-                input_embed = self.model(inputs).detach()
-                adv_input_embed = self.model(adv_inputs).detach()
-                cos_dist = 1 - self.cos_sim(input_embed, adv_input_embed)
-                dreamsim_dist_list.append(cos_dist)
-                end_time = int((time.time() - start_time) / 60)
-                print('-----------------------------------------------')
-                print('time: ', end_time)
-                print('-----------------------------------------------')
-                sys.stdout.flush()
+            inputs = data[0].to(self.device)
+            input_embed = self.model(inputs).detach()
+            adv_inputs = self.general_attack.generate_attack(inputs, img_0=None, img_1=None, target=input_embed,
+                                                             target_model=self.dreamsim_model.embed,
+                                                             is_dist_attack=True)
 
-                torch.save(dreamsim_dist_list, f=f'{dino_name}_list_{self.config.eps}.pt')
+            adv_input_embed = self.model(adv_inputs).detach()
 
-            logging.info('finished')
+            cos_dist = 1 - self.cos_sim(input_embed.unsqueeze(0), adv_input_embed.unsqueeze(0))
+
+            dreamsim_dist_list.append(cos_dist)
+
+            visualize_att_map(inputs.squeeze(0), img_idx=idx, model=self.dreamsim_model.extractor_list[0].model,
+                              device=self.device, patch_size=16,
+                              output_dir=os.path.join(self.config.teacher_model_name, 'clean'))
+            visualize_att_map(adv_inputs.squeeze(0), img_idx=idx, model=self.dreamsim_model.extractor_list[0].model,
+                              device=self.device, patch_size=16,
+                              output_dir=os.path.join(self.config.teacher_model_name, 'adv'))
+        torch.save(dreamsim_dist_list,
+                   f'{self.config.teacher_model_name}/distance_list_{self.config.attack}_{self.config.eps}')
+
+        logging.info('finished')
 
     def vanilla_eval(self):
         Reader = readers_config[self.config.dataset]
@@ -325,44 +330,10 @@ class Evaluator:
 
         return metric_model
 
-    def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
-        attack_method, attack_norm = self.config.attack.split('-')
-
-        if attack_method == 'AA':
-            adversary = AutoAttack(target_model, norm=attack_norm, eps=self.config.eps, version='standard',
-                                   device='cuda')
-            adversary.attacks_to_run = ['apgd-ce']
-            if is_dist_attack:
-                img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
-                                                            bs=img_ref.shape[0])
-            else:
-                img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1), target.long(),
-                                                            bs=img_ref.shape[0])
-            img_ref = img_ref[:, 0, :, :].squeeze(1)
-
-        if attack_method == 'CW':
-            adversary = CarliniWagnerL2Attack(target_model, 2, confidence=0, targeted=False, learning_rate=0.01,
-                                              binary_search_steps=9, max_iterations=10000, abort_early=True,
-                                              initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
-
-            img_ref = adversary(img_ref, target.long())
-
-        elif attack_method == 'PGD':
-            if attack_norm == 'L2':
-                adversary = L2PGDAttack(target_model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=1000,
-                                        rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
-
-            else:  # attack_type == 'Linf':
-                adversary = LinfPGDAttack(target_model, loss_fn=nn.MSELoss(), eps=self.config.eps, nb_iter=50,
-                                          eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1., targeted=False)
-
-            img_ref = adversary(img_ref, target_model(img_ref))
-
-        return img_ref
-
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
-            img_ref = self.generate_attack(img_ref, img_left, img_right, target, target_model=self.model_wrapper())
+            img_ref = self.general_attack.generate_attack(img_ref, img_left, img_right, target,
+                                                          target_model=self.model_wrapper())
         dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)

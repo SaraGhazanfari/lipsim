@@ -5,7 +5,7 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
 
-from core.utils import get_preprocess_fn
+from lipsim_utils.utils import get_preprocess_fn
 from torch.utils.data import DataLoader
 
 
@@ -27,10 +27,10 @@ class NightDataset(Dataset):
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
         self.n_classes = {
-          'ensemble': 1792,
-          'dino_vitb16': 768,
-          'open_clip_vitb32': 512,
-          'clip_vitb32': 512,
+            'ensemble': 1792,
+            'dino_vitb16': 768,
+            'open_clip_vitb32': 512,
+            'clip_vitb32': 512,
         }[config.teacher_model_name]
         if self.split == "train" or self.split == "val":
             self.csv = self.csv[self.csv["split"] == split]
