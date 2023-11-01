@@ -4,7 +4,7 @@ import os
 
 from os.path import join
 import numpy as np
-from dreamsim.model import download_weights
+from dreamsim.model import download_weights, dreamsim
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
@@ -16,7 +16,6 @@ from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 
 from lipsim.core.data.readers import readers_config, N_CLASSES
-from dreamsim import PerceptualModel
 import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
@@ -54,11 +53,11 @@ class Evaluator:
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         download_weights(cache_dir='./checkpoints', dreamsim_type=config.teacher_model_name)
-        self.dreamsim_model = PerceptualModel(config.teacher_model_name, device=self.device, load_dir='./checkpoints',
-                                              normalize_embeds=True)
+        # self.dreamsim_model = PerceptualModel(config.teacher_model_name, device=self.device, load_dir='./checkpoints',
+        #                                       normalize_embeds=True)
 
-        # self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-        #                                    cache_dir='./checkpoints', device=self.device)
+        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
+                                           cache_dir='./checkpoints', device=self.device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.general_attack = GeneralAttack(config=config)
