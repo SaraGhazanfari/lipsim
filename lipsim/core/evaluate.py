@@ -21,6 +21,8 @@ import torch
 import torch.backends.cudnn as cudnn
 import sys
 
+from lipsim.core.utils import RMSELoss
+
 
 def get_2afc_score(d0s, d1s, targets):
     d0s = torch.cat(d0s, dim=0)
@@ -252,11 +254,8 @@ class Evaluator:
                                 is_distributed=False).load_dataset()
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img = img[:, 0, :, :, :].cuda()
-            print(img.shape)
-            lipsim_norms_list.extend(torch.norm(self.model(img[:]), p=2, dim=1).tolist())
-            print(lipsim_norms_list[-1])
-
-        torch.save(lipsim_norms_list, 'lipsim_norms_list.pt')
+            img_embed = self.model(img)
+            print(RMSELoss()(img_embed, torch.zeros_like(img_embed)))
 
     @torch.no_grad()
     #todo
