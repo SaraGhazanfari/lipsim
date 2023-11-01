@@ -248,7 +248,6 @@ class Evaluator:
 
     @torch.no_grad()
     def dreamsim_eval(self):
-        lipsim_norms_list = []
         Reader = readers_config[self.config.dataset]
         data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                                 is_distributed=False).load_dataset()
