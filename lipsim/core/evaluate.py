@@ -248,13 +248,16 @@ class Evaluator:
 
     @torch.no_grad()
     def dreamsim_eval(self):
+        imagenet_norms_list = list()
         Reader = readers_config[self.config.dataset]
-        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
+        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=False,
                                 is_distributed=False).load_dataset()
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img = img.cuda()
             img_embed = self.model(img)
-            print(RMSELoss()(img_embed, torch.zeros_like(img_embed)))
+            imagenet_norms_list.extend(torch.norm(img_embed, p=2, dim=1))
+
+        torch.save(imagenet_norms_list, 'imagenet_norms_list.pt')
 
     @torch.no_grad()
     #todo

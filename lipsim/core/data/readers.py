@@ -101,21 +101,17 @@ class ImagenetReader(BaseReader):
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
 
-        #todo if is_training:
-        #     transform = DataAugmentationDINO(
-        #         global_crops_scale=(0.4, 1.),
-        #         local_crops_scale=(0.05, 0.4),
-        #         local_crops_number=8
-        #     )
-        # else:
-        #     transform = transforms.Compose([
-        #         transforms.CenterCrop(224),
-        #         transforms.ToTensor(),
-        #     ])
-        transform = transforms.Compose([
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                ])
+        if is_training:
+            transform = DataAugmentationDINO(
+                global_crops_scale=(0.4, 1.),
+                local_crops_scale=(0.05, 0.4),
+                local_crops_number=8
+            )
+        else:
+            transform = transforms.Compose([
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+            ])
         split = 'train' if is_training else 'val'
         self.dataset = ImageNet(self.path, split=split, transform=transform)
 
