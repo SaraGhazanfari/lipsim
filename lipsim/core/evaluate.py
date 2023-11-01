@@ -252,7 +252,7 @@ class Evaluator:
         data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                                 is_distributed=False).load_dataset()
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img = img[:, 0, :, :, :].cuda()
+            img = img.cuda()
             img_embed = self.model(img)
             print(RMSELoss()(img_embed, torch.zeros_like(img_embed)))
 
