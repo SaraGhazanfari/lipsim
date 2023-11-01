@@ -15,15 +15,12 @@ from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
 
-
 from lipsim.core.data.readers import readers_config, N_CLASSES
 from dreamsim import PerceptualModel
 import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
-
-from utils.visualization_utils import visualize_att_map
 
 
 def get_2afc_score(d0s, d1s, targets):
@@ -187,6 +184,7 @@ class Evaluator:
         return accuracy, certified
 
     def distance_attack_eval(self):
+        from utils.visualization_utils import visualize_att_map
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False, num_workers=0)
         patch_size = int(self.config.teacher_model_name[-2:])
@@ -256,7 +254,8 @@ class Evaluator:
         norms_list = []
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader), total=len(no_imagenet_data_loader)):
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader),
+                                                                   total=len(no_imagenet_data_loader)):
             norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
         torch.save(norms_list, 'norms_list.pt')
 
