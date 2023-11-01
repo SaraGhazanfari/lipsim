@@ -298,7 +298,7 @@ class Evaluator:
         lipsim_norms_list.extend(torch.norm(lipsim_embed, p=2, dim=1).tolist())
         dreamsim_norms_list.extend(torch.norm(dreamsim_embed, p=2, dim=1).tolist())
         from lipsim.core.utils import RMSELoss
-        diff_norms_list.extend(RMSELoss()(lipsim_embed, dreamsim_embed).tolist())
+        diff_norms_list.extend(RMSELoss(reduction='none')(lipsim_embed, dreamsim_embed).tolist())
         return dreamsim_norms_list, lipsim_norms_list, diff_norms_list
 
     def lpips_eval(self):

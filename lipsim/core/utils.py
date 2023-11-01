@@ -146,9 +146,9 @@ def setup_distributed_training(world_size, rank):
 
 class RMSELoss(nn.Module):
 
-    def __init__(self):
+    def __init__(self, reduction: str = 'mean'):
         super().__init__()
-        self.mse = nn.MSELoss()
+        self.mse = nn.MSELoss(reduction=reduction)
 
     def forward(self, yhat, y):
         return torch.sqrt(self.mse(yhat, y))
