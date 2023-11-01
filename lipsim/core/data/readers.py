@@ -1,16 +1,18 @@
 import torch
-from PIL import Image
+from os.path import join, exists
 from torchvision import transforms
-from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from torchvision.datasets import ImageFolder
 
-from core.data import NightDataset, BAPPSDataset
-from core.data.coco_datast import COCODataset
+from torchvision.datasets import ImageNet
+from lipsim.core.data.imagenet_embedding_dataset import ImageNetEmbeddingDataset
+from lipsim.core.data.night_dataset import NightDataset
+from lipsim.core.data.bapps_dataset import BAPPSDataset
+from lipsim.core.data.coco_datast import COCODataset
 
 
-class DataAugmentationDINO(object):
+class DataAugmentationDINO:
+
     def __init__(self, global_crops_scale=None, local_crops_scale=None, local_crops_number=None):
         flip_and_color_jitter = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
@@ -40,67 +42,118 @@ class DataAugmentationDINO(object):
         return images
 
 
-class ImagenetDataset(Dataset):
-    def __init__(self, config, batch_size, is_training, is_distributed=False, num_workers=10, world_size=1):
+class BaseReader:
+
+    def __init__(self, config, batch_size, is_distributed, is_training):
         self.config = config
         self.batch_size = batch_size
         self.is_training = is_training
         self.is_distributed = is_distributed
-        self.world_size = world_size
-        self.num_workers = num_workers
+        self.num_workers = 4
+        self.prefetch_factor = self.batch_size * 2
+        self.path = join(self.get_data_dir(), self.config.dataset)
+
+    def get_data_dir(self):
+        paths = self.config.data_dir.split(':')
+        data_dir = None
+        for path in paths:
+            if exists(join(path, self.config.dataset)):
+                data_dir = path
+                break
+        if data_dir is None:
+            raise ValueError("Data directory not found.")
+        return data_dir
+
+    def transform(self):
+        """Create the transformer pipeline."""
+        raise NotImplementedError('Must be implemented in derived classes')
+
+    def load_dataset(self):
+        """Load or download dataset."""
+        sampler = None
+        if self.is_distributed:
+            sampler = DistributedSampler(self.dataset, shuffle=self.is_training)
+        loader = DataLoader(self.dataset,
+                            batch_size=self.batch_size,
+                            num_workers=self.num_workers,
+                            shuffle= self.is_training and not sampler,
+                            pin_memory=False,
+                            prefetch_factor=self.prefetch_factor,
+                            sampler=sampler)
+        return loader, sampler
+
+
+class ImagenetReader(BaseReader):
+
+    def __init__(self, config, batch_size, is_training, is_distributed=False):
+        super(ImagenetReader, self).__init__(
+            config, batch_size, is_distributed, is_training)
+        self.config = config
+        self.batch_size = batch_size
+        self.is_training = is_training
         self.n_classes = 768
         self.height, self.width = 224, 500
         self.n_train_files = 1_281_167
-        self.n_test_files = 50_000
+        self.n_test_files = 50_1000
         self.img_size = (None, 3, 224, 500)
         self.split = 'train' if self.is_training else 'val'
 
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
 
-        self.samples = []
-        self.targets = []
-        self.transform = {
-            # 'train': transforms.Compose([
-            #     transforms.CenterCrop(224),
-            #     transforms.RandomHorizontalFlip(),
-            #     transforms.ToTensor(),
-            # ]),
-            'train': DataAugmentationDINO(
+        if is_training:
+            transform = DataAugmentationDINO(
                 global_crops_scale=(0.4, 1.),
                 local_crops_scale=(0.05, 0.4),
                 local_crops_number=8
-            ),
-            'val': transforms.Compose([
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-            ]),
-            'test': transforms.Compose([
+            )
+        else:
+            transform = transforms.Compose([
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
             ])
-        }
+        split = 'train' if is_training else 'val'
+        self.dataset = ImageNet(self.path, split=split, transform=transform)
 
-    def get_dataloader(self, shuffle=None):
-        sampler = None
-        if not shuffle:
-            shuffle = True if self.is_training and not self.is_distributed else False
-        dataset = ImageFolder(self.config.data_dir + self.split, transform=self.transform[self.split])
-        if self.is_distributed:
-            sampler = DistributedSampler(dataset, shuffle=False, num_replicas=self.world_size)
 
-        data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size, shuffle=shuffle,
-                                 num_workers=self.num_workers, pin_memory=True, drop_last=True)
-        return data_loader, sampler
+class ImagenetEmbeddingReader(BaseReader):
 
-    def get_dataset(self):
-        dataset = ImageFolder(self.config.data_dir + self.split, transform=self.transform[self.split])
-        print(len(dataset), self.split)
-        return dataset
+    def __init__(self, config, batch_size, is_training, is_distributed=False):
+        config.dataset = 'imagenet'
+        super(ImagenetEmbeddingReader, self).__init__(
+            config, batch_size, is_distributed, is_training)
+        self.config = config
+        self.batch_size = batch_size
+        self.is_training = is_training
+        self.n_classes = 1792
+        self.n_train_files = 1_281_167
+        self.n_test_files = 50_1000
+        self.img_size = (None, 3, 224, 500)
+        self.split = 'train' if self.is_training else 'val'
+        self.path_embedding = config.path_embedding
+
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
+
+        if is_training:
+            transform = DataAugmentationDINO(
+                global_crops_scale=(0.4, 1.),
+                local_crops_scale=(0.05, 0.4),
+                local_crops_number=8
+            )
+        else:
+            transform = transforms.Compose([
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+            ])
+        split = 'train' if is_training else 'val'
+        self.dataset = ImageNetEmbeddingDataset(
+            self.path, self.path_embedding, split=split, transform=transform)
 
 
 readers_config = {
-    'imagenet-1k': ImagenetDataset,
+    'imagenet': ImagenetReader,
+    'imagenet_embedding': ImagenetEmbeddingReader,
     'night': NightDataset,
     'bapps': BAPPSDataset,
     'coco': COCODataset

@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from dreamsim import dreamsim
 import torch
-from core.data.yfcc_dataset import yfcc_transform
+from lipsim.core import yfcc_transform
 
 if __name__ == '__main__':
 

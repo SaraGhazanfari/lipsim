@@ -3,7 +3,7 @@ import os
 from os.path import join, exists
 import torch
 from PIL import Image
-from core.models.dreamsim.model import dreamsim
+from lipsim.core.models.dreamsim.model import dreamsim
 from torchvision.transforms import transforms
 import submitit
 

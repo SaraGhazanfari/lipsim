@@ -8,10 +8,11 @@ from dreamsim.model import download_weights
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from core.attack.general_attack import GeneralAttack
-from core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
+from lipsim.core.attack.general_attack import GeneralAttack
+
+from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
-from core.data import NightDataset, BAPPSDataset
+from lipsim.core.data import NightDataset, BAPPSDataset
 from lipsim.core.models import N_CLASSES
 
 from lipsim.core.data.readers import readers_config
@@ -187,33 +188,34 @@ class Evaluator:
     def distance_attack_eval(self):
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False, num_workers=0)
-
+        patch_size = int(self.config.teacher_model_name[-2:])
         dreamsim_dist_list = list()
         dataloader, _ = self.reader.get_dataloader()
         for idx, data in tqdm(enumerate(dataloader)):
             if idx * self.batch_size > 5:
                 break
-
             inputs = data[0].to(self.device)
             input_embed = self.model(inputs).detach()
-            adv_inputs = self.general_attack.generate_attack(inputs, img_0=None, img_1=None, target=input_embed,
-                                                             target_model=self.dreamsim_model.embed,
-                                                             is_dist_attack=True)
-
-            adv_input_embed = self.model(adv_inputs).detach()
-
-            cos_dist = 1 - self.cos_sim(input_embed.unsqueeze(0), adv_input_embed.unsqueeze(0))
-
-            dreamsim_dist_list.append(cos_dist)
-
             visualize_att_map(inputs.squeeze(0), img_idx=idx, model=self.dreamsim_model.extractor_list[0].model,
-                              device=self.device, patch_size=16,
+                              device=self.device, patch_size=patch_size,
                               output_dir=os.path.join(self.config.teacher_model_name, 'clean'))
-            visualize_att_map(adv_inputs.squeeze(0), img_idx=idx, model=self.dreamsim_model.extractor_list[0].model,
-                              device=self.device, patch_size=16,
-                              output_dir=os.path.join(self.config.teacher_model_name, 'adv'))
-        torch.save(dreamsim_dist_list,
-                   f'{self.config.teacher_model_name}/distance_list_{self.config.attack}_{self.config.eps}')
+            if self.config.attack:
+                adv_inputs = self.general_attack.generate_attack(inputs, img_0=None, img_1=None, target=input_embed,
+                                                                 target_model=self.dreamsim_model.embed,
+                                                                 is_dist_attack=True)
+
+                adv_input_embed = self.model(adv_inputs).detach()
+
+                cos_dist = 1 - self.cos_sim(input_embed.unsqueeze(0), adv_input_embed.unsqueeze(0))
+
+                dreamsim_dist_list.append(cos_dist)
+
+                visualize_att_map(adv_inputs.squeeze(0), img_idx=idx, model=self.dreamsim_model.extractor_list[0].model,
+                                  device=self.device, patch_size=patch_size,
+                                  output_dir=os.path.join(self.config.teacher_model_name, 'adv'))
+        if self.config.attack:
+            torch.save(dreamsim_dist_list,
+                       f'{self.config.teacher_model_name}/distance_list_{self.config.attack}_{self.config.eps}')
 
         logging.info('finished')
 

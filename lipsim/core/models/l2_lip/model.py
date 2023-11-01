@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision.transforms import Normalize
-from core.models.l2_lip.layers import PoolingLinear, PaddingChannels
-from core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
+from lipsim.core.models.l2_lip.layers import PoolingLinear, PaddingChannels
+from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 
 
 class NormalizedModel(nn.Module):

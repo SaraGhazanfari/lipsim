@@ -30,11 +30,11 @@ def _sanity_check(patch_size, l14=False):
     if l14:
         dino_vit, proj = load_open_clip_as_dino(patch_size, l14=True)
         clip_all, _, preprocess = open_clip.create_model_and_transforms(f'ViT-L-{patch_size}',
-                                                                        pretrained='laion400m_e31', cache_dir=".")
+                                                                        pretrained='laion400m_e31', cache_dir="")
     else:
         dino_vit, proj = load_open_clip_as_dino(patch_size)
         clip_all, _, preprocess = open_clip.create_model_and_transforms(f'ViT-B-{patch_size}',
-                                                                        pretrained='laion400m_e31', cache_dir=".")
+                                                                        pretrained='laion400m_e31', cache_dir="")
 
     x = preprocess(Image.open('images/img_a_1.png'))[None, ...]
 

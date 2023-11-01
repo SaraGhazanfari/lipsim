@@ -17,9 +17,9 @@ from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
 
 from lipsim_utils import utils
-from core.data import NightDataset
-from core.data.readers import readers_config
-from core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
+from lipsim.core.data import NightDataset
+from lipsim.core.data.readers import readers_config
+from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
 
 # from core.models.dreamsim.model import dreamsim
 

@@ -105,6 +105,8 @@ def visualize_att_map(img, img_idx, model, device, patch_size, output_dir, thres
         th_attn = nn.functional.interpolate(th_attn.unsqueeze(0), scale_factor=patch_size, mode="nearest")[
             0].cpu().numpy()
 
+    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+    print('Looking into this!',nh,  w_featmap, h_featmap, attentions.shape)
     attentions = attentions.reshape(nh, w_featmap, h_featmap)
     attentions = nn.functional.interpolate(attentions.unsqueeze(0), scale_factor=patch_size, mode="nearest")[
         0].detach().cpu().numpy()

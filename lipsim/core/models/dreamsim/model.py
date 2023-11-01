@@ -1,14 +1,13 @@
 import os
 import zipfile
-import yaml
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
 
-from core.models.dreamsim.feature_extraction.vit_wrapper import ViTConfig
-from core.models.dreamsim.feature_extraction.vit_wrapper import ViTModel
-from core.models.dreamsim.feature_extraction.extractor import ViTExtractor
-from core.models.dreamsim.config import dreamsim_args, dreamsim_weights
+from lipsim.core.models.dreamsim.feature_extraction.vit_wrapper import ViTConfig
+from lipsim.core.models.dreamsim.feature_extraction.vit_wrapper import ViTModel
+from lipsim.core.models.dreamsim.feature_extraction.extractor import ViTExtractor
+from lipsim.core.models.dreamsim.config import dreamsim_args, dreamsim_weights
 
 # from .feature_extraction.extractor import ViTExtractor
 # from .feature_extraction.vit_wrapper import ViTConfig, ViTModel

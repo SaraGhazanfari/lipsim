@@ -5,10 +5,10 @@ import torch
 import torch.nn.modules.utils as nn_utils
 from torch import nn
 from typing import List, Tuple
-from core.models.dreamsim.feature_extraction.load_clip_as_dino import load_clip_as_dino
-from core.models.dreamsim.feature_extraction.load_open_clip_as_dino import load_open_clip_as_dino
-from core.models.dreamsim.feature_extraction.vision_transformer import DINOHead
-from core.models.dreamsim.feature_extraction.load_mae_as_vit import load_mae_as_vit
+from lipsim.core.models.dreamsim.feature_extraction.load_clip_as_dino import load_clip_as_dino
+from lipsim.core.models.dreamsim.feature_extraction.load_open_clip_as_dino import load_open_clip_as_dino
+from lipsim.core.models.dreamsim.feature_extraction.vision_transformer import DINOHead
+from lipsim.core.models.dreamsim.feature_extraction.load_mae_as_vit import load_mae_as_vit
 
 """
 Mostly copy-paste from https://github.com/ShirAmir/dino-vit-features.
