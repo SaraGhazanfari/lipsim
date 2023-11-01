@@ -253,10 +253,13 @@ class Evaluator:
         lipsim_norms_list = []
         dreamsim_norms_list = []
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right = img_ref.cuda(), img_left.cuda(), img_right.cuda()
             lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
             dreamsim_norms_list.extend(torch.norm(self.dreamsim_model.embed(img_left), p=2, dim=1).tolist())
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader),
                                                                    total=len(no_imagenet_data_loader)):
+            img_ref, img_left, img_right = img_ref.cuda(), img_left.cuda(), img_right.cuda()
+            img_right.cuda(), target.cuda()
             lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
             dreamsim_norms_list.extend(torch.norm(self.dreamsim_model.embed(img_left), p=2, dim=1).tolist())
 
