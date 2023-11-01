@@ -6,8 +6,6 @@ import torch.optim as optim
 from torchvision.transforms import transforms
 from tqdm import tqdm
 
-from lipsim.core.utils import DWT_2D_tiny, IDWT_2D_tiny
-
 
 def normalize_fn(dataset):
     if dataset == 'imagenet_val':

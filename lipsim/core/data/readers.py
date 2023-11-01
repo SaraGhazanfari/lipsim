@@ -76,7 +76,7 @@ class BaseReader:
         loader = DataLoader(self.dataset,
                             batch_size=self.batch_size,
                             num_workers=self.num_workers,
-                            shuffle= self.is_training and not sampler,
+                            shuffle=self.is_training and not sampler,
                             pin_memory=False,
                             prefetch_factor=self.prefetch_factor,
                             sampler=sampler)
@@ -157,4 +157,10 @@ readers_config = {
     'night': NightDataset,
     'bapps': BAPPSDataset,
     'coco': COCODataset
+}
+
+N_CLASSES = {
+    'dino_vitb16': 768,
+    'open_clip_vitb32': 512,
+    'clip_vitb32': 512,
 }

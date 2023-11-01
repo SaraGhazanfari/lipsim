@@ -5,8 +5,10 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
 
-from lipsim_utils.utils import get_preprocess_fn
+
 from torch.utils.data import DataLoader
+
+from lipsim.core.utils import get_preprocess_fn
 
 
 class NightDataset(Dataset):

@@ -9,20 +9,21 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from lipsim.core.attack.general_attack import GeneralAttack
+from lipsim.core.data.bapps_dataset import BAPPSDataset
+from lipsim.core.data.night_dataset import NightDataset
 
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
 from lipsim.core import utils
-from lipsim.core.data import NightDataset, BAPPSDataset
-from lipsim.core.models import N_CLASSES
 
-from lipsim.core.data.readers import readers_config
+
+from lipsim.core.data.readers import readers_config, N_CLASSES
 from dreamsim import PerceptualModel
 import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
 
-from lipsim_utils.visualization_utils import visualize_att_map
+from utils.visualization_utils import visualize_att_map
 
 
 def get_2afc_score(d0s, d1s, targets):
@@ -245,21 +246,29 @@ class Evaluator:
         batch_loss = self.criterion(outputs, dino_outputs).item()
         return batch_loss
 
+    @torch.no_grad()
     def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
-        print(len(data_loader), len(no_imagenet_data_loader))
-        imagenet_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
-        torch.cuda.empty_cache()
-        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
-        overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
-                dataset_size + no_imagenet_dataset_size)
-        logging.info(f"Overall 2AFC score: {str(overall_score)}")
+        norms_list = []
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader), total=len(no_imagenet_data_loader)):
+            norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+        torch.save(norms_list, 'norms_list.pt')
+
+        # todo print(len(data_loader), len(no_imagenet_data_loader))
+        # imagenet_score = self.get_2afc_score_eval(data_loader)
+        # logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        # torch.cuda.empty_cache()
+        # no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
+        # logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+        # overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
+        #         dataset_size + no_imagenet_dataset_size)
+        # logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
