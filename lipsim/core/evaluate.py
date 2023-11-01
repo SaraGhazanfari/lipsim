@@ -246,60 +246,34 @@ class Evaluator:
 
     @torch.no_grad()
     def dreamsim_eval(self):
+        lipsim_norms_list = []
+        Reader = readers_config[self.config.dataset]
+        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
+                                is_distributed=False).load_dataset()
+        for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img = img.cuda()
+            lipsim_norms_list.extend(torch.norm(self.model(img), p=2, dim=1).tolist())
+            print(lipsim_norms_list[-1])
+
+        torch.save(lipsim_norms_list, 'lipsim_norms_list.pt')
+
+    @torch.no_grad()
+    #todo
+    def dreamsim_eval_1(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
-        lipsim_norms_list, dreamsim_norms_list, diff_norms_list = [], [], []
-        diff_norms_list, dreamsim_norms_list, lipsim_norms_list = self.calculate_all_norms(data_loader, diff_norms_list,
-                                                                                           dreamsim_norms_list,
-                                                                                           lipsim_norms_list)
-
-        diff_norms_list, dreamsim_norms_list, lipsim_norms_list = self.calculate_all_norms(no_imagenet_data_loader,
-                                                                                           diff_norms_list,
-                                                                                           dreamsim_norms_list,
-                                                                                           lipsim_norms_list)
-
-        torch.save(lipsim_norms_list, 'lipsim_norms_list.pt')
-        torch.save(dreamsim_norms_list, 'dreamsim_norms_list.pt')
-        torch.save(diff_norms_list, 'diff_norms_list.pt')
-
-        # todo print(len(data_loader), len(no_imagenet_data_loader))
-        # imagenet_score = self.get_2afc_score_eval(data_loader)
-        # logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
-        # torch.cuda.empty_cache()
-        # no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        # logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
-        # overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
-        #         dataset_size + no_imagenet_dataset_size)
-        # logging.info(f"Overall 2AFC score: {str(overall_score)}")
-
-    def calculate_all_norms(self, data_loader, diff_norms_list, dreamsim_norms_list, lipsim_norms_list):
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img_ref, img_left, img_right = img_ref.cuda(), img_left.cuda(), img_right.cuda()
-
-            dreamsim_norms_list, lipsim_norms_list, diff_norms_list = self.calculate_norms(img_ref, dreamsim_norms_list,
-                                                                                           lipsim_norms_list,
-                                                                                           diff_norms_list)
-            dreamsim_norms_list, lipsim_norms_list, diff_norms_list = self.calculate_norms(img_left,
-                                                                                           dreamsim_norms_list,
-                                                                                           lipsim_norms_list,
-                                                                                           diff_norms_list)
-            dreamsim_norms_list, lipsim_norms_list, diff_norms_list = self.calculate_norms(img_right,
-                                                                                           dreamsim_norms_list,
-                                                                                           lipsim_norms_list,
-                                                                                           diff_norms_list)
-        return diff_norms_list, dreamsim_norms_list, lipsim_norms_list
-
-    def calculate_norms(self, img, dreamsim_norms_list, lipsim_norms_list, diff_norms_list):
-        lipsim_embed = self.model(img)
-        dreamsim_embed = self.dreamsim_model.embed(img)
-        lipsim_norms_list.extend(torch.norm(lipsim_embed, p=2, dim=1).tolist())
-        dreamsim_norms_list.extend(torch.norm(dreamsim_embed, p=2, dim=1).tolist())
-        from lipsim.core.utils import RMSELoss
-        diff_norms_list.extend(RMSELoss(reduction='none')(lipsim_embed, dreamsim_embed).tolist())
-        return dreamsim_norms_list, lipsim_norms_list, diff_norms_list
+        print(len(data_loader), len(no_imagenet_data_loader))
+        imagenet_score = self.get_2afc_score_eval(data_loader)
+        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        torch.cuda.empty_cache()
+        no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
+        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+        overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
+                dataset_size + no_imagenet_dataset_size)
+        logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
