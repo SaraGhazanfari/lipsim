@@ -57,7 +57,7 @@ class Evaluator:
         #                                       normalize_embeds=True)
 
         self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-                                           cache_dir='./checkpoints', device=self.device)
+                                          cache_dir='./checkpoints', device=self.device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.general_attack = GeneralAttack(config=config)
@@ -250,13 +250,18 @@ class Evaluator:
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
-        norms_list = []
+        lipsim_norms_list = []
+        dreamsim_norms_list = []
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+            lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+            dreamsim_norms_list.extend(torch.norm(self.dreamsim_model(img_left), p=2, dim=1).tolist())
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader),
                                                                    total=len(no_imagenet_data_loader)):
-            norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
-        torch.save(norms_list, 'norms_list.pt')
+            lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+            dreamsim_norms_list.extend(torch.norm(self.dreamsim_model(img_left), p=2, dim=1).tolist())
+
+        torch.save(lipsim_norms_list, 'lipsim_norms_list.pt')
+        torch.save(dreamsim_norms_list, 'dreamsim_norms_list.pt')
 
         # todo print(len(data_loader), len(no_imagenet_data_loader))
         # imagenet_score = self.get_2afc_score_eval(data_loader)
