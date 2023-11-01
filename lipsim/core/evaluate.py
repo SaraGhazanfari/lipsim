@@ -251,6 +251,7 @@ class Evaluator:
         data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                                 is_distributed=False).load_dataset()
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            print(img.shape)
             img = img.cuda()
             lipsim_norms_list.extend(torch.norm(self.model(img), p=2, dim=1).tolist())
             print(lipsim_norms_list[-1])
