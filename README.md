@@ -1,7 +1,7 @@
 # lipsim
 
 # LipSim: A Provably Robust Perceptual Similarity Metric
-### [Paper](https://arxiv.org/abs/2310.18274) | [Training Scheme](#training) | [Results](#results) | [Commands](#commands) 
+### [Paper](https://arxiv.org/abs/2310.18274) | [Training Scheme](#training) | [Results](#results) | [Commands](#commands) | [Bibtex](#bibtex)
 ## Abstract
 <p align="justify"> In this work, we demonstrate the vulnerability of state-of-the-art perceptual similarity metrics based on an ensemble of ViT-based feature extractors to adversarial attacks. We then propose a framework to train a robust perceptual similarity metric called LipSim (Lipschitz Similarity Metric) with provable guarantees. By leveraging 1-Lipschitz neural networks as the backbone, LipSim provides guarded areas around each data point and certificates for all perturbations within an ℓ2 ball. Finally, a comprehensive set of experiments shows the performance of LipSim in terms of natural and certified scores and on the image retrieval application.</p>
 
@@ -43,4 +43,14 @@ You can download the NIGHT dataset using this (bash)[https://github.com/ssundara
 * Command for calculating the certified accuracy on the NIGHT dataset:
 ```
 python -m lipsim.main --mode certified --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local
+```
+<a name="bibtex"></a>
+## Citation
+```
+@article{ghazanfari2023lipsim,
+  title={LipSim: A Provably Robust Perceptual Similarity Metric},
+  author={Ghazanfari, Sara and Araujo, Alexandre and Krishnamurthy, Prashanth and Khorrami, Farshad and Garg, Siddharth},
+  journal={arXiv preprint arXiv:2310.18274},
+  year={2023}
+}
 ```
