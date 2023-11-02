@@ -116,10 +116,8 @@ class Evaluator:
             return self.model
         elif self.config.mode == 'eval':
             self.vanilla_eval()
-        elif self.config.mode == 'dreamsim':
-            self.dreamsim_eval()
-        elif self.config.mode == 'lpips':
-            self.lpips_eval()
+        elif self.config.mode == 'attack':
+            self.attack_eval()
         elif self.config.mode == 'ssa':
             self.distance_attack_eval()
         elif self.config.mode == 'certified':
@@ -251,19 +249,7 @@ class Evaluator:
         return batch_loss
 
     @torch.no_grad()
-    def temp_dreamsim_eval(self):
-        lipsim_norms_list = []
-        Reader = readers_config[self.config.dataset]
-        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=False,
-                                is_distributed=False).load_dataset()
-        for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img = img.cuda()
-            lipsim_norms_list.extend(torch.norm(self.model(img), p=2, dim=1).tolist())
-
-        torch.save(lipsim_norms_list, 'lipsim_imagenet_norms_list.pt')
-
-    @torch.no_grad()
-    def dreamsim_eval(self):
+    def attack_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
@@ -278,16 +264,6 @@ class Evaluator:
         overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
-
-    def lpips_eval(self):
-        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
-                        'frameinterp']:
-            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset).get_dataloader(
-                batch_size=self.config.batch_size)
-            twoafc_score = self.get_2afc_score_eval(data_loader)
-            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
-        return twoafc_score
 
     def get_2afc_score_eval(self, test_loader):
         logging.info("Evaluating NIGHTS dataset.")

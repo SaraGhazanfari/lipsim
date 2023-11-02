@@ -14,7 +14,7 @@ from lipsim.core.trainer import Trainer
 
 warnings.filterwarnings("ignore")
 
-eval_mode = ['certified', 'attack', 'eval', 'dreamsim', 'ssa', 'lipsim', 'lpips']
+eval_mode = ['certified', 'attack', 'eval', 'ssa', 'lipsim']
 all_mode = ['train', 'finetune']
 all_mode.extend(eval_mode)
 
@@ -87,7 +87,6 @@ def main(config):
         tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
 
-
     if config.mode == 'train':
         executor = submitit.AutoExecutor(
             folder=config.train_dir, cluster=cluster)
@@ -115,14 +114,10 @@ def main(config):
     elif config.mode == 'finetune':
         trainer = Trainer(config)
         trainer.finetune_func()
-    # elif config.mode in ['eval', 'eval_best', 'attack']:
-    #     Evaluator(config)
     elif config.mode in eval_mode:
         evaluate = Evaluator(config)
         model = evaluate()
         return model
-
-
 
 
 if __name__ == '__main__':
