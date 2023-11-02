@@ -247,7 +247,7 @@ class Evaluator:
         return batch_loss
 
     @torch.no_grad()
-    def dreamsim_eval(self):
+    def temp_dreamsim_eval(self):
         imagenet_norms_list = list()
         Reader = readers_config[self.config.dataset]
         data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=False,
@@ -261,7 +261,7 @@ class Evaluator:
 
     @torch.no_grad()
     #todo
-    def dreamsim_eval_1(self):
+    def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
