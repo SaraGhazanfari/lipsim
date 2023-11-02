@@ -6,7 +6,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from torchvision.datasets import ImageNet
+from torchvision.datasets import ImageNet, ImageFolder
 from lipsim.core.data.imagenet_embedding_dataset import ImageNetEmbeddingDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.bapps_dataset import BAPPSDataset
@@ -116,7 +116,8 @@ class ImagenetReader(BaseReader):
             ])
         split = 'train' if is_training else 'val'
         print(self.path)
-        self.dataset = ImageNet(self.path, split=split, transform=transform)
+        self.dataset = ImageFolder(os.path.join(self.path, split), transform=transform)
+        # self.dataset = ImageNet(self.path, split=split, transform=transform)
 
 
 class ImagenetEmbeddingReader(BaseReader):
