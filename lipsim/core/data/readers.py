@@ -104,11 +104,15 @@ class ImagenetReader(BaseReader):
         self.stds = (1.0000, 1.0000, 1.0000)
 
         if is_training:
-            transform = DataAugmentationDINO(
-                global_crops_scale=(0.4, 1.),
-                local_crops_scale=(0.05, 0.4),
-                local_crops_number=8
-            )
+            #todo transform = DataAugmentationDINO(
+            #     global_crops_scale=(0.4, 1.),
+            #     local_crops_scale=(0.05, 0.4),
+            #     local_crops_number=8
+            # )
+            transform = transforms.Compose([
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+            ])
         else:
             transform = transforms.Compose([
                 transforms.CenterCrop(224),
