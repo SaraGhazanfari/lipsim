@@ -253,7 +253,7 @@ class Evaluator:
         data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                                 is_distributed=False).load_dataset() #todo
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            if i > 50:
+            if i > 1000:
                 break
             img = img.cuda()
             img_embed = self.model(img)
