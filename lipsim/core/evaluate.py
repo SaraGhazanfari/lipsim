@@ -176,6 +176,7 @@ class Evaluator:
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
+            print(fy_fi)
             radius = (fy_fi / bound).min(dim=1)[0]
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
@@ -327,7 +328,6 @@ class Evaluator:
             embed_x1 = embed_x1 / norm_x_1
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
-        print(bound)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
