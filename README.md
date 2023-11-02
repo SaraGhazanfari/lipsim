@@ -30,19 +30,23 @@ LipSim aims to provide good image embeddings that are less sensitive to adversar
 
 <a name="commands"></a>
 ## Commands for Training
-* Command for training the 1-Lipschitz classifier using the ImageNet-1k dataset:
+* Training the 1-Lipschitz classifier using the ImageNet-1k dataset:
 ```
-python3 -m lipsim.main --dataset imagenet_embedding --epochs 40 --batch_size 32 --nnodes 4 --constraint 32 --teacher_model_name ensemble --data_dir /path/to/the/data
+python -m lipsim.main --dataset imagenet --epochs 40 --batch_size 32 --nnodes 4 --constraint 32 --teacher_model_name ensemble --data_dir /path/to/the/data
 ```
-* Command for finetuning the model on the NIGHT dataset:
+* Finetuning the model on the NIGHT dataset:
 ```
 python -m lipsim.main --mode finetune --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 32 --epochs 1 --teacher_model_name ensemble --local --margin 0.2
 ```
 You can download the NIGHT dataset using this (bash)[https://github.com/ssundaram21/dreamsim/blob/main/dataset/download_dataset.sh] script.
 ## Commands for Evaluation
-* Command for calculating the certified accuracy on the NIGHT dataset:
+* Calculating the certified accuracy on the NIGHT dataset:
 ```
 python -m lipsim.main --mode certified --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local
+```
+* Evaluating the empirical robustness of LipSim:
+```
+python -m lipsim.main --mode attack --dataset imagenet-1k --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local --attack AA-L2 --eps 1.0
 ```
 <a name="bibtex"></a>
 ## Citation
