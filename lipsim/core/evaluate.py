@@ -115,7 +115,7 @@ class Evaluator:
         elif self.config.mode == 'eval':
             self.vanilla_eval()
         elif self.config.mode == 'dreamsim':
-            self.dreamsim_eval()
+            self.temp_dreamsim_eval()# todo
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'ssa':
@@ -249,19 +249,29 @@ class Evaluator:
 
     @torch.no_grad()
     def temp_dreamsim_eval(self):
-        imagenet_norms_list = list()
-        Reader = readers_config[self.config.dataset]
-        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=False,
-                                is_distributed=False).load_dataset()
-        for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img = img.cuda()
-            img_embed = self.model(img)
-            imagenet_norms_list.extend(torch.norm(img_embed, p=2, dim=1).tolist())
+        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                                 split='test_imagenet').get_dataloader()
+        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
+                                                                         batch_size=self.config.batch_size,
+                                                                         split='test_no_imagenet').get_dataloader()
+        lipsim_norms_list = []
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right = img_ref.cuda(), img_left.cuda(), img_right.cuda()
+            lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+            lipsim_norms_list.extend(torch.norm(self.model(img_ref), p=2, dim=1).tolist())
+            lipsim_norms_list.extend(torch.norm(self.model(img_right), p=2, dim=1).tolist())
 
-        torch.save(imagenet_norms_list, 'test_imagenet_norms_list.pt')
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(no_imagenet_data_loader),
+                                                                   total=len(no_imagenet_data_loader)):
+            img_ref, img_left, img_right = img_ref.cuda(), img_left.cuda(), img_right.cuda()
+            img_right.cuda(), target.cuda()
+            lipsim_norms_list.extend(torch.norm(self.model(img_left), p=2, dim=1).tolist())
+            lipsim_norms_list.extend(torch.norm(self.model(img_ref), p=2, dim=1).tolist())
+            lipsim_norms_list.extend(torch.norm(self.model(img_right), p=2, dim=1).tolist())
+
+        torch.save(lipsim_norms_list, 'lipsim_norms_list.pt')
 
     @torch.no_grad()
-    #todo
     def dreamsim_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
