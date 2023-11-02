@@ -309,7 +309,7 @@ class Evaluator:
         embed_ref = self.model(img_ref)
         if not requires_grad:
             embed_ref = embed_ref.detach() + torch.ones_like(embed_ref) #todo
-        print(torch.ones_like(embed_ref).shape)
+
         embed_x0 = self.model(img_left).detach() + torch.ones_like(embed_ref)
         embed_x1 = self.model(img_right).detach() + torch.ones_like(embed_ref)
 
