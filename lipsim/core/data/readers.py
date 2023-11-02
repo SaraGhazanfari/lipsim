@@ -1,3 +1,5 @@
+import os
+
 import torch
 from os.path import join, exists
 from torchvision import transforms
@@ -113,6 +115,7 @@ class ImagenetReader(BaseReader):
                 transforms.ToTensor(),
             ])
         split = 'train' if is_training else 'val'
+        print(self.path)
         self.dataset = ImageNet(self.path, split=split, transform=transform)
 
 
