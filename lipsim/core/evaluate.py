@@ -69,6 +69,7 @@ class Evaluator:
             checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
             get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
             ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
+            print(ckpt_name)
             ckpt_path = join(self.config.train_dir, 'checkpoints', ckpt_name)
         checkpoint = torch.load(ckpt_path)
         new_checkpoint = {}
