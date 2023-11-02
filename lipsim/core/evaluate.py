@@ -250,8 +250,8 @@ class Evaluator:
     def dreamsim_eval(self):
         imagenet_norms_list = list()
         Reader = readers_config[self.config.dataset]
-        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                                is_distributed=False).load_dataset() #todo
+        data_loader, _ = Reader(config=self.config, batch_size=self.batch_size, is_training=False,
+                                is_distributed=False).load_dataset()
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
             if i > 1000:
                 break
@@ -259,7 +259,7 @@ class Evaluator:
             img_embed = self.model(img)
             imagenet_norms_list.extend(torch.norm(img_embed, p=2, dim=1).tolist())
 
-        torch.save(imagenet_norms_list, 'imagenet_norms_list.pt')
+        torch.save(imagenet_norms_list, 'test_imagenet_norms_list.pt')
 
     @torch.no_grad()
     #todo
