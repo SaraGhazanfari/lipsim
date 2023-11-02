@@ -108,7 +108,7 @@ class Evaluator:
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
 
-        # self.load_ckpt()
+        self.load_ckpt()
 
         if self.config.mode == 'lipsim':
             return self.model
