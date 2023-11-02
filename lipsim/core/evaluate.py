@@ -308,10 +308,13 @@ class Evaluator:
 
         embed_ref = self.model(img_ref)
         if not requires_grad:
-            embed_ref = embed_ref.detach() + torch.ones_like(embed_ref) #todo
+            embed_ref = embed_ref.detach()
+        embed_ref = self.add_bias_before_projection(embed_ref)
 
-        embed_x0 = self.model(img_left).detach() + torch.ones_like(embed_ref)
-        embed_x1 = self.model(img_right).detach() + torch.ones_like(embed_ref)
+        embed_x0 = self.model(img_left).detach()
+        embed_x0 = self.add_bias_before_projection(embed_x0)
+        embed_x1 = self.model(img_right).detach()
+        embed_x1 = self.add_bias_before_projection(embed_x1)
 
         if requires_normalization:
             norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
@@ -325,6 +328,13 @@ class Evaluator:
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
+
+    def add_bias_before_projection(self, embed_ref):
+        embed_ref_norm = torch.norm(embed_ref, p=2, dim=1)
+        for idx, norm_value in enumerate(embed_ref_norm):
+            if norm_value < 1.0:
+                embed_ref[idx] += torch.ones_like(embed_ref[idx])
+        return embed_ref
 
     def model_wrapper(self):
         def metric_model(img):
