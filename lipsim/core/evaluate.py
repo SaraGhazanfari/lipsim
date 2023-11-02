@@ -255,7 +255,7 @@ class Evaluator:
         for i, (img, _) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img = img.cuda()
             img_embed = self.model(img)
-            imagenet_norms_list.extend(torch.norm(img_embed, p=2, dim=1))
+            imagenet_norms_list.extend(torch.norm(img_embed, p=2, dim=1).tolist())
 
         torch.save(imagenet_norms_list, 'imagenet_norms_list.pt')
 
