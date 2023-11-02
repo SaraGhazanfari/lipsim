@@ -327,6 +327,7 @@ class Evaluator:
             embed_x1 = embed_x1 / norm_x_1
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
+        print(bound)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
