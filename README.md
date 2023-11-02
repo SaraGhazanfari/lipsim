@@ -30,3 +30,9 @@ LipSim aims to provide good image embeddings that are less sensitive to adversar
 
 <a name="commands"></a>
 ## Commands for Training & Evaluation
+
+```
+python -m lipsim.main --dataset imagenet_embedding --epochs 40 --batch_size 32 --nnodes 4 --constraint 32 --teacher_model_name ensemble
+```
+
+To decrease the training time, we did a preprocessing to save the [DreamSim](https://github.com/ssundaram21/dreamsim) embeddings of the ImageNet-1k data and then we used them during the training. 
