@@ -333,7 +333,7 @@ class Evaluator:
         embed_ref_norm = torch.norm(embed_ref, p=2, dim=1)
         for idx, norm_value in enumerate(embed_ref_norm):
             if norm_value < 1.0:
-                embed_ref[idx] += torch.ones_like(embed_ref[idx])
+                embed_ref[idx] += (2/embed_ref.shape[1]) * torch.ones_like(embed_ref[idx])
         return embed_ref
 
     def model_wrapper(self):
