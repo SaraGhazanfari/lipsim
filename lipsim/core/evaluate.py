@@ -115,7 +115,7 @@ class Evaluator:
         elif self.config.mode == 'eval':
             self.vanilla_eval()
         elif self.config.mode == 'dreamsim':
-            self.temp_dreamsim_eval()  # todo
+            self.dreamsim_eval()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'ssa':
@@ -308,9 +308,11 @@ class Evaluator:
 
         embed_ref = self.model(img_ref)
         if not requires_grad:
-            embed_ref = embed_ref.detach()
-        embed_x0 = self.model(img_left).detach()
-        embed_x1 = self.model(img_right).detach()
+            embed_ref = embed_ref.detach() + torch.ones_like(embed_ref) #todo
+        print(torch.ones_like(embed_ref).shape)
+        embed_x0 = self.model(img_left).detach() + torch.ones_like(embed_ref)
+        embed_x1 = self.model(img_right).detach() + torch.ones_like(embed_ref)
+
         if requires_normalization:
             norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
             embed_ref = embed_ref / norm_ref
