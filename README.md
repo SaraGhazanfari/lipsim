@@ -29,13 +29,18 @@ LipSim aims to provide good image embeddings that are less sensitive to adversar
 <img width="1317" alt="results" src="https://github.com/SaraGhazanfari/lipsim/assets/8003662/d2e22c4b-7897-4414-a380-2c61fd19d364">
 
 <a name="commands"></a>
-## Commands for Training & Evaluation
-* Command for training the 1-Lipschitz classifier using ImageNet-1k dataset:
-
+## Commands for Training
+* Command for training the 1-Lipschitz classifier using the ImageNet-1k dataset:
 ```
 python3 -m lipsim.main --dataset imagenet_embedding --epochs 40 --batch_size 32 --nnodes 4 --constraint 32 --teacher_model_name ensemble --data_dir /path/to/the/data
 ```
-* Command for the finetuning the model on NIGHT dataset:
+* Command for finetuning the model on the NIGHT dataset:
 ```
-python -m lipsim.main --mode finetune --dataset night --model-name small --train_dir dino_lipsim_0.2 --data_dir $SCRATCH/dataset/nights --batch_size 32 --epochs 1 --teacher_model_name dino_vitb16 --local --margin 0.2
+python -m lipsim.main --mode finetune --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 32 --epochs 1 --teacher_model_name ensemble --local --margin 0.2
+```
+You can download the NIGHT dataset using this (bash)[https://github.com/ssundaram21/dreamsim/blob/main/dataset/download_dataset.sh] script.
+## Commands for Evaluation
+* Command for calculating the certified accuracy on the NIGHT dataset:
+```
+python -m lipsim.main --mode certified --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local
 ```
