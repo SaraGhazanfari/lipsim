@@ -30,3 +30,12 @@ LipSim aims to provide good image embeddings that are less sensitive to adversar
 
 <a name="commands"></a>
 ## Commands for Training & Evaluation
+* Command for training the 1-Lipschitz classifier using ImageNet-1k dataset:
+
+```
+python3 -m lipsim.main --dataset imagenet_embedding --epochs 40 --batch_size 32 --nnodes 4 --constraint 32 --teacher_model_name ensemble --data_dir /path/to/the/data
+```
+* Command for the finetuning the model on NIGHT dataset:
+```
+python -m lipsim.main --mode finetune --dataset night --model-name small --train_dir dino_lipsim_0.2 --data_dir $SCRATCH/dataset/nights --batch_size 32 --epochs 1 --teacher_model_name dino_vitb16 --local --margin 0.2
+```
