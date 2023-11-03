@@ -38,7 +38,7 @@ python -m lipsim.main --dataset imagenet --epochs 40 --batch_size 32 --nnodes 4 
 ```
 python -m lipsim.main --mode finetune --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 32 --epochs 1 --teacher_model_name ensemble --local --margin 0.2
 ```
-You can download the NIGHT dataset using this (bash)[https://github.com/ssundaram21/dreamsim/blob/main/dataset/download_dataset.sh] script.
+You can download the NIGHT dataset using [this](https://github.com/ssundaram21/dreamsim/blob/main/dataset/download_dataset.sh) bash script.
 ## Commands for Evaluation
 * Calculating the certified accuracy on the NIGHT dataset:
 ```
