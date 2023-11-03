@@ -309,7 +309,14 @@ class Evaluator:
         return dist_0, dist_1, bound
 
     def add_bias_before_projection(self, embed_ref):
-        return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
+        embed_ref_norm = torch.norm(embed_ref, p=2, dim=1)
+        for idx, norm_value in embed_ref_norm:
+            if norm_value < 1 + 108 / 255:
+                embed_ref[idx] += (1 + 108 / 255 - norm_value) * (1 / sqrt(embed_ref.shape[1])) * torch.ones_like(
+                    embed_ref)
+
+        return embed_ref
+        # return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
 
     def model_wrapper(self):
         def metric_model(img):
