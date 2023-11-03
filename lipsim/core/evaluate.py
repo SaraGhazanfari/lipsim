@@ -139,7 +139,7 @@ class Evaluator:
                 dataset_size + no_imagenet_dataset_size)
         overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
-        eps_list = np.array([36, 72, 108, 255])
+        eps_list = np.array([36, 72, 108])
         eps_float_list = eps_list / 255
         for i, eps_float in enumerate(eps_float_list):
             self.message.add('eps', eps_float, format='.5f')
@@ -158,8 +158,7 @@ class Evaluator:
         running_accuracy = np.zeros(4)
         running_certified = np.zeros(4)
         running_inputs = 0
-        lip_cst = 2
-        eps_list = np.array([36, 72, 108, 255])
+        eps_list = np.array([36, 72, 108])
         eps_float_list = eps_list / 255
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
@@ -302,6 +301,7 @@ class Evaluator:
             embed_x0 = embed_x0 / norm_x_0
             norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
             embed_x1 = embed_x1 / norm_x_1
+            print(min(norm_ref), min(norm_x_0), min(norm_x_1))
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
@@ -309,17 +309,7 @@ class Evaluator:
         return dist_0, dist_1, bound
 
     def add_bias_before_projection(self, embed_ref):
-        embed_ref_norm = torch.norm(embed_ref, p=2, dim=1)
-        for idx, norm_value in embed_ref_norm:
-            if norm_value < 1 + 108 / 255:
-                embed_ref[idx] += (1 + 108 / 255 - norm_value) * (1 / sqrt(embed_ref.shape[1])) * torch.ones_like(
-                    embed_ref)
-            print(torch.norm(embed_ref, p=2, dim=1))
-            import time
-            time.sleep(1)
-
-        return embed_ref
-        # return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
+        return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
 
     def model_wrapper(self):
         def metric_model(img):
