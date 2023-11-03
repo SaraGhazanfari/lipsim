@@ -314,6 +314,9 @@ class Evaluator:
             if norm_value < 1 + 108 / 255:
                 embed_ref[idx] += (1 + 108 / 255 - norm_value) * (1 / sqrt(embed_ref.shape[1])) * torch.ones_like(
                     embed_ref)
+            print(torch.norm(embed_ref, p=2, dim=1))
+            import time
+            time.sleep(1)
 
         return embed_ref
         # return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
