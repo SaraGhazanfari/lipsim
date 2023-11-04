@@ -100,7 +100,7 @@ def main(config):
         slurm_account=config.account,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
         # slurm_partition=config.partition,
-        slurm_qos=config.qos,
+        # slurm_qos=config.qos,
         slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
         timeout_min=config.timeout,
@@ -130,7 +130,7 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train or Evaluate Lipschitz Networks.')
 
-    parser.add_argument("--account", type=str, default='dci@v100',
+    parser.add_argument("--account", type=str, default='sg7457@nyu.edu',
                         help="Account to use for slurm.")
     parser.add_argument("--ngpus", type=int, default=4,
                         help="Number of GPUs to use.")
