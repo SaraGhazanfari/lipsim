@@ -243,7 +243,6 @@ class Evaluator:
         batch_loss = self.criterion(outputs, dino_outputs).item()
         return batch_loss
 
-    @torch.no_grad()
     def attack_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
