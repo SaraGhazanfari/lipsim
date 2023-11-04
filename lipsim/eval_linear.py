@@ -99,6 +99,7 @@ class LinearEvaluation:
         header = 'Epoch: [{}]'.format(epoch)
         for (inp, target) in self.metric_logger.log_every(self.train_loader, 20, header):
             # move to gpu
+            print(inp.shape)
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
 
