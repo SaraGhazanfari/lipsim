@@ -15,33 +15,30 @@ from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel,
 
 class LinearEvaluation:
     def __init__(self, config):
-        try:
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.config = config
-            self.embed_dim = N_CLASSES[self.config.teacher_model_name]
-            self.model = self.load_ckpt()
-            self.model = self.model.eval()
-            self.linear_classifier = ClassificationLayer(self.config,
-                                                         embed_dim=N_CLASSES[self.config.teacher_model_name],
-                                                         n_classes=1000)
-            self.linear_classifier = self.linear_classifier.to(self.device)
-            linear_classifier = nn.parallel.DistributedDataParallel(self.linear_classifier,
-                                                                    device_ids=[self.config.gpu])
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.config = config
+        self.embed_dim = N_CLASSES[self.config.teacher_model_name]
+        self.model = self.load_ckpt()
+        self.model = self.model.eval()
+        self.linear_classifier = ClassificationLayer(self.config,
+                                                     embed_dim=N_CLASSES[self.config.teacher_model_name],
+                                                     n_classes=1000)
+        self.linear_classifier = self.linear_classifier.to(self.device)
+        linear_classifier = nn.parallel.DistributedDataParallel(self.linear_classifier,
+                                                                device_ids=[self.config.gpu])
 
-            self.optimizer = torch.optim.SGD(
-                linear_classifier.parameters(),
-                self.config.lr * self.config.batch_size,  # linear scaling rule
-                momentum=0.9,
-                weight_decay=0,  # we do not apply weight decay
-            )
-            Reader = readers_config[self.config.dataset]
-            self.train_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
-                                          is_training=True).load_dataset()
-            self.val_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
-                                        is_training=False).load_dataset()
-            self.metric_logger = utils.MetricLogger(delimiter="  ")
-        except Exception as e:
-            print(e)
+        self.optimizer = torch.optim.SGD(
+            linear_classifier.parameters(),
+            self.config.lr * self.config.batch_size,  # linear scaling rule
+            momentum=0.9,
+            weight_decay=0,  # we do not apply weight decay
+        )
+        Reader = readers_config[self.config.dataset]
+        self.train_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
+                                      is_training=True).load_dataset()
+        self.val_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
+                                    is_training=False).load_dataset()
+        self.metric_logger = utils.MetricLogger(delimiter="  ")
 
     def load_ckpt(self):
         means = (0.0000, 0.0000, 0.0000)

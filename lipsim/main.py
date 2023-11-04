@@ -115,12 +115,12 @@ def main(config):
     elif config.mode == 'finetune':
         trainer = Trainer(config)
         trainer.finetune_func()
+    elif config.mode == 'classifier':
+        LinearEvaluation(config).eval_linear()
     elif config.mode in eval_mode:
         evaluate = Evaluator(config)
         model = evaluate()
         return model
-    elif config.mode == 'classifier':
-        LinearEvaluation(config).eval_linear()
 
 
 if __name__ == '__main__':
