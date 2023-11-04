@@ -11,8 +11,6 @@ class GeneralAttack:
 
     def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
         attack_method, attack_norm = self.config.attack.split('-')
-        print(img_ref.shape)
-        print(torch.stack((img_ref, img_ref), dim=1).shape)
         if attack_method == 'AA':
             img_ref = self.generate_auto_attack(attack_norm, img_0, img_1, img_ref, is_dist_attack, target,
                                                 target_model)
