@@ -7,7 +7,6 @@ import submitit
 import torch
 from torch import nn
 import torch.backends.cudnn as cudnn
-from torch.distributed.elastic.events import record
 from torch.nn.parallel import DistributedDataParallel
 
 from lipsim.core import utils
@@ -30,11 +29,18 @@ class LinearEvaluation:
         self.ngpus = torch.cuda.device_count()
         self.world_size = self.num_nodes * self.ngpus
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
-        self.model = self.load_ckpt()
-        self.model = self.model.eval()
+
+        means = (0.0000, 0.0000, 0.0000)
+        stds = (1.0000, 1.0000, 1.0000)
+        model = L2LipschitzNetwork(self.config, self.embed_dim)
+        self.model = NormalizedModel(model, means, stds)
+
         utils.setup_distributed_training(self.world_size, self.rank)
         self.model = DistributedDataParallel(
             self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+
+        self.model = self.load_ckpt()
+        self.model = self.model.eval()
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
@@ -55,10 +61,6 @@ class LinearEvaluation:
         self.metric_logger = utils.MetricLogger(delimiter="  ")
 
     def load_ckpt(self):
-        means = (0.0000, 0.0000, 0.0000)
-        stds = (1.0000, 1.0000, 1.0000)
-        model = L2LipschitzNetwork(self.config, self.embed_dim)
-        model = NormalizedModel(model, means, stds)
         checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
         get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
         ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
