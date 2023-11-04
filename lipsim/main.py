@@ -99,7 +99,7 @@ def main(config):
         exclusive=True,
         slurm_account=config.account,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        slurm_partition=config.partition,
+        # slurm_partition=config.partition,
         slurm_qos=config.qos,
         slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
@@ -138,8 +138,8 @@ if __name__ == '__main__':
                         help="Number of nodes.")
     parser.add_argument("--timeout", type=int, default=1200,
                         help="Time of the Slurm job in minutes for training.")  # 1440
-    # parser.add_argument("--partition", type=str, default="gpu_p13",
-    #                     help="Partition to use for Slurm.")
+    parser.add_argument("--partition", type=str, default="gpu_p13",
+                        help="Partition to use for Slurm.")
     parser.add_argument("--qos", type=str, default="qos_gpu-t3",
                         help="Choose Quality of Service for slurm job.")
     parser.add_argument("--constraint", type=str, default=None,
