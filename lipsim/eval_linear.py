@@ -24,11 +24,9 @@ class LinearEvaluation:
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
         self.linear_classifier = self.linear_classifier.to(self.device)
-        linear_classifier = nn.parallel.DistributedDataParallel(self.linear_classifier,
-                                                                device_ids=[self.config.gpu])
 
         self.optimizer = torch.optim.SGD(
-            linear_classifier.parameters(),
+            self.linear_classifier.parameters(),
             self.config.lr * self.config.batch_size,  # linear scaling rule
             momentum=0.9,
             weight_decay=0,  # we do not apply weight decay
