@@ -17,6 +17,7 @@ class LinearEvaluation:
     def __init__(self, config):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.config = config
+        print(self.config.epochs)
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
         self.model = self.load_ckpt()
         self.model = self.model.eval()
@@ -64,7 +65,7 @@ class LinearEvaluation:
         cudnn.benchmark = True
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
-
+        print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
             self.train_loader.sampler.set_epoch(epoch)
 
