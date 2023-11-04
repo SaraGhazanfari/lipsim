@@ -66,8 +66,6 @@ class LinearEvaluation:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
         print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
-            self.train_loader.sampler.set_epoch(epoch)
-
             train_stats = self.train(epoch)
             scheduler.step()
 
