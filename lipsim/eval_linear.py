@@ -17,6 +17,10 @@ from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel,
 
 class LinearEvaluation:
     def __init__(self, config):
+        self.config = config
+        self.train_dir = self.config.train_dir
+
+    def _init_class_properties(self):
         job_env = submitit.JobEnvironment()
         self.rank = int(job_env.global_rank)
         self.local_rank = int(job_env.local_rank)
@@ -25,9 +29,6 @@ class LinearEvaluation:
         self.is_master = bool(self.rank == 0)
         self.ngpus = torch.cuda.device_count()
         self.world_size = self.num_nodes * self.ngpus
-
-        self.config = config
-        self.train_dir = self.config.train_dir
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
         self.model = self.load_ckpt()
         self.model = self.model.eval()
@@ -52,7 +53,6 @@ class LinearEvaluation:
         self.val_loader, self.val_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
                                                    is_training=False).load_dataset()
         self.metric_logger = utils.MetricLogger(delimiter="  ")
-
 
     def load_ckpt(self):
         means = (0.0000, 0.0000, 0.0000)
@@ -93,6 +93,7 @@ class LinearEvaluation:
 
     # @record
     def __call__(self):
+        self._init_class_properties()
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
         self.saved_ckpts = set([0])
@@ -188,5 +189,5 @@ class LinearEvaluation:
         #           .format(top1=self.metric_logger.acc1, top5=self.metric_logger.acc5, losses=self.metric_logger.loss))
         # else:
         print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
-                  .format(top1=self.metric_logger.acc1, losses=self.metric_logger.loss))
+              .format(top1=self.metric_logger.acc1, losses=self.metric_logger.loss))
         return {k: meter.global_avg for k, meter in self.metric_logger.meters.items()}
