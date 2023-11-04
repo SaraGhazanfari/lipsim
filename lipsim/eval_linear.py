@@ -96,6 +96,7 @@ class LinearEvaluation:
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
         self.saved_ckpts = set([0])
+        best_acc = 0
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
         print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
@@ -105,7 +106,7 @@ class LinearEvaluation:
 
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          'epoch': epoch}
-            if epoch % self.config.val_freq == 0 or epoch == self.config.epochs - 1:
+            if epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1:
                 test_stats = self.evaluate()
                 print(
                     f"Accuracy at epoch {epoch} of the network on the test images: {test_stats['acc1']:.1f}%")
@@ -114,7 +115,7 @@ class LinearEvaluation:
                 log_stats = {**{k: v for k, v in log_stats.items()},
                              **{f'test_{k}': v for k, v in test_stats.items()}}
 
-            with (Path(self.config.output_dir) / "log.txt").open("a") as f:
+            with (Path(self.train_dir) / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
             self._save_ckpt(step=1, epoch=epoch)
         print("Training of the supervised linear classifier on frozen features completed.\n"
@@ -172,20 +173,20 @@ class LinearEvaluation:
             output = self.linear_classifier(output)
             loss = nn.CrossEntropyLoss()(output, target)
 
-            if self.linear_classifier.module.num_labels >= 5:
-                acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-            else:
-                acc1, = utils.accuracy(output, target, topk=(1,))
+            # if self.linear_classifier.module.num_labels >= 5:
+            #     acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            # else:
+            acc1, = utils.accuracy(output, target, topk=(1,))
 
             batch_size = inp.shape[0]
             self.metric_logger.update(loss=loss.item())
             self.metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-            if self.linear_classifier.module.num_labels >= 5:
-                self.metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        if self.linear_classifier.module.num_labels >= 5:
-            print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-                  .format(top1=self.metric_logger.acc1, top5=self.metric_logger.acc5, losses=self.metric_logger.loss))
-        else:
-            print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
+            # if self.linear_classifier.module.num_labels >= 5:
+            #     self.metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        # if self.linear_classifier.module.num_labels >= 5:
+        #     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
+        #           .format(top1=self.metric_logger.acc1, top5=self.metric_logger.acc5, losses=self.metric_logger.loss))
+        # else:
+        print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
                   .format(top1=self.metric_logger.acc1, losses=self.metric_logger.loss))
         return {k: meter.global_avg for k, meter in self.metric_logger.meters.items()}
