@@ -138,8 +138,8 @@ if __name__ == '__main__':
                         help="Number of nodes.")
     parser.add_argument("--timeout", type=int, default=1200,
                         help="Time of the Slurm job in minutes for training.")  # 1440
-    parser.add_argument("--partition", type=str, default="gpu_p13",
-                        help="Partition to use for Slurm.")
+    # parser.add_argument("--partition", type=str, default="gpu_p13",
+    #                     help="Partition to use for Slurm.")
     parser.add_argument("--qos", type=str, default="qos_gpu-t3",
                         help="Choose Quality of Service for slurm job.")
     parser.add_argument("--constraint", type=str, default=None,
