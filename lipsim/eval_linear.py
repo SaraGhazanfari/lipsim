@@ -34,16 +34,19 @@ class LinearEvaluation:
         stds = (1.0000, 1.0000, 1.0000)
         model = L2LipschitzNetwork(self.config, self.embed_dim)
         self.model = NormalizedModel(model, means, stds)
-
+        self.model = self.model.cuda()
         utils.setup_distributed_training(self.world_size, self.rank)
         self.model = DistributedDataParallel(
             self.model, device_ids=[self.local_rank], output_device=self.local_rank)
 
         self.model = self.load_ckpt()
         self.model = self.model.eval()
+
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
+        self.linear_classifier = self.linear_classifier.cuda()
+
         self.linear_classifier = DistributedDataParallel(
             self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
 
@@ -70,8 +73,8 @@ class LinearEvaluation:
         for k, v in checkpoint['model_state_dict'].items():
             if 'alpha' not in k:
                 new_checkpoint[k] = v
-        model.load_state_dict(new_checkpoint)
-        return model
+        self.model.load_state_dict(new_checkpoint)
+        return self.model
 
     def _save_ckpt(self, step, epoch, final=False, best=False):
         """Save ckpt in train directory."""
