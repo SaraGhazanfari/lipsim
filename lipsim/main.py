@@ -87,26 +87,26 @@ def main(config):
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
         tasks_per_node = 1
     cluster = 'slurm' if not config.local else 'local'
+    executor = submitit.AutoExecutor(
+        folder=config.train_dir, cluster=cluster)
 
+    executor.update_parameters(
+        gpus_per_node=config.ngpus,
+        nodes=config.nnodes,
+        tasks_per_node=tasks_per_node,
+        cpus_per_task=ncpus // tasks_per_node,
+        stderr_to_stdout=True,
+        exclusive=True,
+        slurm_account=config.account,
+        slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
+        slurm_partition=config.partition,
+        slurm_qos=config.qos,
+        slurm_constraint=config.constraint,
+        slurm_signal_delay_s=0,
+        timeout_min=config.timeout,
+    )
     if config.mode == 'train':
-        executor = submitit.AutoExecutor(
-            folder=config.train_dir, cluster=cluster)
 
-        executor.update_parameters(
-            gpus_per_node=config.ngpus,
-            nodes=config.nnodes,
-            tasks_per_node=tasks_per_node,
-            cpus_per_task=ncpus // tasks_per_node,
-            stderr_to_stdout=True,
-            exclusive=True,
-            slurm_account=config.account,
-            slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-            slurm_partition=config.partition,
-            slurm_qos=config.qos,
-            slurm_constraint=config.constraint,
-            slurm_signal_delay_s=0,
-            timeout_min=config.timeout,
-        )
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
@@ -116,7 +116,11 @@ def main(config):
         trainer = Trainer(config)
         trainer.finetune_func()
     elif config.mode == 'classifier':
-        LinearEvaluation(config).eval_linear()
+        linear_eval = LinearEvaluation(config)
+        job = executor.submit(linear_eval)
+        job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode in eval_mode:
         evaluate = Evaluator(config)
         model = evaluate()

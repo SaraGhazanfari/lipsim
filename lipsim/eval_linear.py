@@ -1,12 +1,14 @@
 import glob
-import os
 import json
-from os.path import join
+from os.path import join, exists
 from pathlib import Path
 
+import submitit
 import torch
 from torch import nn
 import torch.backends.cudnn as cudnn
+from torch.distributed.elastic.events import record
+from torch.nn.parallel import DistributedDataParallel
 
 from lipsim.core import utils
 from lipsim.core.data.readers import N_CLASSES, readers_config
@@ -15,15 +17,28 @@ from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel,
 
 class LinearEvaluation:
     def __init__(self, config):
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        job_env = submitit.JobEnvironment()
+        self.rank = int(job_env.global_rank)
+        self.local_rank = int(job_env.local_rank)
+        self.num_nodes = int(job_env.num_nodes)
+        self.num_tasks = int(job_env.num_tasks)
+        self.is_master = bool(self.rank == 0)
+        self.ngpus = torch.cuda.device_count()
+        self.world_size = self.num_nodes * self.ngpus
+
         self.config = config
+        self.train_dir = self.config.train_dir
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
         self.model = self.load_ckpt()
         self.model = self.model.eval()
+        utils.setup_distributed_training(self.world_size, self.rank)
+        self.model = DistributedDataParallel(
+            self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
-        self.linear_classifier = self.linear_classifier.to(self.device)
+        self.linear_classifier = DistributedDataParallel(
+            self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
 
         self.optimizer = torch.optim.SGD(
             self.linear_classifier.parameters(),
@@ -32,19 +47,18 @@ class LinearEvaluation:
             weight_decay=0,  # we do not apply weight decay
         )
         Reader = readers_config[self.config.dataset]
-        self.train_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
-                                      is_training=True).load_dataset()
-        self.val_loader, _ = Reader(config=self.config, batch_size=self.config.batch_size,
-                                    is_training=False).load_dataset()
+        self.train_loader, self.train_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
+                                                       is_training=True).load_dataset()
+        self.val_loader, self.val_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
+                                                   is_training=False).load_dataset()
         self.metric_logger = utils.MetricLogger(delimiter="  ")
+
 
     def load_ckpt(self):
         means = (0.0000, 0.0000, 0.0000)
         stds = (1.0000, 1.0000, 1.0000)
         model = L2LipschitzNetwork(self.config, self.embed_dim)
         model = NormalizedModel(model, means, stds)
-        model = torch.nn.DataParallel(model)
-        model = model.to(self.device)
         checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
         get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
         ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
@@ -57,13 +71,35 @@ class LinearEvaluation:
         model.load_state_dict(new_checkpoint)
         return model
 
-    def eval_linear(self):
+    def _save_ckpt(self, step, epoch, final=False, best=False):
+        """Save ckpt in train directory."""
+        freq_ckpt_epochs = self.config.save_checkpoint_epochs
+        if (epoch % freq_ckpt_epochs == 0 and self.is_master and epoch not in self.saved_ckpts) or (
+                final and self.is_master) or best:
+            prefix = "model" if not best else "best_model"
+            ckpt_name = f"{prefix}.ckpt-{step}.pth"
+            ckpt_path = join(self.train_dir, 'checkpoints', ckpt_name)
+            if exists(ckpt_path) and not best:
+                return
+            self.saved_ckpts.add(epoch)
+            state = {
+                'epoch': epoch,
+                'global_step': step,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                # 'scheduler': self.scheduler.state_dict()
+            }
+            torch.save(state, ckpt_path)
+
+    @record
+    def __call__(self):
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
-
+        self.saved_ckpts = set([0])
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
         print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
+            self.train_sampler.set_epoch(epoch)
             train_stats = self.train(epoch)
             scheduler.step()
 
@@ -80,16 +116,10 @@ class LinearEvaluation:
 
             with (Path(self.config.output_dir) / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
-            save_dict = {
-                "epoch": epoch + 1,
-                "state_dict": self.linear_classifier.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-                "scheduler": scheduler.state_dict(),
-                "best_acc": best_acc,
-            }
-            torch.save(save_dict, os.path.join(self.config.output_dir, "checkpoint.pth.tar"))
+            self._save_ckpt(step=1, epoch=epoch)
         print("Training of the supervised linear classifier on frozen features completed.\n"
               "Top-1 test accuracy: {acc:.1f}".format(acc=best_acc))
+        self._save_ckpt(step=1, epoch=self.config.epochs, final=True)
 
     def train(self, epoch):
         self.linear_classifier.train()
@@ -131,6 +161,7 @@ class LinearEvaluation:
         self.linear_classifier.eval()
 
         for inp, target in self.val_loader:
+            self.val_sampler.set_epoch(0)
             # move to gpu
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
