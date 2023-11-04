@@ -69,16 +69,11 @@ class L2LipschitzNetwork(nn.Module):
         return x
 
 
-class LipSimNetwork(nn.Module):
-    def __init__(self, config, n_classes, backbone):
-        super(LipSimNetwork, self).__init__()
+class ClassificationLayer(nn.Module):
+    def __init__(self, config, embed_dim, n_classes):
+        super(ClassificationLayer, self).__init__()
         self.config = config
-        self.n_classes = n_classes
-        self.backbone = backbone
-        self.finetuning_layer = SDPBasedLipschitzLinearLayer(self.n_classes, self.n_classes)
+        self.finetuning_layer = SDPBasedLipschitzLinearLayer(embed_dim, n_classes)
 
     def forward(self, x):
-        x = self.backbone(x)
-        x = self.finetuning_layer(x)
-        norm_2 = torch.norm(x, p=2, dim=(1)).unsqueeze(1)
-        return x / norm_2
+        return self.finetuning_layer(x)

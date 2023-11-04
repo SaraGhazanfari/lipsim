@@ -1,7 +1,6 @@
 import glob
 import logging
 import os
-import time
 from math import sqrt
 
 from os.path import join
@@ -11,7 +10,6 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from lipsim.core.attack.general_attack import GeneralAttack
-from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
@@ -22,8 +20,6 @@ import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
-
-from lipsim.core.utils import RMSELoss
 
 
 def get_2afc_score(d0s, d1s, targets):
@@ -189,7 +185,7 @@ class Evaluator:
     def distance_attack_eval(self):
         from utils.visualization_utils import visualize_att_map
         Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False, num_workers=0)
+        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=False)
         patch_size = int(self.config.teacher_model_name[-2:])
         dreamsim_dist_list = list()
         dataloader, _ = self.reader.get_dataloader()

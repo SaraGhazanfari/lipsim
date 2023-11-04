@@ -9,13 +9,14 @@ import submitit
 
 from lipsim.core.evaluate import Evaluator
 from lipsim.core.trainer import Trainer
+from lipsim.eval_linear import LinearEvaluation
 
 # from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")
 
 eval_mode = ['certified', 'attack', 'eval', 'ssa', 'lipsim']
-all_mode = ['train', 'finetune']
+all_mode = ['train', 'finetune', 'classifier']
 all_mode.extend(eval_mode)
 
 
@@ -118,6 +119,8 @@ def main(config):
         evaluate = Evaluator(config)
         model = evaluate()
         return model
+    elif config.mode == 'classifier':
+        LinearEvaluation(config).eval_linear()
 
 
 if __name__ == '__main__':
