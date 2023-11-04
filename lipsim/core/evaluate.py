@@ -306,13 +306,14 @@ class Evaluator:
     def add_bias_before_projection(self, embed_ref):
         return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
 
-    def model_wrapper(self, img_0=None, img_1=None):
-
+    def model_wrapper(self, img_left, img_right):
         def metric_model(img):
-            if len(img.shape) > 4:
-                img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(1)
+            if len(img.shape) <= 4:
+                img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(
+                    1)
             else:
                 img_ref = img
+                img_0, img_1 = img_left, img_right
             dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
 
