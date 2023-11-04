@@ -91,7 +91,7 @@ class LinearEvaluation:
             }
             torch.save(state, ckpt_path)
 
-    @record
+    # @record
     def __call__(self):
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
