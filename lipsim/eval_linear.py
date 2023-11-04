@@ -46,6 +46,7 @@ class LinearEvaluation:
         model = torch.nn.DataParallel(model)
         model = model.to(self.device)
         checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
+        print(checkpoints)
         get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
         ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
         print(ckpt_name)
