@@ -58,7 +58,7 @@ class LinearEvaluation:
         )
         Reader = readers_config[self.config.dataset]
         self.train_loader, self.train_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
-                                                       is_training=True).load_dataset()
+                                                       is_training=True, is_distributed=True).load_dataset()
         self.val_loader, self.val_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
                                                    is_training=False).load_dataset()
         self.metric_logger = utils.MetricLogger(delimiter="  ")
@@ -168,7 +168,7 @@ class LinearEvaluation:
         self.linear_classifier.eval()
 
         for inp, target in self.val_loader:
-            self.val_sampler.set_epoch(0)
+            # self.val_sampler.set_epoch(0)
             # move to gpu
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
