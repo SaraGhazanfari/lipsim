@@ -293,7 +293,7 @@ class Trainer:
             logging.info(self.message.get_message())
 
     def finetune_func(self):
-        self.perceptual_metric = PerceptualMetric(backbone=self.model)
+
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
@@ -356,7 +356,7 @@ class Trainer:
         # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
 
         self.model = self.model.cuda()
-
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
