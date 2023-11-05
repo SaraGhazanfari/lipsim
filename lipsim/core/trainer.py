@@ -19,7 +19,7 @@ from tqdm import tqdm
 from lipsim.core import utils
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
-from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork
+from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
 
 # from core.models.dreamsim.model import dreamsim
 
@@ -293,6 +293,7 @@ class Trainer:
             logging.info(self.message.get_message())
 
     def finetune_func(self):
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
@@ -405,7 +406,7 @@ class Trainer:
         self.best_checkpoint = None
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
-        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+
         epoch_id = 0
         self.complete_eval()
         self.optimizer.zero_grad()
@@ -418,9 +419,9 @@ class Trainer:
 
                 start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                         requires_grad=True,
-                                                                         requires_normalization=True)
+                dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                                           requires_grad=True,
+                                                                                           requires_normalization=True)
                 logit = dist_0 - dist_1
                 loss = self.criterion(logit.squeeze(), target)
                 loss.backward()
@@ -460,15 +461,6 @@ class Trainer:
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
-        # print(len(data_loader), len(no_imagenet_data_loader))
-        # imagenet_score = self.get_2afc_score_eval(data_loader)
-        # logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
-        # torch.cuda.empty_cache()
-        # no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        # logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
-        # overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
-        #         dataset_size + no_imagenet_dataset_size)
-        # logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
         imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
         torch.cuda.empty_cache()
@@ -492,34 +484,6 @@ class Trainer:
             self.message.add('Overall certified', overall_certified[i], format='.5f')
             logging.info(self.message.get_message())
 
-    def get_2afc_score_eval(self, test_loader):
-        logging.info("Evaluating NIGHTS dataset.")
-        d0s = []
-        d1s = []
-        targets = []
-        with torch.no_grad():
-            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
-                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                    img_right.cuda(), target.cuda()
-                dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
-                d0s.append(dist_0)
-                d1s.append(dist_1)
-                targets.append(target)
-
-        twoafc_score = get_2afc_score(d0s, d1s, targets)
-        return twoafc_score
-
-    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
-
-        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
-        if len(dist_0.shape) < 1:
-            dist_0 = dist_0.unsqueeze(0)
-            dist_1 = dist_1.unsqueeze(0)
-        dist_0 = dist_0.unsqueeze(1).detach()
-        dist_1 = dist_1.unsqueeze(1).detach()
-        target = target.unsqueeze(1).detach()
-        return dist_0, dist_1, target
-
     def get_certified_accuracy(self, data_loader):
         # self.model.eval()
         running_accuracy = np.zeros(4)
@@ -533,9 +497,10 @@ class Trainer:
                 img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                     img_right.cuda(), target.cuda()
 
-                dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
-                                                                             img_right=img_right,
-                                                                             requires_normalization=True)
+                dist_0, dist_1, bound = self.perceptual_metric.get_cosine_score_between_images(img_ref,
+                                                                                               img_left=img_left,
+                                                                                               img_right=img_right,
+                                                                                               requires_normalization=True)
 
                 outputs = torch.stack((dist_1, dist_0), dim=1)
                 predicted = outputs.argmax(axis=1)
@@ -554,29 +519,6 @@ class Trainer:
         certified = running_certified / running_inputs
 
         return accuracy, certified
-
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False,
-                                        requires_normalization=False):
-
-        embed_ref = self.model(img_ref)
-        embed_x0 = self.model(img_left)
-        embed_x1 = self.model(img_right)
-        if not requires_grad:
-            embed_ref = embed_ref.detach()
-            embed_x0 = embed_x0.detach()
-            embed_x1 = embed_x1.detach()
-        if requires_normalization:
-            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-            embed_ref = embed_ref / norm_ref
-            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-            embed_x0 = embed_x0 / norm_x_0
-            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-            embed_x1 = embed_x1 / norm_x_1
-
-        bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
-        dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1, bound
 
 
 def get_2afc_score(d0s, d1s, targets):

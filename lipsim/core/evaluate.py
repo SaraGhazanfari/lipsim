@@ -1,7 +1,6 @@
 import glob
 import logging
 import os
-from math import sqrt
 
 from os.path import join
 import numpy as np
@@ -12,7 +11,7 @@ from tqdm import tqdm
 from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.night_dataset import NightDataset
 
-from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel
+from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric
 from lipsim.core import utils
 
 from lipsim.core.data.readers import readers_config, N_CLASSES
@@ -105,6 +104,7 @@ class Evaluator:
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
 
         self.load_ckpt()
 
@@ -160,9 +160,9 @@ class Evaluator:
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
 
-            dist_0, dist_1, bound = self.get_cosine_score_between_images(img_ref, img_left=img_left,
-                                                                         img_right=img_right,
-                                                                         requires_normalization=True)
+            dist_0, dist_1, bound = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left=img_left,
+                                                                                           img_right=img_right,
+                                                                                           requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == target
@@ -276,35 +276,6 @@ class Evaluator:
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False,
-                                        requires_normalization=False):
-
-        embed_ref = self.model(img_ref)
-        if not requires_grad:
-            embed_ref = embed_ref.detach()
-        embed_ref = self.add_bias_before_projection(embed_ref)
-
-        embed_x0 = self.model(img_left).detach()
-        embed_x0 = self.add_bias_before_projection(embed_x0)
-        embed_x1 = self.model(img_right).detach()
-        embed_x1 = self.add_bias_before_projection(embed_x1)
-
-        if requires_normalization:
-            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-            embed_ref = embed_ref / norm_ref
-            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-            embed_x0 = embed_x0 / norm_x_0
-            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-            embed_x1 = embed_x1 / norm_x_1
-
-        bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
-        dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
-        dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
-        return dist_0, dist_1, bound
-
-    def add_bias_before_projection(self, embed_ref):
-        return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
-
     def model_wrapper(self, img_left, img_right):
         def metric_model(img):
             if len(img.shape) > 4:
@@ -313,7 +284,8 @@ class Evaluator:
             else:
                 img_ref = img
                 img_0, img_1 = img_left, img_right
-            dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_0, img_1, requires_grad=True)
+            dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_0, img_1,
+                                                                                       requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
@@ -321,14 +293,15 @@ class Evaluator:
     def dist_wrapper(self):
         def metric_model(img):
             img_ref, img_0 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1)
-            dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img_0, img_0, requires_grad=True)
+            dist_0, _, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_0, img_0,
+                                                                                  requires_grad=True)
             return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
 
     def dist_2_wrapper(self, img_ref):
         def metric_model(img):
-            dist_0, _, _ = self.get_cosine_score_between_images(img_ref, img, img, requires_grad=True)
+            dist_0, _, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img, img, requires_grad=True)
             return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
@@ -337,7 +310,7 @@ class Evaluator:
         if self.config.attack:
             img_ref = self.general_attack.generate_attack(img_ref, img_left, img_right, target,
                                                           target_model=self.model_wrapper(img_left, img_right))
-        dist_0, dist_1, _ = self.get_cosine_score_between_images(img_ref, img_left, img_right)
+        dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)
