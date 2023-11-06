@@ -50,14 +50,7 @@ class Evaluator:
 
     def __init__(self, config):
         self.config = config
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        download_weights(cache_dir='./checkpoints', dreamsim_type=config.teacher_model_name)
-        # self.dreamsim_model = PerceptualModel(config.teacher_model_name, device=self.device, load_dir='./checkpoints',
-        #                                       normalize_embeds=True)
-
-        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=config.teacher_model_name,
-                                          cache_dir='./checkpoints', device=self.device)
         self.criterion = utils.get_loss(self.config)
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.general_attack = GeneralAttack(config=config)
@@ -80,7 +73,11 @@ class Evaluator:
 
     def __call__(self):
         '''Run evaluation of model or eval under attack'''
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                          cache_dir='./checkpoints', device=self.device)
         cudnn.benchmark = True
 
         # create a mesage builder for logging
