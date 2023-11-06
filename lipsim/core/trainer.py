@@ -100,7 +100,7 @@ class Trainer:
             logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
             logging.info(f"Hostname: {socket.gethostname()}.")
 
-        # ditributed settings
+        # distributed settings
         self.world_size = 1
         self.is_distributed = False
         if self.num_nodes > 1 or self.num_tasks > 1:
