@@ -51,7 +51,15 @@ class KNNEval:
                 self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-            utils.setup_distributed_training(self.world_size, self.rank)
+
+        dist.init_process_group(
+            backend="nccl",
+            init_method='127.0.0.1:29500',
+            world_size=self.world_size,
+            rank=self.rank,
+        )
+        torch.cuda.set_device(self.local_rank)
+
     def _load_dataloader(self):
         transform = transforms.Compose([
             transforms.Resize(256, interpolation=3),
