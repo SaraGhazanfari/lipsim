@@ -43,22 +43,15 @@ class KNNEval:
         # if self.num_nodes > 1 or self.num_tasks > 1:
         #     self.is_distributed = True
         #     self.world_size = self.num_nodes * self.ngpus
-        # torch.cuda.set_device(self.local_rank)
-        self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 0, 0, False
+
+        self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
+        torch.cuda.set_device(self.local_rank)
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.rank)
             self.model = DistributedDataParallel(
                 self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-
-        dist.init_process_group(
-            backend="nccl",
-            init_method='127.0.0.1:29500',
-            world_size=self.world_size,
-            rank=self.rank,
-        )
-        torch.cuda.set_device(self.local_rank)
 
     def _load_dataloader(self):
         transform = transforms.Compose([
