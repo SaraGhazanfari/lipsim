@@ -96,7 +96,7 @@ class ImagenetReader(BaseReader):
         self.n_classes = 768
         self.height, self.width = 224, 500
         self.n_train_files = 1_281_167
-        self.n_test_files = 50_1000
+        self.n_test_files = 50_000
         self.img_size = (None, 3, 224, 500)
         self.split = 'train' if self.is_training else 'val'
 

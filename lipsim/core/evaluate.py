@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.night_dataset import NightDataset
+from lipsim.core.eval_knn import KNNEval
 
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric
 from lipsim.core import utils
@@ -118,6 +119,8 @@ class Evaluator:
             self.distance_attack_eval()
         elif self.config.mode == 'certified':
             self.certified_eval()
+        elif self.config.mode == 'knn':
+            KNNEval(self.config, self.model).knn_classifier()
 
         logging.info('Done with batched inference.')
 
