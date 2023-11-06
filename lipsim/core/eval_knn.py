@@ -21,11 +21,11 @@ class KNNEval:
     def __init__(self, config, model):
         self.config = config
         self.model = model
+        self._setup_distributed_run()
         print('Reading data...')
         self._load_dataloader()
         print('Loading Features...')
         self._load_features()
-        self._setup_distributed_run()
 
     def _setup_distributed_run(self):
         cudnn.benchmark = True
