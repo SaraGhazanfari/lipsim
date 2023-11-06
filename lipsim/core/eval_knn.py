@@ -29,28 +29,28 @@ class KNNEval:
 
     def _setup_distributed_run(self):
         cudnn.benchmark = True
-        self.train_dir = self.config.train_dir
-        self.ngpus = torch.cuda.device_count()
-        job_env = submitit.JobEnvironment()
-        self.rank = int(job_env.global_rank)
-        self.local_rank = int(job_env.local_rank)
-        self.num_nodes = int(job_env.num_nodes)
-        self.num_tasks = int(job_env.num_tasks)
-        self.is_master = bool(self.rank == 0)
-        torch.cuda.init()
-        self.world_size = 1
-        self.is_distributed = False
-        if self.num_nodes > 1 or self.num_tasks > 1:
-            self.is_distributed = True
-            self.world_size = self.num_nodes * self.ngpus
-        torch.cuda.set_device(self.local_rank)
+        # self.train_dir = self.config.train_dir
+        # self.ngpus = torch.cuda.device_count()
+        # job_env = submitit.JobEnvironment()
+        # self.rank = int(job_env.global_rank)
+        # self.local_rank = int(job_env.local_rank)
+        # self.num_nodes = int(job_env.num_nodes)
+        # self.num_tasks = int(job_env.num_tasks)
+        # self.is_master = bool(self.rank == 0)
+        # torch.cuda.init()
+        # self.world_size = 1
+        # self.is_distributed = False
+        # if self.num_nodes > 1 or self.num_tasks > 1:
+        #     self.is_distributed = True
+        #     self.world_size = self.num_nodes * self.ngpus
+        # torch.cuda.set_device(self.local_rank)
+        self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 0, 0, False
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.rank)
             self.model = DistributedDataParallel(
                 self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         else:
             self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-        utils.setup_distributed_training(self.world_size, self.rank)
 
     def _load_dataloader(self):
         transform = transforms.Compose([
@@ -60,7 +60,7 @@ class KNNEval:
             # pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
         dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
-        self.sampler = torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
+        self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
         dataset_val = ReturnIndexDataset(os.path.join(self.config.data_dir, "val"), transform=transform)
         self.train_loader = torch.utils.data.DataLoader(
             dataset_train,
