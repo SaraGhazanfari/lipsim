@@ -67,62 +67,32 @@ class KNNEval:
         print("Extracting features for train set...")
         train_features = self.extract_features(self.train_loader)
         print("Extracting features for val set...")
-        test_features = self.extract_features(self.test_loader, is_test=True)
+        test_features = self.extract_features(self.test_loader)
 
         train_features = nn.functional.normalize(train_features, dim=1, p=2)
         test_features = nn.functional.normalize(test_features, dim=1, p=2)
 
         train_labels = torch.tensor([s[-1] for s in self.train_loader.dataset.samples]).long()
         test_labels = torch.tensor([s[-1] for s in self.test_loader.dataset.samples]).long()
-        # save features and labels
-        # if self.config.dump_features and dist.get_rank() == 0:
+
         torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
         torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
         torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
         torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
         return train_features, test_features, train_labels, test_labels
 
-    def extract_features(self, data_loader, multiscale=False, is_test=False):
+    def extract_features(self, data_loader):
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
         for samples, index in metric_logger.log_every(data_loader, 10):
             samples = samples.cuda(non_blocking=True)
             index = index.cuda(non_blocking=True)
-
             feats = self.model(samples).clone()
 
             # init storage feature matrix
-            if dist.get_rank() == 0 and features is None:
-                features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
-                if self.config.use_cuda:
-                    features = features.cuda(non_blocking=True)
-                print(f"Storing features into tensor of shape {features.shape}")
-
-            # get indexes from all processes
-            y_all = torch.empty(dist.get_world_size(), index.size(0), dtype=index.dtype, device=index.device)
-            y_l = list(y_all.unbind(0))
-            y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
-            y_all_reduce.wait()
-            index_all = torch.cat(y_l)
-
-            # share features between processes
-            feats_all = torch.empty(
-                dist.get_world_size(),
-                feats.size(0),
-                feats.size(1),
-                dtype=feats.dtype,
-                device=feats.device,
-            )
-            output_l = list(feats_all.unbind(0))
-            output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
-            output_all_reduce.wait()
-
-            # update storage feature matrix
-            if dist.get_rank() == 0:
-                if self.config.use_cuda:
-                    features.index_copy_(0, index_all, torch.cat(output_l))
-                else:
-                    features.index_copy_(0, index_all.cpu(), torch.cat(output_l).cpu())
+            features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
+            features = features.cuda(non_blocking=True)
+            features.index_copy_(0, index, feats)
         return features
 
     def knn_classifier(self):
