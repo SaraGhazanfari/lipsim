@@ -19,7 +19,9 @@ class KNNEval:
     def __init__(self, config, model):
         self.config = config
         self.model = model
+        print('Reading data...')
         self._load_dataloader()
+        print('Loading Features...')
         self._load_features()
 
     def _load_dataloader(self):
@@ -47,17 +49,17 @@ class KNNEval:
         )
 
     def _load_features(self):
-        if self.config.load_features:
-            self.train_features = torch.load(os.path.join(self.config.load_features, "trainfeat.pth"))
-            self.test_features = torch.load(os.path.join(self.config.load_features, "testfeat.pth"))
-            self.train_labels = torch.load(os.path.join(self.config.load_features, "trainlabels.pth"))
-            self.test_labels = torch.load(os.path.join(self.config.load_features, "testlabels.pth"))
-        else:
-            self.train_features, self.test_features, self.train_labels, self.test_labels = self._extract_feature_pipeline()
-            self.train_features = self.train_features.cuda()
-            self.test_features = self.test_features.cuda()
-            self.train_labels = self.train_labels.cuda()
-            self.test_labels = self.test_labels.cuda()
+        # if self.config.load_features:
+        #     self.train_features = torch.load(os.path.join(self.config.load_features, "trainfeat.pth"))
+        #     self.test_features = torch.load(os.path.join(self.config.load_features, "testfeat.pth"))
+        #     self.train_labels = torch.load(os.path.join(self.config.load_features, "trainlabels.pth"))
+        #     self.test_labels = torch.load(os.path.join(self.config.load_features, "testlabels.pth"))
+        # else:
+        self.train_features, self.test_features, self.train_labels, self.test_labels = self._extract_feature_pipeline()
+        self.train_features = self.train_features.cuda()
+        self.test_features = self.test_features.cuda()
+        self.train_labels = self.train_labels.cuda()
+        self.test_labels = self.test_labels.cuda()
 
     def _extract_feature_pipeline(self):
 
@@ -73,11 +75,11 @@ class KNNEval:
         train_labels = torch.tensor([s[-1] for s in self.train_loader.dataset.samples]).long()
         test_labels = torch.tensor([s[-1] for s in self.test_loader.dataset.samples]).long()
         # save features and labels
-        if self.config.dump_features and dist.get_rank() == 0:
-            torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
-            torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
-            torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
-            torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
+        # if self.config.dump_features and dist.get_rank() == 0:
+        torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
+        torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
+        torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
+        torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
         return train_features, test_features, train_labels, test_labels
 
     def extract_features(self, data_loader, multiscale=False, is_test=False):
