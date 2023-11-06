@@ -126,6 +126,16 @@ def setup_logging(config, rank):
     logging.basicConfig(filename=filename, level=level, format=format_, datefmt='%H:%M:%S')
 
 
+def get_open_port():
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    s.listen(1)
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
 def setup_distributed_training(world_size, rank):
     """ find a common host name on all nodes and setup distributed training """
     # make sure http proxy are unset, in order for the nodes to communicate
@@ -140,7 +150,7 @@ def setup_distributed_training(world_size, rank):
     # host_name = stdout.decode().splitlines()[0]
     import platform
     host_name = platform.node()
-    dist_url = f'tcp://{host_name}:9000'
+    dist_url = f'tcp://{host_name}:{get_open_port()}'
     # setup dist.init_process_group
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
