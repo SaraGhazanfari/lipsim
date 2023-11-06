@@ -106,7 +106,6 @@ def main(config):
         timeout_min=config.timeout,
     )
     if config.mode == 'train':
-
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
@@ -118,6 +117,12 @@ def main(config):
     elif config.mode == 'classifier':
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)
+        job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
+    elif config.mode == 'knn':
+        evaluate = Evaluator(config)
+        job = executor.submit(evaluate)
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
