@@ -22,6 +22,7 @@ class KNNEval:
     def __init__(self, config, model):
         self.config = config
         self.model = model
+        self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
         utils.setup_logging(self.config, self.rank)
         self._setup_distributed_run()
         logging.info('Reading data...')
@@ -32,7 +33,6 @@ class KNNEval:
     def _setup_distributed_run(self):
         cudnn.benchmark = True
         torch.cuda.init()
-        self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
         torch.cuda.set_device(self.local_rank)
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.rank)
