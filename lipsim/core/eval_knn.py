@@ -98,6 +98,7 @@ class KNNEval:
     def extract_features(self, data_loader):
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
+        start_index = 0
         for samples, index in metric_logger.log_every(data_loader, 10):
             samples = samples.cuda(non_blocking=True)
             index = index.cuda(non_blocking=True)
@@ -129,8 +130,10 @@ class KNNEval:
 
             # update storage feature matrix
             # if dist.get_rank() == 0:
-            print(index * self.config.batch_size, (index + 1) * self.config.batch_size)
-            features[index * self.config.batch_size:(index + 1) * self.config.batch_size, :] = output_l
+            print(start_index, start_index + self.config.batch_size)
+            features[start_index:start_index + self.config.batch_size, :] = output_l
+            start_index += self.config.batch_size
+
             # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
