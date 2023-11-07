@@ -134,7 +134,7 @@ class KNNEval:
             # features[start_index:start_index + self.config.batch_size, :] = torch.cat(output_l)
             # start_index += self.config.batch_size
 
-            features.index_copy_(0, index_all, torch.cat(output_l))
+            # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
     def knn_classifier(self):
