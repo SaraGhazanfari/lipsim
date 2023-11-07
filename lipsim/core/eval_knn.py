@@ -68,6 +68,7 @@ class KNNEval:
             drop_last=False,
         )
 
+    @torch.no_grad()
     def _load_features(self):
         self.train_features, self.test_features, self.train_labels, self.test_labels = self._extract_feature_pipeline()
         self.train_features = self.train_features.cuda()
@@ -75,6 +76,7 @@ class KNNEval:
         self.train_labels = self.train_labels.cuda()
         self.test_labels = self.test_labels.cuda()
 
+    @torch.no_grad()
     def _extract_feature_pipeline(self):
 
         # ============ extract features ... ============
@@ -95,6 +97,7 @@ class KNNEval:
         torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
         return train_features, test_features, train_labels, test_labels
 
+    @torch.no_grad()
     def extract_features(self, data_loader):
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
