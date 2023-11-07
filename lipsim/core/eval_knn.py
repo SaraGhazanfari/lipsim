@@ -129,8 +129,8 @@ class KNNEval:
 
             # update storage feature matrix
             # if dist.get_rank() == 0:
-            print(index_all)
-            features[index_all, :] = output_l
+            print(index * self.config.batch_size, (index + 1) * self.config.batch_size)
+            features[index * self.config.batch_size:(index + 1) * self.config.batch_size, :] = output_l
             # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
