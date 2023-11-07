@@ -70,8 +70,8 @@ class KNNEval:
     @torch.no_grad()
     def _load_features(self):
         if os.path.exists(os.path.join(self.config.train_dir, 'trainfeat.pth')):
-            self.train_features = torch.load(os.path.join(self.config.train_dir, "trainfeat.pth"))[:, 768:768 + 512]
-            self.test_features = torch.load(os.path.join(self.config.train_dir, "testfeat.pth"))[:, 768:768 + 512]
+            self.train_features = torch.load(os.path.join(self.config.train_dir, "trainfeat.pth"))[:, 768 + 512:]
+            self.test_features = torch.load(os.path.join(self.config.train_dir, "testfeat.pth"))[:, 768 + 512:]
             self.train_labels = torch.load(os.path.join(self.config.train_dir, "trainlabels.pth"))
             self.test_labels = torch.load(os.path.join(self.config.train_dir, "testlabels.pth"))
         else:
