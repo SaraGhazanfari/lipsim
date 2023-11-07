@@ -91,10 +91,10 @@ class KNNEval:
         train_labels = torch.tensor([s[-1] for s in self.train_loader.dataset.samples]).long()
         test_labels = torch.tensor([s[-1] for s in self.test_loader.dataset.samples]).long()
         # if dist.get_rank() == 0:
-        torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
-        torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
-        torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
-        torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
+        torch.save(train_features.cpu(), os.path.join(self.config.train_dir, "trainfeat.pth"))
+        torch.save(test_features.cpu(), os.path.join(self.config.train_dir, "testfeat.pth"))
+        torch.save(train_labels.cpu(), os.path.join(self.config.train_dir, "trainlabels.pth"))
+        torch.save(test_labels.cpu(), os.path.join(self.config.train_dir, "testlabels.pth"))
         return train_features, test_features, train_labels, test_labels
 
     @torch.no_grad()
