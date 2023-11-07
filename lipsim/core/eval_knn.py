@@ -108,8 +108,9 @@ class KNNEval:
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
                 features = features.cuda(non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
+            print(feats.shape, feats[0, 0])
             features[index, :] = feats
-
+            print(features[index[0], 0])
             # get indexes from all processes
             # y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
             # y_l = list(y_all.unbind(0))
