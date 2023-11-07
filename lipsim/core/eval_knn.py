@@ -129,7 +129,8 @@ class KNNEval:
 
             # update storage feature matrix
             # if dist.get_rank() == 0:
-            print(index_all.shape, torch.cat(output_l).shape)
+            print(index_all)
+            features[index_all, :] = output_l
             # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
