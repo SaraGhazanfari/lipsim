@@ -111,8 +111,8 @@ class KNNEval:
             # get indexes from all processes
             y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
             y_l = list(y_all.unbind(0))
-            y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
-            y_all_reduce.wait()
+            # y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
+            # y_all_reduce.wait()
             index_all = torch.cat(y_l)
 
             # share features between processes
@@ -124,7 +124,7 @@ class KNNEval:
                 device=feats.device,
             )
             output_l = list(feats_all.unbind(0))
-            output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
+            # output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
             # output_all_reduce.wait()
 
             # update storage feature matrix
