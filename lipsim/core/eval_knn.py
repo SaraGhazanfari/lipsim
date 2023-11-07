@@ -88,11 +88,11 @@ class KNNEval:
 
         train_labels = torch.tensor([s[-1] for s in self.train_loader.dataset.samples]).long()
         test_labels = torch.tensor([s[-1] for s in self.test_loader.dataset.samples]).long()
-        if dist.get_rank() == 0:
-            torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
-            torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
-            torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
-            torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
+        # if dist.get_rank() == 0:
+        torch.save(train_features.cpu(), os.path.join(self.config.dump_features, "trainfeat.pth"))
+        torch.save(test_features.cpu(), os.path.join(self.config.dump_features, "testfeat.pth"))
+        torch.save(train_labels.cpu(), os.path.join(self.config.dump_features, "trainlabels.pth"))
+        torch.save(test_labels.cpu(), os.path.join(self.config.dump_features, "testlabels.pth"))
         return train_features, test_features, train_labels, test_labels
 
     def extract_features(self, data_loader):
@@ -103,7 +103,7 @@ class KNNEval:
             index = index.cuda(non_blocking=True)
             feats = self.model(samples).clone()
 
-            if dist.get_rank() == 0 and features is None:
+            if features is None:  # dist.get_rank() == 0 and
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
                 features = features.cuda(non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
@@ -128,8 +128,8 @@ class KNNEval:
             # output_all_reduce.wait()
 
             # update storage feature matrix
-            if dist.get_rank() == 0:
-                features.index_copy_(0, index_all, torch.cat(output_l))
+            # if dist.get_rank() == 0:
+            features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
     def knn_classifier(self):
@@ -138,7 +138,7 @@ class KNNEval:
             top1, top5 = self.knn_classifier_for_each_k(k, self.config.temperature)
             logging.info(f"{k}-NN classifier result: Top1: {top1}, Top5: {top5}")
 
-        dist.barrier()
+        # dist.barrier()
 
     @torch.no_grad()
     def knn_classifier_for_each_k(self, k, T, num_classes=1000):
