@@ -1,7 +1,6 @@
 import logging
 import os
 
-import submitit
 import torch
 from torch import nn
 from torch.backends import cudnn
@@ -9,7 +8,6 @@ from torch.nn.parallel import DistributedDataParallel
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 from lipsim.core import utils
-import torch.distributed as dist
 
 
 class ReturnIndexDataset(ImageFolder):
@@ -20,6 +18,7 @@ class ReturnIndexDataset(ImageFolder):
 
 class KNNEval:
     def __init__(self, config, model):
+        self.temperature = 0.07
         self.config = config
         self.model = model
         self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
@@ -149,7 +148,7 @@ class KNNEval:
     def knn_classifier(self):
         logging.info("Features are ready!\nStart the k-NN classification.")
         for k in [10, 20, 100, 200]:
-            top1, top5 = self.knn_classifier_for_each_k(k, self.config.temperature)
+            top1, top5 = self.knn_classifier_for_each_k(k, self.temperature)
             logging.info(f"{k}-NN classifier result: Top1: {top1}, Top5: {top5}")
 
         # dist.barrier()
