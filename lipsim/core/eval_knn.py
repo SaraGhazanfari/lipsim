@@ -108,23 +108,24 @@ class KNNEval:
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
                 features = features.cuda(non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
+            features[index, :] = feats
 
             # get indexes from all processes
-            y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
-            y_l = list(y_all.unbind(0))
+            # y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
+            # y_l = list(y_all.unbind(0))
             # y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
             # y_all_reduce.wait()
-            index_all = torch.cat(y_l)
-            print(index)
+            # index_all = torch.cat(y_l)
+            #
             # share features between processes
-            feats_all = torch.empty(
-                self.world_size,
-                feats.size(0),
-                feats.size(1),
-                dtype=feats.dtype,
-                device=feats.device,
-            )
-            output_l = list(feats_all.unbind(0))
+            # feats_all = torch.empty(
+            #     self.world_size,
+            #     feats.size(0),
+            #     feats.size(1),
+            #     dtype=feats.dtype,
+            #     device=feats.device,
+            # )
+            # output_l = list(feats_all.unbind(0))
             # output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
             # output_all_reduce.wait()
 
