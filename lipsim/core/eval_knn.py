@@ -109,7 +109,7 @@ class KNNEval:
                 logging.info(f"Storing features into tensor of shape {features.shape}")
 
             # get indexes from all processes
-            y_all = torch.empty(dist.get_world_size(), index.size(0), dtype=index.dtype, device=index.device)
+            y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
             y_l = list(y_all.unbind(0))
             y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
             y_all_reduce.wait()
@@ -117,7 +117,7 @@ class KNNEval:
 
             # share features between processes
             feats_all = torch.empty(
-                dist.get_world_size(),
+                self.world_size,
                 feats.size(0),
                 feats.size(1),
                 dtype=feats.dtype,
@@ -125,7 +125,7 @@ class KNNEval:
             )
             output_l = list(feats_all.unbind(0))
             output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
-            output_all_reduce.wait()
+            # output_all_reduce.wait()
 
             # update storage feature matrix
             if dist.get_rank() == 0:
