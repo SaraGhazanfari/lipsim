@@ -24,6 +24,7 @@ class KNNEval:
         self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
         utils.setup_logging(self.config, self.rank)
         self._setup_distributed_run()
+        self.model = self.model.module.embed
         logging.info('Reading data...')
         self._load_dataloader()
         logging.info('Loading Features...')
@@ -117,32 +118,6 @@ class KNNEval:
                 features = features.cuda(non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
             features[index, :] = feats
-            # get indexes from all processes
-            # y_all = torch.empty(self.world_size, index.size(0), dtype=index.dtype, device=index.device)
-            # y_l = list(y_all.unbind(0))
-            # y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
-            # y_all_reduce.wait()
-            # index_all = torch.cat(y_l)
-            #
-            # share features between processes
-            # feats_all = torch.empty(
-            #     self.world_size,
-            #     feats.size(0),
-            #     feats.size(1),
-            #     dtype=feats.dtype,
-            #     device=feats.device,
-            # )
-            # output_l = list(feats_all.unbind(0))
-            # output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
-            # output_all_reduce.wait()
-
-            # update storage feature matrix
-            # if dist.get_rank() == 0:
-
-            # features[start_index:start_index + self.config.batch_size, :] = torch.cat(output_l)
-            # start_index += self.config.batch_size
-
-            # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
     def knn_classifier(self):
