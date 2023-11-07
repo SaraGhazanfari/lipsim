@@ -130,7 +130,7 @@ class KNNEval:
             # update storage feature matrix
             # if dist.get_rank() == 0:
             print(index_all.shape, torch.cat(output_l).shape)
-            features.index_copy_(0, index_all, torch.cat(output_l))
+            # features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
     def knn_classifier(self):
