@@ -115,7 +115,7 @@ class KNNEval:
             # y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
             # y_all_reduce.wait()
             index_all = torch.cat(y_l)
-            print(y_l)
+            print(index)
             # share features between processes
             feats_all = torch.empty(
                 self.world_size,
