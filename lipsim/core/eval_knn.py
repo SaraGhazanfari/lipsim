@@ -29,21 +29,7 @@ class KNNEval:
 
     def _setup_distributed_run(self):
         cudnn.benchmark = True
-        # self.train_dir = self.config.train_dir
-        # self.ngpus = torch.cuda.device_count()
-        # job_env = submitit.JobEnvironment()
-        # self.rank = int(job_env.global_rank)
-        # self.local_rank = int(job_env.local_rank)
-        # self.num_nodes = int(job_env.num_nodes)
-        # self.num_tasks = int(job_env.num_tasks)
-        # self.is_master = bool(self.rank == 0)
-        # torch.cuda.init()
-        # self.world_size = 1
-        # self.is_distributed = False
-        # if self.num_nodes > 1 or self.num_tasks > 1:
-        #     self.is_distributed = True
-        #     self.world_size = self.num_nodes * self.ngpus
-
+        torch.cuda.init()
         self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
         torch.cuda.set_device(self.local_rank)
         if self.is_distributed:
