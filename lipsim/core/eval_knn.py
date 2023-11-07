@@ -148,7 +148,7 @@ class KNNEval:
 
     def knn_classifier(self):
         logging.info("Features are ready!\nStart the k-NN classification.")
-        for k in self.config.nb_knn:
+        for k in [10, 20, 100, 200]:
             top1, top5 = self.knn_classifier_for_each_k(k, self.config.temperature)
             logging.info(f"{k}-NN classifier result: Top1: {top1}, Top5: {top5}")
 
