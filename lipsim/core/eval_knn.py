@@ -1,3 +1,4 @@
+import logging
 import os
 
 import submitit
@@ -21,10 +22,11 @@ class KNNEval:
     def __init__(self, config, model):
         self.config = config
         self.model = model
+        utils.setup_logging(self.config, self.rank)
         self._setup_distributed_run()
-        print('Reading data...')
+        logging.info('Reading data...')
         self._load_dataloader()
-        print('Loading Features...')
+        logging.info('Loading Features...')
         self._load_features()
 
     def _setup_distributed_run(self):
@@ -67,12 +69,6 @@ class KNNEval:
         )
 
     def _load_features(self):
-        # if self.config.load_features:
-        #     self.train_features = torch.load(os.path.join(self.config.load_features, "trainfeat.pth"))
-        #     self.test_features = torch.load(os.path.join(self.config.load_features, "testfeat.pth"))
-        #     self.train_labels = torch.load(os.path.join(self.config.load_features, "trainlabels.pth"))
-        #     self.test_labels = torch.load(os.path.join(self.config.load_features, "testlabels.pth"))
-        # else:
         self.train_features, self.test_features, self.train_labels, self.test_labels = self._extract_feature_pipeline()
         self.train_features = self.train_features.cuda()
         self.test_features = self.test_features.cuda()
@@ -82,9 +78,9 @@ class KNNEval:
     def _extract_feature_pipeline(self):
 
         # ============ extract features ... ============
-        print("Extracting features for train set...")
+        logging.info("Extracting features for train set...")
         train_features = self.extract_features(self.train_loader)
-        print("Extracting features for val set...")
+        logging.info("Extracting features for val set...")
         test_features = self.extract_features(self.test_loader)
 
         train_features = nn.functional.normalize(train_features, dim=1, p=2)
@@ -110,7 +106,7 @@ class KNNEval:
             if dist.get_rank() == 0 and features is None:
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
                 features = features.cuda(non_blocking=True)
-                print(f"Storing features into tensor of shape {features.shape}")
+                logging.info(f"Storing features into tensor of shape {features.shape}")
 
             # get indexes from all processes
             y_all = torch.empty(dist.get_world_size(), index.size(0), dtype=index.dtype, device=index.device)
@@ -137,10 +133,10 @@ class KNNEval:
         return features
 
     def knn_classifier(self):
-        print("Features are ready!\nStart the k-NN classification.")
+        logging.info("Features are ready!\nStart the k-NN classification.")
         for k in self.config.nb_knn:
             top1, top5 = self.knn_classifier_for_each_k(k, self.config.temperature)
-            print(f"{k}-NN classifier result: Top1: {top1}, Top5: {top5}")
+            logging.info(f"{k}-NN classifier result: Top1: {top1}, Top5: {top5}")
 
         dist.barrier()
 
