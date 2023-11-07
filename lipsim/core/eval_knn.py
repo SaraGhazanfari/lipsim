@@ -98,7 +98,7 @@ class KNNEval:
     def extract_features(self, data_loader):
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
-        start_index = 0
+        # start_index = 0
         for samples, index in metric_logger.log_every(data_loader, 10):
             samples = samples.cuda(non_blocking=True)
             index = index.cuda(non_blocking=True)
@@ -115,7 +115,7 @@ class KNNEval:
             # y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
             # y_all_reduce.wait()
             index_all = torch.cat(y_l)
-
+            print(y_l)
             # share features between processes
             feats_all = torch.empty(
                 self.world_size,
@@ -131,10 +131,10 @@ class KNNEval:
             # update storage feature matrix
             # if dist.get_rank() == 0:
 
-            features[start_index:start_index + self.config.batch_size, :] = torch.cat(output_l)
-            start_index += self.config.batch_size
+            # features[start_index:start_index + self.config.batch_size, :] = torch.cat(output_l)
+            # start_index += self.config.batch_size
 
-            # features.index_copy_(0, index_all, torch.cat(output_l))
+            features.index_copy_(0, index_all, torch.cat(output_l))
         return features
 
     def knn_classifier(self):
