@@ -196,12 +196,12 @@ class FeatureCrossEntropy(nn.Module):
         """
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
-        student_out = student_output / self.student_temp
+        # student_out = student_output / self.student_temp
         temp = self.teacher_temp_schedule[epoch]
         teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
         loss = 0
-        for s_out in student_out:
-            loss += torch.mean(-teacher_out * F.log_softmax(s_out, dim=-1), dim=-1)
+        for s_out in student_output:
+            loss += torch.mean(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
         print(loss)
         return loss
 
