@@ -204,6 +204,7 @@ class FeatureCrossEntropy(nn.Module):
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
         # student_out = student_output / self.student_temp
+        print(student_output.shape, teacher_output.shape, self.center.shape)
         temp = self.teacher_temp_schedule[epoch]
         teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
         loss = 0
