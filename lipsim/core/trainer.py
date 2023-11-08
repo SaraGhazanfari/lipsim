@@ -132,7 +132,7 @@ class Trainer:
                              is_distributed=self.is_distributed)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
-        self.n_classes = self.reader.n_classes
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
