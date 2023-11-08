@@ -144,10 +144,10 @@ class Trainer:
             logging.info(f'Number of parameters to train: {param_size}')
 
         download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                         cache_dir='./checkpoints')
-        self.teacher_model = self.teacher_model.cuda()
-        self.teacher_model.eval()
+        # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+        #                                  cache_dir='./checkpoints')
+        # self.teacher_model = self.teacher_model.cuda()
+        # self.teacher_model.eval()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
@@ -263,7 +263,10 @@ class Trainer:
 
     @torch.no_grad()
     def _teacher_model_embed(self, imgs):
-        return self.teacher_model.embed(imgs)
+        teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                    cache_dir='./checkpoints')
+        teacher_model.eval()
+        return teacher_model.embed(imgs)
 
     def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
