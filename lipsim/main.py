@@ -101,7 +101,7 @@ def main(config):
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
         # slurm_partition=config.partition,
         # slurm_qos=config.qos,
-        slurm_constraint=config.constraint,
+        # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
         timeout_min=config.timeout,
     )
