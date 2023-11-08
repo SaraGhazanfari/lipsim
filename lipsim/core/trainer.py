@@ -19,6 +19,7 @@ from tqdm import tqdm
 from lipsim.core import utils
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
+from lipsim.core.models.dreamsim.model import dreamsim
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
 
 # from core.models.dreamsim.model import dreamsim
@@ -142,9 +143,10 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-        # self.teacher_model, _ = dreamsim(pretrained=True,
-        #   dreamsim_type=self.config.teacher_model_name, cache_dir=self.config.dreamsim_path)
-        # self.teacher_model = self.teacher_model.cuda()
+        self.teacher_model, _ = dreamsim(pretrained=True,
+                                         dreamsim_type=self.config.teacher_model_name,
+                                         cache_dir=self.config.dreamsim_path)
+        self.teacher_model = self.teacher_model.cuda()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
@@ -258,8 +260,10 @@ class Trainer:
     def one_step_training(self, data, epoch, step):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
-        images, embeddings = data
-        embeddings = self.process_embedding(embeddings)
+        # todo images, embeddings = data
+        images = data
+        embeddings = self.teacher_model.embed(images)
+        # todo embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
         embeddings = embeddings.cuda()
