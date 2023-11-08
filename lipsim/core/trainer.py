@@ -258,6 +258,10 @@ class Trainer:
         elif self.config.teacher_model_name == 'clip_vitb32':
             return embeddings[:, 768 + 512:]
 
+    @torch.no_grad()
+    def _teacher_model_embed(self, imgs):
+        return self.teacher_model.embed(imgs)
+
     def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
@@ -266,7 +270,7 @@ class Trainer:
         # todo embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        embeddings = self.teacher_model.embed(original_imgs).detach()
+        embeddings = self._teacher_model_embed(original_imgs)
         # embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
