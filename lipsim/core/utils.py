@@ -210,7 +210,6 @@ class FeatureCrossEntropy(nn.Module):
         for s_out in student_output:
             loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
         loss = torch.mean(loss)
-        print(loss)
         return loss
 
     @torch.no_grad()
