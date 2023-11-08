@@ -77,11 +77,11 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = torch.cuda.device_count()
 
-        job_env = submitit.JobEnvironment()
-        self.rank = int(job_env.global_rank)
-        self.local_rank = int(job_env.local_rank)
-        self.num_nodes = int(job_env.num_nodes)
-        self.num_tasks = int(job_env.num_tasks)
+        #todo job_env = submitit.JobEnvironment()
+        self.rank = 0#todo int(job_env.global_rank)
+        self.local_rank = 0#todo int(job_env.local_rank)
+        self.num_nodes = 1#todo int(job_env.num_nodes)
+        self.num_tasks = 1#todo int(job_env.num_tasks)
         self.is_master = bool(self.rank == 0)
 
         # Setup logging
