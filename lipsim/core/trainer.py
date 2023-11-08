@@ -144,7 +144,7 @@ class Trainer:
             logging.info(f'Number of parameters to train: {param_size}')
 
         download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+        self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
                                           cache_dir='./checkpoints')
         self.teacher_model = self.teacher_model.cuda()
 
