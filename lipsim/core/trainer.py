@@ -147,6 +147,7 @@ class Trainer:
         self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
                                          cache_dir='./checkpoints')
         self.teacher_model = self.teacher_model.cuda()
+        self.teacher_model.eval()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
@@ -265,7 +266,7 @@ class Trainer:
         # todo embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        embeddings = self.teacher_model.embed(original_imgs)
+        embeddings = self.teacher_model.embed(original_imgs).detach()
         # embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
