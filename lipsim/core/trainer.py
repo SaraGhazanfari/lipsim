@@ -145,7 +145,7 @@ class Trainer:
 
         download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
         self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                          cache_dir='./checkpoints')
+                                         cache_dir='./checkpoints')
         self.teacher_model = self.teacher_model.cuda()
 
         # setup distributed process if training is distributed
@@ -199,7 +199,7 @@ class Trainer:
                 if global_step == 2 and self.is_master:
                     start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                self.one_step_training(data, epoch, global_step)
+                self.one_step_training(data, epoch, global_step, epoch_id)
                 self._save_ckpt(global_step, epoch_id)
                 if global_step == 20 and self.is_master:
                     self._print_approximated_train_time(start_time)
@@ -257,7 +257,7 @@ class Trainer:
         elif self.config.teacher_model_name == 'clip_vitb32':
             return embeddings[:, 768 + 512:]
 
-    def one_step_training(self, data, epoch, step):
+    def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         # todo images, embeddings = data
@@ -275,7 +275,8 @@ class Trainer:
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
         # teacher_out = self.teacher_model.embed(original_imgs)
-        loss = self.criterion([original_out, jittered_out], embeddings, epoch)  # + self.criterion(jittered_out, embeddings)
+        loss = self.criterion([original_out, jittered_out], embeddings,
+                              epoch_id)  # + self.criterion(jittered_out, embeddings)
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
