@@ -188,9 +188,15 @@ class HingeLoss(torch.nn.Module):
 
 class FeatureCrossEntropy(nn.Module):
 
-    def __init__(self, student_temp=0.1):
+    def __init__(self, warmup_teacher_temp=0.04, teacher_temp=0.04,
+                 warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1):
         super().__init__()
         self.student_temp = student_temp
+        self.teacher_temp_schedule = np.concatenate((
+            np.linspace(warmup_teacher_temp,
+                        teacher_temp, warmup_teacher_temp_epochs),
+            np.ones(nepochs - warmup_teacher_temp_epochs) * teacher_temp
+        ))
 
     def forward(self, student_output, teacher_output, epoch):
         """
