@@ -261,7 +261,7 @@ class Trainer:
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         # todo images, embeddings = data
-        images = data
+        images, _ = data
         embeddings = self.teacher_model.embed(images)
         # todo embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
