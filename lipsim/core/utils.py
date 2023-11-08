@@ -223,7 +223,7 @@ def get_loss(config, margin=0, device='cuda:0'):
     elif config.mode == 'finetune':
         return HingeLoss(margin=config.margin, device=device)
     elif config.mode in ['train']:
-        FeatureCrossEntropy()
+        return FeatureCrossEntropy()
 
 
 def get_scheduler(optimizer, config, num_steps):
