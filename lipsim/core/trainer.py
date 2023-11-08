@@ -75,7 +75,7 @@ class Trainer:
         """
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir
-        self.ngpus = 1  # torch.cuda.device_count()
+        self.ngpus = self.config.ngpus
 
         job_env = submitit.JobEnvironment()
         self.rank = int(job_env.global_rank)
