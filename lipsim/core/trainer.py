@@ -87,6 +87,11 @@ class Trainer:
         # Setup logging
         utils.setup_logging(self.config, self.rank)
 
+        logging.info(self.rank)
+        logging.info(self.local_rank)
+        logging.info(self.num_nodes)
+        logging.info(self.num_tasks)
+
         torch.cuda.init()
 
         self.message = utils.MessageBuilder()
