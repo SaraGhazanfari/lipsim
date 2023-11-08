@@ -208,9 +208,9 @@ class FeatureCrossEntropy(nn.Module):
         teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
         loss = 0
         for s_out in student_output:
-            loss += torch.mean(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
+            loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
         print(loss)
-        return loss
+        return torch.mean(loss)
 
     @torch.no_grad()
     def update_center(self, teacher_output):
