@@ -18,7 +18,7 @@ from tqdm import tqdm
 from dreamsim.model import download_weights, dreamsim
 from lipsim.core import utils
 from lipsim.core.data.night_dataset import NightDataset
-from lipsim.core.data.readers import readers_config
+from lipsim.core.data.readers import readers_config, N_CLASSES
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
 
@@ -350,7 +350,7 @@ class Trainer:
                              is_distributed=self.is_distributed)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
-        self.n_classes = self.reader.n_classes
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
