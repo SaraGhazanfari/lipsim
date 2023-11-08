@@ -192,7 +192,7 @@ class FeatureCrossEntropy(nn.Module):
                  warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1):
         super().__init__()
         self.student_temp = student_temp
-        self.register_buffer("center", torch.zeros(1, out_dim))
+        self.register_buffer("center", torch.zeros(1, out_dim, device='cuda'))
         self.teacher_temp_schedule = np.concatenate((
             np.linspace(warmup_teacher_temp,
                         teacher_temp, warmup_teacher_temp_epochs),
