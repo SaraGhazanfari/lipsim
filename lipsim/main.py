@@ -107,11 +107,10 @@ def main(config):
     )
     if config.mode == 'train':
         trainer = Trainer(config)
-        trainer()
-        # job = executor.submit(trainer)
-        # job_id = job.job_id
-        # folder = config.train_dir.split('/')[-1]
-        # print(f"Submitted batch job {job_id} in folder {folder}")
+        job = executor.submit(trainer)
+        job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'finetune':
         trainer = Trainer(config)
         trainer.finetune_func()
