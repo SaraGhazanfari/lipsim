@@ -186,11 +186,41 @@ class HingeLoss(torch.nn.Module):
         return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
 
 
+class FeatureCrossEntropy(nn.Module):
+
+    def __init__(self, student_temp=0.1):
+        super().__init__()
+        self.student_temp = student_temp
+
+    def forward(self, student_output, teacher_output, epoch):
+        """
+        Cross-entropy between softmax outputs of the teacher and student networks.
+        """
+        student_out = student_output / self.student_temp
+        temp = self.teacher_temp_schedule[epoch]
+        teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
+        loss = torch.mean(-teacher_out * F.log_softmax(student_out, dim=-1), dim=-1)
+        return loss
+
+    @torch.no_grad()
+    def update_center(self, teacher_output):
+        """
+        Update center used for teacher output.
+        """
+        batch_center = torch.sum(teacher_output, dim=0, keepdim=True)
+        dist.all_reduce(batch_center)
+        batch_center = batch_center / (len(teacher_output) * dist.get_world_size())
+        # ema update
+        self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
+
+
 def get_loss(config, margin=0, device='cuda:0'):
-    if config.mode in ['train', 'lipsim', 'vanilla-eval']:
+    if config.mode in ['lipsim', 'vanilla-eval']:
         return RMSELoss()
     elif config.mode == 'finetune':
         return HingeLoss(margin=config.margin, device=device)
+    elif config.mode in ['train']:
+        FeatureCrossEntropy()
 
 
 def get_scheduler(optimizer, config, num_steps):
