@@ -97,13 +97,13 @@ def main(config):
         cpus_per_task=ncpus // tasks_per_node,
         stderr_to_stdout=True,
         exclusive=True,
-        # slurm_account=config.account,
+        slurm_account=config.account,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        # slurm_partition=config.partition,
-        # slurm_qos=config.qos,
-        # slurm_constraint=config.constraint,
+        slurm_partition=config.partition,
+        slurm_qos=config.qos,
+        slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
-        slurm_mem_per_cpu=100,
+        # slurm_mem_per_cpu=100,
         timeout_min=config.timeout,
     )
     if config.mode == 'train':
