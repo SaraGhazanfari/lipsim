@@ -198,24 +198,21 @@ class Trainer:
         self.best_checkpoint = None
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
-        try:
-            for epoch_id in range(start_epoch, self.config.epochs):
-                if self.is_distributed:
-                    sampler.set_epoch(epoch_id)
-                for n_batch, data in enumerate(data_loader):
-                    if global_step == 2 and self.is_master:
-                        start_time = time.time()
-                    epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                    self.one_step_training(data, epoch, global_step, epoch_id)
-                    self._save_ckpt(global_step, epoch_id)
-                    if global_step == 20 and self.is_master:
-                        self._print_approximated_train_time(start_time)
-                    global_step += 1
+        for epoch_id in range(start_epoch, self.config.epochs):
+            if self.is_distributed:
+                sampler.set_epoch(epoch_id)
+            for n_batch, data in enumerate(data_loader):
+                if global_step == 2 and self.is_master:
+                    start_time = time.time()
+                epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
+                self.one_step_training(data, epoch, global_step, epoch_id)
+                self._save_ckpt(global_step, epoch_id)
+                if global_step == 20 and self.is_master:
+                    self._print_approximated_train_time(start_time)
+                global_step += 1
 
-            self._save_ckpt(global_step, epoch_id, final=True)
-            logging.info("Done training -- epoch limit reached.")
-        except Exception as e:
-            logging.info(e)
+        self._save_ckpt(global_step, epoch_id, final=True)
+        logging.info("Done training -- epoch limit reached.")
 
     def compute_gradient_norm(self):
         grad_norm = 0.
@@ -276,13 +273,13 @@ class Trainer:
     def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
-        # todo images, embeddings = data
+        images, embeddings = data
         images, _ = data
-        # todo embeddings = self.process_embedding(embeddings)
+        embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        embeddings = self._teacher_model_embed(original_imgs)
-        # embeddings = embeddings.cuda()
+        # embeddings = self._teacher_model_embed(original_imgs)
+        embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
             logging.info(f'embeddings {embeddings.shape}')
@@ -290,7 +287,7 @@ class Trainer:
         jittered_out = self.model(jittered_imgs)
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
-        # teacher_out = self.teacher_model.embed(original_imgs)
+
         loss = self.criterion([original_out, jittered_out], embeddings,
                               epoch_id)  # + self.criterion(jittered_out, embeddings)
         loss.backward()
