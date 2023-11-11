@@ -207,7 +207,10 @@ class Trainer:
                 if global_step == 2 and self.is_master:
                     start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                self.one_step_training(data, epoch, global_step, epoch_id)
+                if self.config.mode == 'train':
+                    self.one_step_training(data, epoch, global_step, epoch_id)
+                else:
+                    self.one_epoch_finetuning(data_loader, epoch_id, global_step)
                 self._save_ckpt(global_step, epoch_id)
                 if global_step == 20 and self.is_master:
                     self._print_approximated_train_time(start_time)
@@ -438,34 +441,36 @@ class Trainer:
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
-            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                    img_right.cuda(), target.cuda()
-
-                start_time = time.time()
-                epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                                           requires_grad=True,
-                                                                                           requires_normalization=True)
-                logit = dist_0 - dist_1
-                loss = self.criterion(logit.squeeze(), target)
-                loss.backward()
-                self.process_gradients(global_step)
-                self.optimizer.step()
-                self.optimizer.zero_grad()
-                with self.warmup.dampening() if self.warmup else nullcontext():
-                    self.scheduler.step(global_step)
-                seconds_per_batch = time.time() - start_time
-                examples_per_second = self.global_batch_size / seconds_per_batch
-                examples_per_second *= self.world_size
-                self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
-                global_step += 1
+            global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
         if self.config.dataset == 'night':
             self.night_complete_eval()
         else:
             self.lpips_eval()
+
+    def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+
+            start_time = time.time()
+            epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
+            dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right,
+                                                                                       requires_grad=True,
+                                                                                       requires_normalization=True)
+            logit = dist_0 - dist_1
+            loss = self.criterion(logit.squeeze(), target)
+            loss.backward()
+            self.process_gradients(global_step)
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            with self.warmup.dampening() if self.warmup else nullcontext():
+                self.scheduler.step(global_step)
+            seconds_per_batch = time.time() - start_time
+            examples_per_second = self.global_batch_size / seconds_per_batch
+            examples_per_second *= self.world_size
+            self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
 
     @torch.no_grad()
     def lpips_eval(self):
