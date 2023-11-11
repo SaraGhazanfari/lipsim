@@ -25,7 +25,7 @@ class GeneralAttack:
         elif attack_method == 'SQ':
             attack = torchattacks.Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
                                          p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
-            img_ref = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
+            img_ref = attack.perturb(img_ref, target.long())
 
         return img_ref
 
