@@ -460,12 +460,12 @@ class Trainer:
                 examples_per_second *= self.world_size
                 self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
                 global_step += 1
-            if self.config.dataset == 'night':
-                self.night_complete_eval()
-            else:
-                self.lpips_eval()
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
+        if self.config.dataset == 'night':
+            self.night_complete_eval()
+        else:
+            self.lpips_eval()
 
     @torch.no_grad()
     def lpips_eval(self):
