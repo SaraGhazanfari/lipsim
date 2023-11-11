@@ -44,6 +44,8 @@ class BAPPSDataset(Dataset):
         transform_list += [transforms.ToTensor(),
                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
         self.transform = transforms.Compose(transform_list)
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
 
         if make_path:
             self._make_path(load_size)
