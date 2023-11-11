@@ -17,6 +17,8 @@ from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
 from dreamsim.model import download_weights, dreamsim
 from lipsim.core import utils
+from lipsim.core.attack.general_attack import GeneralAttack
+from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config, N_CLASSES
 
@@ -361,6 +363,14 @@ class Trainer:
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                              is_distributed=self.is_distributed)
+
+        if self.config.dataset == 'night':
+            data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
+                                          split='train').get_dataloader()
+        else:
+            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+                                       split='train', dataset='traditional').get_dataloader(
+                batch_size=self.config.batch_size)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
@@ -393,8 +403,6 @@ class Trainer:
         self._load_state()
         # define set for saved ckpt
 
-        data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                      split='train').get_dataloader()
         sampler = None
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
@@ -426,7 +434,7 @@ class Trainer:
         self.best_accuracy = [0., 0.]
 
         epoch_id = 0
-        self.complete_eval()
+        self.night_complete_eval()
         self.optimizer.zero_grad()
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
@@ -453,9 +461,23 @@ class Trainer:
                 examples_per_second *= self.world_size
                 self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
                 global_step += 1
-            self.complete_eval()
+            if self.config.dataset == 'night':
+                self.night_complete_eval()
+            else:
+                self.lpips_eval()
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
+
+    @torch.no_grad()
+    def lpips_eval(self):
+        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                        'frameinterp']:
+            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+                                       split='val', dataset=dataset).get_dataloader(
+                batch_size=self.config.batch_size)
+            twoafc_score = self.get_2afc_score_eval(data_loader)
+            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
+        return twoafc_score
 
     def log_training(self, epoch, epoch_id, examples_per_second, global_step, loss, start_time):
         if self._to_print(global_step):
@@ -473,7 +495,7 @@ class Trainer:
         if global_step == 20 and self.is_master:
             self._print_approximated_train_time(start_time)
 
-    def complete_eval(self):
+    def night_complete_eval(self):
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
@@ -537,6 +559,50 @@ class Trainer:
         certified = running_certified / running_inputs
 
         return accuracy, certified
+
+    def get_2afc_score_eval(self, test_loader):
+        logging.info("Evaluating NIGHTS dataset.")
+        d0s = []
+        d1s = []
+        targets = []
+        # with torch.no_grad()
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
+            d0s.append(dist_0)
+            d1s.append(dist_1)
+            targets.append(target)
+
+        twoafc_score = get_2afc_score(d0s, d1s, targets)
+        return twoafc_score
+
+    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
+        if self.config.attack:
+            img_ref = GeneralAttack(self.config).generate_attack(img_ref, img_left, img_right, target,
+                                                                 target_model=self.model_wrapper(img_left, img_right))
+        dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right)
+        if len(dist_0.shape) < 1:
+            dist_0 = dist_0.unsqueeze(0)
+            dist_1 = dist_1.unsqueeze(0)
+        dist_0 = dist_0.unsqueeze(1)
+        dist_1 = dist_1.unsqueeze(1)
+        target = target.unsqueeze(1)
+        return dist_0, dist_1, target
+
+    def model_wrapper(self, img_left, img_right):
+        def metric_model(img):
+            if len(img.shape) > 4:
+                img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(
+                    1)
+            else:
+                img_ref = img
+                img_0, img_1 = img_left, img_right
+            dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_0, img_1,
+                                                                                       requires_grad=True)
+            return torch.stack((dist_1, dist_0), dim=1)
+
+        return metric_model
 
 
 def get_2afc_score(d0s, d1s, targets):

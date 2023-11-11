@@ -1,4 +1,5 @@
 import torch
+import torchattacks
 from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack
 from torch import nn
 
@@ -20,6 +21,11 @@ class GeneralAttack:
 
         elif attack_method == 'PGD':
             img_ref = self.generate_pgd_attack(attack_norm, img_ref, target_model)
+
+        elif attack_method == 'SQ':
+            attack = torchattacks.Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
+                                         p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
+            img_ref = attack(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
 
         return img_ref
 

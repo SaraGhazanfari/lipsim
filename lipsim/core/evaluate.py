@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from lipsim.core.attack.general_attack import GeneralAttack
+from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.eval_knn import KNNEval
 
@@ -116,10 +117,23 @@ class Evaluator:
             self.distance_attack_eval()
         elif self.config.mode == 'certified':
             self.certified_eval()
+        elif self.config.mode == 'lpips':
+            self.lpips_eval()
         elif self.config.mode == 'knn':
             KNNEval(self.config, self.dreamsim_model).knn_classifier()
 
         logging.info('Done with batched inference.')
+
+    @torch.no_grad()
+    def lpips_eval(self):
+        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                        'frameinterp']:
+            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+                                       split='val', dataset=dataset).get_dataloader(
+                batch_size=self.config.batch_size)
+            twoafc_score = self.get_2afc_score_eval(data_loader)
+            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
+        return twoafc_score
 
     @torch.no_grad()
     def certified_eval(self):
@@ -259,23 +273,6 @@ class Evaluator:
                 dataset_size + no_imagenet_dataset_size)
         logging.info(f"Overall 2AFC score: {str(overall_score)}")
 
-    def get_2afc_score_eval(self, test_loader):
-        logging.info("Evaluating NIGHTS dataset.")
-        d0s = []
-        d1s = []
-        targets = []
-        # with torch.no_grad()
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
-            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
-            d0s.append(dist_0)
-            d1s.append(dist_1)
-            targets.append(target)
-
-        twoafc_score = get_2afc_score(d0s, d1s, targets)
-        return twoafc_score
-
     def model_wrapper(self, img_left, img_right):
         def metric_model(img):
             if len(img.shape) > 4:
@@ -305,6 +302,23 @@ class Evaluator:
             return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
+
+    def get_2afc_score_eval(self, test_loader):
+        logging.info("Evaluating NIGHTS dataset.")
+        d0s = []
+        d1s = []
+        targets = []
+        # with torch.no_grad()
+        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
+            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
+                img_right.cuda(), target.cuda()
+            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
+            d0s.append(dist_0)
+            d1s.append(dist_1)
+            targets.append(target)
+
+        twoafc_score = get_2afc_score(d0s, d1s, targets)
+        return twoafc_score
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:

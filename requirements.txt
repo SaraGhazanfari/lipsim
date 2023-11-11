@@ -12,3 +12,4 @@ pandas
 pywavelets
 seaborn
 datadings
+torchattacks==3.5.1
