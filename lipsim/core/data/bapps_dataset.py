@@ -46,6 +46,8 @@ class BAPPSDataset(Dataset):
         self.transform = transforms.Compose(transform_list)
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
+        self.n_train_files = 1_877_000
+        self.n_test_files = 96_000
 
         if make_path:
             self._make_path(load_size)
