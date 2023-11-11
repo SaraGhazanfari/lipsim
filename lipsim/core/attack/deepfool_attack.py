@@ -28,6 +28,7 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=50):
     I = (np.array(f_image)).flatten().argsort()[::-1]
 
     I = I[0:num_classes]
+    print(I)
     label = I[0]
 
     input_shape = image.cpu().numpy().shape
