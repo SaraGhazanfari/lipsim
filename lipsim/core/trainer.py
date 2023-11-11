@@ -79,7 +79,7 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = self.config.ngpus
 
-        job_env = submitit.JobEnvironment()
+        # job_env = submitit.JobEnvironment()
         self.rank = 0#int(job_env.global_rank)
         self.local_rank = 0#int(job_env.local_rank)
         self.num_nodes = 1#int(job_env.num_nodes)
