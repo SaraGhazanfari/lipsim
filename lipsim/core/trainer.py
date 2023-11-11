@@ -169,6 +169,7 @@ class Trainer:
 
         # define set for saved ckpt
         self.saved_ckpts = set([0])
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
         if self.config.dataset == 'bapps':
             data_loader, sampler = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                                 split='train', dataset='traditional', make_path=True,
@@ -411,7 +412,7 @@ class Trainer:
         self.saved_ckpts = set([0])
         self._load_state()
         # define set for saved ckpt
-        self.perceptual_metric = PerceptualMetric(backbone=self.model)
+
         sampler = None
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
