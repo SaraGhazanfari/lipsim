@@ -38,7 +38,7 @@ class BAPPSDataset(Dataset):
     def __init__(self, config=None, data_dir='', batch_size=32, is_training=False, is_distributed=False, load_size=64,
                  split='val', dataset='cnn', make_path=False):
         self.is_training = True if split == 'train' else False
-        self.root = os.path.join(data_dir, split, dataset)
+        self.root = os.path.join(data_dir, '2afc', split, dataset)
         self.load_size = load_size
         transform_list = [transforms.Resize(load_size)]
         transform_list += [transforms.ToTensor(),
