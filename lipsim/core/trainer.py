@@ -360,7 +360,7 @@ class Trainer:
         torch.cuda.set_device(self.local_rank)
 
         # load dataset
-        Reader = readers_config[self.config.dataset]
+        Reader = readers_config['imagenet'] #self.config.dataset
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                              is_distributed=self.is_distributed)
 
@@ -369,7 +369,7 @@ class Trainer:
                                           split='train').get_dataloader()
         else:
             data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
-                                       split='train', dataset='traditional').get_dataloader(
+                                       split='train', dataset='traditional', make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
@@ -473,7 +473,7 @@ class Trainer:
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
             data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset).get_dataloader(
+                                       split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
             logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
