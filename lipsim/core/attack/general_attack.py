@@ -3,6 +3,7 @@ from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack
 from torch import nn
 
 from autoattack import AutoAttack
+from lipsim.core.attack.deepfool_attack import deepfool
 from lipsim.core.attack.square_attack import Square
 
 
@@ -24,9 +25,12 @@ class GeneralAttack:
 
         elif attack_method == 'SQ':
             attack = Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
-                                         p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
+                            p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
             img_ref = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
 
+        elif attack_method == 'DF':
+            r_tot, loop_i, label, k_i, img_ref = deepfool(img_ref, target_model, num_classes=2, overshoot=0.02,
+                                                          max_iter=50)
         return img_ref
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
