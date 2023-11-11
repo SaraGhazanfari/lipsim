@@ -29,8 +29,10 @@ class GeneralAttack:
             img_ref = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
 
         elif attack_method == 'DF':
-            r_tot, loop_i, label, k_i, img_ref = deepfool(img_ref, target_model, num_classes=2, overshoot=0.02,
-                                                          max_iter=200)
+            for idx, img in enumerate(img_ref):
+                r_tot, loop_i, label, k_i, img = deepfool(img, target_model, num_classes=2, overshoot=0.02,
+                                                          max_iter=50)
+                img_ref[idx] = img
         return img_ref
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
