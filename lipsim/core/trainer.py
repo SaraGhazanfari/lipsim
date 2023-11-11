@@ -411,7 +411,7 @@ class Trainer:
         self.saved_ckpts = set([0])
         self._load_state()
         # define set for saved ckpt
-
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
         sampler = None
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
