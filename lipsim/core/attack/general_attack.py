@@ -35,7 +35,7 @@ class GeneralAttack:
                                     rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
         else:  # attack_type == 'Linf':
-            adversary = LinfPGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=200,
+            adversary = LinfPGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=50,
                                       eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1., targeted=False)
         img_ref = adversary(img_ref, target_model(img_ref))
         return img_ref
