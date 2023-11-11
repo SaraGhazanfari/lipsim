@@ -15,8 +15,9 @@ from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
-from dreamsim.model import download_weights, dreamsim
+# from dreamsim.model import download_weights, dreamsim
 from lipsim.core import utils
+from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config, N_CLASSES
 
@@ -64,7 +65,7 @@ class Trainer:
                 'global_step': step,
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-                # 'scheduler': self.scheduler.state_dict()
+                'scheduler': self.scheduler.state_dict()
             }
             logging.debug("Saving checkpoint '{}'.".format(ckpt_name))
             torch.save(state, ckpt_path)
@@ -87,12 +88,12 @@ class Trainer:
         # Setup logging
         utils.setup_logging(self.config, self.rank)
 
-        logging.info(self.rank)
-        logging.info(self.local_rank)
-        logging.info(self.num_nodes)
-        logging.info(self.num_tasks)
-
-        torch.cuda.init()
+        # logging.info(self.rank)
+        # logging.info(self.local_rank)
+        # logging.info(self.num_nodes)
+        # logging.info(self.num_tasks)
+        #
+        # torch.cuda.init()
 
         self.message = utils.MessageBuilder()
         # print self.config parameters
@@ -148,7 +149,7 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
         # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
         #                                  cache_dir='./checkpoints')
         # self.teacher_model = self.teacher_model.cuda()
@@ -182,9 +183,8 @@ class Trainer:
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler, self.warmup = utils.get_scheduler(self.optimizer, self.config, num_steps)
-        if self.config.warmup_scheduler is not None:
-            logging.info(f"Warmup scheduler on {self.config.warmup_scheduler * 100:.0f}% of training")
+        self.scheduler = CosineAnnealingWarmupRestarts(
+            self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -288,13 +288,11 @@ class Trainer:
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
 
-        loss = self.criterion([original_out, jittered_out], embeddings,
-                              epoch_id)  # + self.criterion(jittered_out, embeddings)
+        loss = self.criterion([original_out, jittered_out], embeddings, epoch_id)  
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
-        with self.warmup.dampening() if self.warmup else nullcontext():
-            self.scheduler.step(step)
+        self.scheduler.step(step)
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
         examples_per_second *= self.world_size

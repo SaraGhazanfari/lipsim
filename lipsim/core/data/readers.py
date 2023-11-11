@@ -116,7 +116,6 @@ class ImagenetReader(BaseReader):
                 transforms.ToTensor(),
             ])
         split = 'train' if is_training else 'val'
-        print(self.path)
         self.dataset = ImageFolder(os.path.join(self.path, split), transform=transform)
         # self.dataset = ImageNet(self.path, split=split, transform=transform)
 

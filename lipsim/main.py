@@ -7,9 +7,9 @@ from datetime import datetime
 from os.path import exists, realpath
 import submitit
 
-from lipsim.core.evaluate import Evaluator
+# from lipsim.core.evaluate import Evaluator
 from lipsim.core.trainer import Trainer
-from lipsim.eval_linear import LinearEvaluation
+# from lipsim.eval_linear import LinearEvaluation
 
 # from lipsim.core.evaluate import Evaluator
 

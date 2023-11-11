@@ -50,10 +50,6 @@ class Evaluator:
 
     def __init__(self, config):
         self.config = config
-        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        self.criterion = utils.get_loss(self.config)
-        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
-        self.general_attack = GeneralAttack(config=config)
 
     def load_ckpt(self, ckpt_path=None):
         if ckpt_path is None:
@@ -73,6 +69,12 @@ class Evaluator:
 
     def __call__(self):
         '''Run evaluation of model or eval under attack'''
+
+        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+        self.criterion = utils.get_loss(self.config)
+        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+        self.general_attack = GeneralAttack(config=self.config)
+
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
         download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)

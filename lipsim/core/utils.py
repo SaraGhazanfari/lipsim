@@ -135,12 +135,12 @@ def setup_logging(config, rank):
 #     s.close()
 #     return port
 
-def get_port_number():
-    from socket import socket
-    with socket() as s:
-        s.bind(('', 0))
-        port = s.getsockname()[1]
-    return port
+# def get_port_number():
+#     from socket import socket
+#     with socket() as s:
+#         s.bind(('', 0))
+#         port = s.getsockname()[1]
+#     return port
 
 
 def setup_distributed_training(world_size, rank):
@@ -152,12 +152,12 @@ def setup_distributed_training(world_size, rank):
         if var.upper() in os.environ:
             del os.environ[var.upper()]
     # get distributed url
-    # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
-    # stdout = subprocess.check_output(cmd.split())
-    # host_name = stdout.decode().splitlines()[0]
-    import platform
-    host_name = platform.node()
-    dist_url = f'tcp://{host_name}:{get_port_number()}'
+    cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
+    stdout = subprocess.check_output(cmd.split())
+    host_name = stdout.decode().splitlines()[0]
+    # import platform
+    # host_name = platform.node()
+    dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
