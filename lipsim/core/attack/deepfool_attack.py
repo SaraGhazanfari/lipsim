@@ -22,11 +22,12 @@ class DeepFool(Attack):
         >>> adv_images = attack(images, labels)
     """
 
-    def __init__(self, model, steps=50, overshoot=0.02):
+    def __init__(self, model, steps=50, overshoot=0.02, device='cuda'):
         super().__init__("DeepFool", model)
         self.steps = steps
         self.overshoot = overshoot
         self.supported_mode = ["default"]
+        self.device = device
 
     def forward(self, images, labels):
         r"""
