@@ -80,10 +80,10 @@ class Trainer:
         self.ngpus = self.config.ngpus
 
         # job_env = submitit.JobEnvironment()
-        self.rank = 0#int(job_env.global_rank)
-        self.local_rank = 0#int(job_env.local_rank)
-        self.num_nodes = 1#int(job_env.num_nodes)
-        self.num_tasks = 1#int(job_env.num_tasks)
+        self.rank = 0  # int(job_env.global_rank)
+        self.local_rank = 0  # int(job_env.local_rank)
+        self.num_nodes = 1  # int(job_env.num_nodes)
+        self.num_tasks = 1  # int(job_env.num_tasks)
         self.is_master = bool(self.rank == 0)
 
         # Setup logging
@@ -170,8 +170,9 @@ class Trainer:
         # define set for saved ckpt
         self.saved_ckpts = set([0])
         if self.config.dataset == 'bapps':
-            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                       split='train', dataset='traditional', make_path=True).get_dataloader(
+            data_loader, sampler = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                                split='train', dataset='traditional', make_path=True,
+                                                is_distributed=self.is_distributed).get_dataloader(
                 batch_size=self.config.batch_size)
         else:
             data_loader, sampler = self.reader.load_dataset()
@@ -376,8 +377,8 @@ class Trainer:
             data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                           split='train').get_dataloader()
         else:
-            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                       split='train', dataset='traditional', make_path=True).get_dataloader(
+            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                          split='train', dataset='traditional', make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
@@ -481,8 +482,8 @@ class Trainer:
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
-            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset, make_path=True).get_dataloader(
+            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                          split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
             logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")

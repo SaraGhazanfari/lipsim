@@ -97,4 +97,4 @@ class BAPPSDataset(Dataset):
         dataloader = torch.utils.data.DataLoader(self, batch_size=batch_size,
                                                  shuffle=self.is_training,
                                                  num_workers=num_workers, sampler=sampler)
-        return dataloader
+        return dataloader, sampler
