@@ -53,7 +53,7 @@ class BaseReader:
         self.is_distributed = is_distributed
         self.num_workers = 4
         self.prefetch_factor = self.batch_size * 2
-        self.path = join(self.get_data_dir(), self.config.dataset)
+        # self.path = join(self.get_data_dir(), self.config.dataset)
 
     def get_data_dir(self):
         paths = self.config.data_dir.split(':')
