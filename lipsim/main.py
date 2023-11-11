@@ -181,7 +181,8 @@ if __name__ == '__main__':
 
     # specific parameters for eval
     parser.add_argument("--attack", type=str,
-                        choices=['PGD-L2', 'PGD-Linf', 'AA-L2', 'AA-Linf', 'CW-L2', 'CW-Linf', 'SQ-Linf', 'SQ-L2'],
+                        choices=['PGD-L2', 'PGD-Linf', 'AA-L2', 'AA-Linf', 'CW-L2', 'CW-Linf', 'SQ-Linf', 'SQ-L2',
+                                 'DF-L2'],
                         help="Choose the attack.")
     parser.add_argument("--eps", type=float, default=36)
 
