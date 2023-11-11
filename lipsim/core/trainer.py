@@ -132,7 +132,7 @@ class Trainer:
             self.world_size, self.global_batch_size))
 
         torch.cuda.set_device(self.local_rank)
-        print(self.config.dataset)
+
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
@@ -360,7 +360,7 @@ class Trainer:
         torch.cuda.set_device(self.local_rank)
 
         # load dataset
-        Reader = readers_config['imagenet'] #self.config.dataset
+        Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                              is_distributed=self.is_distributed)
 
