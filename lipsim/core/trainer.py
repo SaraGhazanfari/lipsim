@@ -434,7 +434,6 @@ class Trainer:
         self.best_accuracy = [0., 0.]
 
         epoch_id = 0
-        self.night_complete_eval()
         self.optimizer.zero_grad()
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
