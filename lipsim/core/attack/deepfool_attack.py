@@ -39,7 +39,7 @@ def deepfool(image, net, num_classes=10, overshoot=0.02, max_iter=50):
 
     x = Variable(pert_image[None, :], requires_grad=True)
     fs = net(x)
-    fs_list = [fs[0, I[k]] for k in range(num_classes)]
+    # fs_list = [fs[0, I[k]] for k in range(num_classes)]
     k_i = label
 
     while k_i == label and loop_i < max_iter:
