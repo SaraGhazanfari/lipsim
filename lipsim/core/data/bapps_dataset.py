@@ -35,7 +35,8 @@ def make_dataset(dir, mode='img'):
 
 
 class BAPPSDataset(Dataset):
-    def __init__(self, config, data_root, batch_size, is_training, is_distributed, load_size=64, split='val',
+    def __init__(self, config, data_root='', batch_size=32, is_training=False, is_distributed=False, load_size=64,
+                 split='val',
                  dataset='cnn'):
         self.is_training = True if split == 'train' else False
         self.root = os.path.join(data_root, split, dataset)
