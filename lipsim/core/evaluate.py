@@ -281,7 +281,7 @@ class Evaluator:
             else:
                 img_ref = img
                 img_0, img_1 = img_left, img_right
-            self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed)
+
             dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_0, img_1,
                                                                                        requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
@@ -325,7 +325,6 @@ class Evaluator:
         if self.config.attack:
             img_ref = self.general_attack.generate_attack(img_ref, img_left, img_right, target,
                                                           target_model=self.model_wrapper(img_left, img_right))
-        print(img_ref.shape)
         dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
