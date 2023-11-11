@@ -47,11 +47,11 @@ class Attack(object):
         self._attacks = OrderedDict()
 
         self.set_model(model)
-        try:
-            self.device = next(model.parameters()).device
-        except Exception:
-            self.device = None
-            print("Failed to set device automatically, please try set_device() manual.")
+        # try:
+        #     self.device = next(model.parameters()).device
+        # except Exception:
+        #     self.device = None
+        #     print("Failed to set device automatically, please try set_device() manual.")
 
         # Controls attack mode.
         self.attack_mode = "default"
