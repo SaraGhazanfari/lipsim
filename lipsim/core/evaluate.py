@@ -324,8 +324,7 @@ class Evaluator:
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
         if self.config.attack:
             img_ref = self.general_attack.generate_attack(img_ref, img_left, img_right, target,
-                                                          target_model=self.model_wrapper(img_left, img_right))
-        print(img_ref.shape)
+                                                          target_model=self.model_wrapper(img_left, img_right))[0]
         dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
