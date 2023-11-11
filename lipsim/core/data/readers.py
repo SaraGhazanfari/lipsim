@@ -53,7 +53,7 @@ class BaseReader:
         self.is_distributed = is_distributed
         self.num_workers = 4
         self.prefetch_factor = self.batch_size * 2
-        # self.path = join(self.get_data_dir(), self.config.dataset)
+        self.path = join(self.get_data_dir(), self.config.dataset)
 
     def get_data_dir(self):
         paths = self.config.data_dir.split(':')
@@ -116,7 +116,6 @@ class ImagenetReader(BaseReader):
                 transforms.ToTensor(),
             ])
         split = 'train' if is_training else 'val'
-        print(self.path)
         self.dataset = ImageFolder(os.path.join(self.path, split), transform=transform)
         # self.dataset = ImageNet(self.path, split=split, transform=transform)
 

@@ -368,7 +368,7 @@ class Trainer:
             data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                           split='train').get_dataloader()
         else:
-            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                        split='train', dataset='traditional', make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
         if self.local_rank == 0:
@@ -472,7 +472,7 @@ class Trainer:
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
-            data_loader = BAPPSDataset(data_root=self.config.data_dir, load_size=224,
+            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                        split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
