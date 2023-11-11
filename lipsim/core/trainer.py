@@ -169,8 +169,13 @@ class Trainer:
 
         # define set for saved ckpt
         self.saved_ckpts = set([0])
+        if self.config.dataset == 'bapps':
+            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                       split='train', dataset='traditional', make_path=True).get_dataloader(
+                batch_size=self.config.batch_size)
+        else:
+            data_loader, sampler = self.reader.load_dataset()
 
-        data_loader, sampler = self.reader.load_dataset()
         if sampler is not None:
             assert sampler.num_replicas == self.world_size
 

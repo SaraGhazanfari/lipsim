@@ -3,7 +3,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DistributedSampler
 import torch.utils.data
 import os
 
@@ -48,6 +48,7 @@ class BAPPSDataset(Dataset):
         self.stds = (1.0000, 1.0000, 1.0000)
         self.n_train_files = 1_877_000
         self.n_test_files = 96_000
+        self.is_distributed = is_distributed
 
         if make_path:
             self._make_path(load_size)
@@ -89,8 +90,11 @@ class BAPPSDataset(Dataset):
     def __len__(self):
         return len(self.p0_paths)
 
-    def get_dataloader(self, batch_size=1, num_workers=8):
+    def get_dataloader(self, batch_size=1, num_workers=10):
+        sampler = None
+        if self.is_distributed:
+            sampler = DistributedSampler(self, shuffle=self.is_training)
         dataloader = torch.utils.data.DataLoader(self, batch_size=batch_size,
                                                  shuffle=self.is_training,
-                                                 num_workers=1)
+                                                 num_workers=num_workers, sampler=sampler)
         return dataloader
