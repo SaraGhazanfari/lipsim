@@ -30,7 +30,7 @@ class GeneralAttack:
 
         elif attack_method == 'DF':
             r_tot, loop_i, label, k_i, img_ref = deepfool(img_ref, target_model, num_classes=2, overshoot=0.02,
-                                                          max_iter=50)
+                                                          max_iter=200)
         return img_ref
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
