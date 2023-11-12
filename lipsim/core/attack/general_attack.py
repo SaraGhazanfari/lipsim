@@ -1,5 +1,5 @@
 import torch
-from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack
+from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack, MomentumIterativeAttack
 from torch import nn
 
 from autoattack import AutoAttack
@@ -13,25 +13,33 @@ class GeneralAttack:
 
     def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
         attack_method, attack_norm = self.config.attack.split('-')
-        if attack_method == 'AA':
-            img_ref = self.generate_auto_attack(attack_norm, img_0, img_1, img_ref, is_dist_attack, target,
+        if attack_method == 'AA':  # AutoAttack
+            img_adv = self.generate_auto_attack(attack_norm, img_0, img_1, img_ref, is_dist_attack, target,
                                                 target_model)
 
-        if attack_method == 'CW':
-            img_ref = self.generate_carlini_attack(img_ref, target, target_model)
+        if attack_method == 'CW':  # CarliniWagner
+            img_adv = self.generate_carlini_attack(img_ref, target, target_model)
 
         elif attack_method == 'PGD':
-            img_ref = self.generate_pgd_attack(attack_norm, img_ref, target_model)
+            img_adv = self.generate_pgd_attack(attack_norm, img_ref, target_model)
 
-        elif attack_method == 'SQ':
+        elif attack_method == 'SQ':  # Square
             attack = Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
                             p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
-            img_ref = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
+            img_adv = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
 
-        elif attack_method == 'DF':
+        elif attack_method == 'DF':  # DeepFool
             attack = DeepFool(target_model, steps=50, overshoot=0.02)
-            img_ref = attack(img_ref, target.long())
-        return img_ref
+            img_adv = attack(img_ref, target.long())
+
+        elif attack_method == 'MI':  # MomentumIterativeAttack
+            attack = MomentumIterativeAttack(target_model, loss_fn=None, eps=self.config.eps, nb_iter=100,
+                                             decay_factor=1.0,
+                                             eps_iter=0.01, clip_min=0.0, clip_max=1.0, targeted=False, ord=2)
+            img_adv = attack(img_ref, target.long())
+            print(torch.norm(img_ref - img_adv, p=2, dim=(1, 2, 3)))
+
+        return img_adv
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
         if attack_norm == 'L2':
@@ -49,7 +57,6 @@ class GeneralAttack:
                                           binary_search_steps=9, max_iterations=100, abort_early=True,
                                           initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
         img_adv = adversary(img_ref, target.long())
-        print(torch.norm(img_ref - img_adv, p=2, dim=(1, 2, 3)))
         return img_adv
 
     def generate_auto_attack(self, attack_norm, img_0, img_1, img_ref, is_dist_attack, target, target_model):
