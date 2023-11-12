@@ -45,7 +45,7 @@ class GeneralAttack:
         else:
             attack = MomentumIterativeAttack(target_model, loss_fn=None, eps=self.config.eps, nb_iter=100,
                                              decay_factor=1.0, eps_iter=0.01, clip_min=0.0, clip_max=1.0,
-                                             targeted=False, ord='inf')
+                                             targeted=False, ord=float('inf'))
         img_adv = attack(img_ref, target.long())
         return img_adv
 
