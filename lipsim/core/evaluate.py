@@ -267,13 +267,13 @@ class Evaluator:
                                                                          split='test_no_imagenet').get_dataloader()
         print(len(data_loader), len(no_imagenet_data_loader))
         imagenet_score = self.get_2afc_score_eval(data_loader)
-        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}")
+        logging.info(f"ImageNet 2AFC score: {str(imagenet_score)}, attack: {self.config.attack}, eps: {str(self.config.eps)}")
         torch.cuda.empty_cache()
         no_imagenet_score = self.get_2afc_score_eval(no_imagenet_data_loader)
-        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}")
+        logging.info(f"No ImageNet 2AFC score: {str(no_imagenet_score)}, attack: {self.config.attack}, eps: {str(self.config.eps)}")
         overall_score = (imagenet_score * dataset_size + no_imagenet_score * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
-        logging.info(f"Overall 2AFC score: {str(overall_score)}")
+        logging.info(f"Overall 2AFC score: {str(overall_score)}, attack: {self.config.attack}, eps: {str(self.config.eps)}")
 
     def model_wrapper(self, img_left, img_right):
         def metric_model(img):
