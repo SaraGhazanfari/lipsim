@@ -205,6 +205,7 @@ class Evaluator:
         running_inputs = 0
         eps_list = np.array([36, 72, 108])
         eps_float_list = eps_list / 255
+        index_list = list()
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
@@ -217,7 +218,6 @@ class Evaluator:
             correct = outputs.max(1)[1] == target
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
-            index_list = list()
             fy_fi[mask] = torch.inf
 
             for idx, target_elem in enumerate(target):
