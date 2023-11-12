@@ -4,7 +4,7 @@ import os
 
 from os.path import join
 import numpy as np
-from dreamsim.model import download_weights, dreamsim
+# from dreamsim.model import download_weights, dreamsim
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
@@ -12,6 +12,7 @@ from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.eval_knn import KNNEval
+from lipsim.core.models.dreamsim.model import download_weights, dreamsim
 
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric
 from lipsim.core import utils
