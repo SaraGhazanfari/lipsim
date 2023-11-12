@@ -46,7 +46,7 @@ class GeneralAttack:
 
     def generate_carlini_attack(self, img_ref, target, target_model):
         adversary = CarliniWagnerL2Attack(target_model, 2, confidence=0, targeted=False, learning_rate=0.01,
-                                          binary_search_steps=9, max_iterations=10000, abort_early=True,
+                                          binary_search_steps=9, max_iterations=10, abort_early=True,
                                           initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
         img_ref = adversary(img_ref, target.long())
         return img_ref
