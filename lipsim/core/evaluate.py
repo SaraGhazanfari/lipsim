@@ -216,11 +216,13 @@ class Evaluator:
                                                                                            requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
-            correct = outputs.max(1)[1] == round(target)
+            correct = outputs.max(1)[1] == torch.round(target)
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
             index_list = list()
+            print(torch.round(target))
+            print('-------------------')
             print(correct)
             for idx, target_elem in enumerate(target):
                 if target_elem != 0.5:
