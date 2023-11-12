@@ -133,7 +133,7 @@ class Evaluator:
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
-            data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                        split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
@@ -314,13 +314,12 @@ class Evaluator:
         return metric_model
 
     def get_2afc_score_eval(self, test_loader):
-        logging.info("Evaluating NIGHTS dataset.")
+        logging.info(f"Evaluating {self.config.dataset} dataset.")
         d0s = []
         d1s = []
         targets = []
         # with torch.no_grad()
         for i, data in tqdm(enumerate(test_loader), total=len(test_loader)):
-            print(len(data))
             img_ref, img_left, img_right, target, idx = data
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
