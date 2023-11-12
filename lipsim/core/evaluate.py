@@ -103,7 +103,7 @@ class Evaluator:
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
-        self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed) #PerceptualMetric(backbone=self.model)
+        self.perceptual_metric = PerceptualMetric(backbone=self.model)
 
         self.load_ckpt()
 
