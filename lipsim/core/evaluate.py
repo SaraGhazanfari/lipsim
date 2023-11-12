@@ -28,8 +28,15 @@ def get_2afc_score(d0s, d1s, targets):
     d0s = torch.cat(d0s, dim=0)
     d1s = torch.cat(d1s, dim=0)
     targets = torch.cat(targets, dim=0)
-    scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
-    twoafc_score = torch.mean(scores)
+    scores = 0
+    count = 0
+    for idx, target in enumerate(targets):
+        if target != 0.5:
+            count += 1
+            scores += (d0s[idx] < d1s[idx]) * (1.0 - target) + (d1s[idx] < d0s[idx]) * target + (d1s[idx] == d0s[idx]) * 0.5
+
+    #twoafc_score = torch.mean(scores)
+    twoafc_score = scores/count
     return twoafc_score
 
 
