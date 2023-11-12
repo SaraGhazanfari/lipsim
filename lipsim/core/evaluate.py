@@ -162,13 +162,13 @@ class Evaluator:
                 batch_size=self.config.batch_size)
             lpips_accuracy, lpips_certified = self.get_certified_accuracy(data_loader)
 
-        eps_list = np.array([36, 72, 108])
-        eps_float_list = eps_list / 255
-        for i, eps_float in enumerate(eps_float_list):
-            self.message.add('eps', eps_float, format='.5f')
-            self.message.add('bapps accuracy', lpips_accuracy[i], format='.5f')
-            self.message.add('bapps certified', lpips_certified[i], format='.5f')
-            logging.info(self.message.get_message())
+            eps_list = np.array([36, 72, 108])
+            eps_float_list = eps_list / 255
+            for i, eps_float in enumerate(eps_float_list):
+                self.message.add('eps', eps_float, format='.5f')
+                self.message.add(f'bapps accuracy {dataset}', lpips_accuracy[i], format='.5f')
+                self.message.add(f'bapps certified {dataset}', lpips_certified[i], format='.5f')
+                logging.info(self.message.get_message())
 
     @torch.no_grad()
     def certified_eval_for_night(self):
