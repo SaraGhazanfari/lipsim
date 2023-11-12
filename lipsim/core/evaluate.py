@@ -169,9 +169,10 @@ class Evaluator:
             acc = (result_dict['traditional']['acc'] * result_dict['traditional']['count'] + result_dict['cnn'][
                 'acc'] * result_dict['cnn']['count']) / (
                           result_dict['traditional']['count'] + result_dict['cnn']['count'])
+
             certificate = (result_dict['traditional']['certificate'] * result_dict['traditional']['count'] +
                            result_dict['cnn'][
-                               'acc'] * result_dict['certificate']['count']) / (
+                               'certificate'] * result_dict['cnn']['count']) / (
                                   result_dict['traditional']['count'] + result_dict['cnn']['count'])
             self.message.add('eps', eps_float, format='.5f')
             self.message.add(f'bapps accuracy {dataset}', acc, format='.5f')
