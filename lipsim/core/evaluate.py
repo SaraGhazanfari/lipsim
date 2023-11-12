@@ -103,7 +103,7 @@ class Evaluator:
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
-        self.perceptual_metric = PerceptualMetric(backbone=self.model)
+        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
         self.load_ckpt()
 
@@ -114,7 +114,8 @@ class Evaluator:
         elif self.config.mode == 'attack':
             if self.config.target == 'dreamsim':
                 print('dreamsim is loading as perceputal metric...')
-                self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed)
+                self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
+                                                          requires_bias=self.config.requires_bias)
             self.attack_eval()
         elif self.config.mode == 'ssa':
             self.distance_attack_eval()

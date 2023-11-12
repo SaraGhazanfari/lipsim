@@ -82,9 +82,10 @@ class ClassificationLayer(nn.Module):
 
 
 class PerceptualMetric:
-    def __init__(self, backbone):
+    def __init__(self, backbone, requires_bias=True):
         self.backbone = backbone
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+        self.requires_bias = requires_bias
 
     def add_bias_before_projection(self, embed_ref):
         return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
@@ -100,10 +101,11 @@ class PerceptualMetric:
             embed_ref = embed_ref.detach()
             embed_x0 = embed_x0.detach()
             embed_x1 = embed_x1.detach()
+        if self.requires_bias:
+            embed_ref = self.add_bias_before_projection(embed_ref)
+            embed_x0 = self.add_bias_before_projection(embed_x0)
+            embed_x1 = self.add_bias_before_projection(embed_x1)
 
-        embed_ref = self.add_bias_before_projection(embed_ref)
-        embed_x0 = self.add_bias_before_projection(embed_x0)
-        embed_x1 = self.add_bias_before_projection(embed_x1)
         if requires_normalization:
             norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
             embed_ref = embed_ref / norm_ref
@@ -116,5 +118,3 @@ class PerceptualMetric:
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
-
-
