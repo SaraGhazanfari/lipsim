@@ -210,7 +210,7 @@ class Evaluator:
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
-
+            target = target.squeeze()
             dist_0, dist_1, bound = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left=img_left,
                                                                                            img_right=img_right,
                                                                                            requires_normalization=True)
