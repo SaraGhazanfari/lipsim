@@ -133,7 +133,7 @@ class Evaluator:
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
             data_loader = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset).get_dataloader(
+                                       split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
             print(f"BAPPS 2AFC score: {str(twoafc_score)}")
