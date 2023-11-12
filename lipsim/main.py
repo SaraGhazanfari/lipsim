@@ -204,7 +204,8 @@ if __name__ == '__main__':
                         default='/gpfswork/rech/dci/uuc79vj/lipsim/dreamsim_ckpts')
     parser.add_argument("--teacher_model_name", type=str, default='ensemble',
                         help='dino_vitb16 open_clip_vitb32 clip_vitb32')
-
+    parser.add_argument("--target", type=str, default='lipsim',
+                        help='dreamsim, lipsim')
     parser.add_argument("--margin", type=float, default=0)
 
     # parse all arguments
