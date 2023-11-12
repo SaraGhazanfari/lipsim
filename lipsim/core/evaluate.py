@@ -30,6 +30,7 @@ def get_2afc_score(d0s, d1s, targets):
     targets = torch.cat(targets, dim=0)
     scores = 0
     count = 0
+    print(targets)
     for idx, target in enumerate(targets):
         if target != 0.5:
             count += 1
