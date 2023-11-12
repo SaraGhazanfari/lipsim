@@ -46,10 +46,11 @@ class GeneralAttack:
 
     def generate_carlini_attack(self, img_ref, target, target_model):
         adversary = CarliniWagnerL2Attack(target_model, 2, confidence=0, targeted=False, learning_rate=0.01,
-                                          binary_search_steps=9, max_iterations=10, abort_early=True,
+                                          binary_search_steps=9, max_iterations=100, abort_early=True,
                                           initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
-        img_ref = adversary(img_ref, target.long())
-        return img_ref
+        img_adv = adversary(img_ref, target.long())
+        print(torch.norm(img_ref - img_adv, p=2, dim=(1, 2, 3)))
+        return img_adv
 
     def generate_auto_attack(self, attack_norm, img_0, img_1, img_ref, is_dist_attack, target, target_model):
         adversary = AutoAttack(target_model, norm=attack_norm, eps=self.config.eps, version='standard',
