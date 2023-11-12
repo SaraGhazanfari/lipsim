@@ -221,7 +221,7 @@ class Evaluator:
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
             index_list = list()
-            print(torch.sum(correct))
+
             for idx, target_elem in enumerate(target):
                 if target_elem != 0.5:
                     index_list.append(idx)
@@ -234,7 +234,7 @@ class Evaluator:
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
-                running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
+                running_accuracy[i] += correct.sum().cpu().numpy()#predicted.eq(target.data).cpu().sum().numpy()
             running_inputs += len(index_list) #img_ref.size(0)
 
         accuracy = running_accuracy / running_inputs
