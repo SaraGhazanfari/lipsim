@@ -210,21 +210,22 @@ class Trainer:
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
-            for n_batch, data in enumerate(data_loader):
-                if global_step == 2 and self.is_master:
-                    start_time = time.time()
-                epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                if self.config.mode == 'train':
+            if self.config.mode == 'train':
+                for n_batch, data in enumerate(data_loader):
+                    if global_step == 2 and self.is_master:
+                        start_time = time.time()
+                    epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
                     self.one_step_training(data, epoch, global_step, epoch_id)
-                else:
-                    self.one_epoch_finetuning(data_loader, epoch_id, global_step)
-                self._save_ckpt(global_step, epoch_id)
-                if global_step == 20 and self.is_master:
-                    self._print_approximated_train_time(start_time)
-                global_step += 1
 
-        self._save_ckpt(global_step, epoch_id, final=True)
-        logging.info("Done training -- epoch limit reached.")
+                    self._save_ckpt(global_step, epoch_id)
+                    if global_step == 20 and self.is_master:
+                        self._print_approximated_train_time(start_time)
+                    global_step += 1
+            else:
+                self.one_epoch_finetuning(data_loader, epoch_id, global_step)
+
+            self._save_ckpt(global_step, epoch_id, final=True)
+            logging.info("Done training -- epoch limit reached.")
 
     def compute_gradient_norm(self):
         grad_norm = 0.
@@ -477,6 +478,11 @@ class Trainer:
             seconds_per_batch = time.time() - start_time
             examples_per_second = self.global_batch_size / seconds_per_batch
             examples_per_second *= self.world_size
+
+            self._save_ckpt(global_step, epoch_id)
+            if global_step == 20 and self.is_master:
+                self._print_approximated_train_time(start_time)
+            global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
 
     @torch.no_grad()
