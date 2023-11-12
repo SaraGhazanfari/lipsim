@@ -1,5 +1,5 @@
 import torch
-from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack, MomentumIterativeAttack
+from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack, MomentumIterativeAttack, L1PGDAttack
 from torch import nn
 
 from autoattack import AutoAttack
@@ -45,10 +45,16 @@ class GeneralAttack:
             adversary = L2PGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=1000,
                                     rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
-        else:  # attack_type == 'Linf':
+        elif attack_norm == 'Linf':
             adversary = LinfPGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=50,
                                       eps_iter=0.01, rand_init=True, clip_min=0., clip_max=1., targeted=False)
+
+        else:
+            adversary = L1PGDAttack(target_model, loss_fn=None, eps=10.0, nb_iter=50, eps_iter=0.01, rand_init=True,
+                                           clip_min=0.0, clip_max=1.0, targeted=False)
         img_ref = adversary(img_ref, target_model(img_ref))
+
+
         return img_ref
 
     def generate_carlini_attack(self, img_ref, target, target_model):
