@@ -136,6 +136,7 @@ class Evaluator:
                                        split='val', dataset=dataset).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
+            print(f"BAPPS 2AFC score: {str(twoafc_score)}")
             logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
         return twoafc_score
 
