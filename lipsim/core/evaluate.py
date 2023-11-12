@@ -160,7 +160,10 @@ class Evaluator:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                           split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
-            lpips_accuracy, lpips_certified, counts = self.get_certified_accuracy(data_loader)
+            # lpips_accuracy, lpips_certified, counts = self.get_certified_accuracy(data_loader)
+            lpips_accuracy = 10
+            lpips_certified = 20
+            counts = 5
             result_dict[dataset] = {'acc': lpips_accuracy, 'certificate': lpips_certified, 'count': counts}
 
         eps_list = np.array([36, 72, 108])
@@ -175,8 +178,8 @@ class Evaluator:
                                'certificate'] * result_dict['cnn']['count']) / (
                                   result_dict['traditional']['count'] + result_dict['cnn']['count'])
             self.message.add('eps', eps_float, format='.5f')
-            self.message.add(f'bapps accuracy {dataset}', acc, format='.5f')
-            self.message.add(f'bapps certified {dataset}', certificate, format='.5f')
+            self.message.add('bapps accuracy', acc, format='.5f')
+            self.message.add('bapps certified', certificate, format='.5f')
             logging.info(self.message.get_message())
 
     @torch.no_grad()
