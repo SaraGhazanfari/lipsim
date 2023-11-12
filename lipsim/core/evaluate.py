@@ -234,11 +234,10 @@ class Evaluator:
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
-                print('running_certified', running_certified[i])
                 running_accuracy[i] += correct.sum().cpu().numpy()#predicted.eq(target.data).cpu().sum().numpy()
-                print('running_accuracy', running_accuracy[i])
-            running_inputs += len(index_list) #img_ref.size(0)
 
+            running_inputs += len(index_list) #img_ref.size(0)
+            print(len(index_list), running_inputs)
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
 
