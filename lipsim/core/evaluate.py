@@ -33,10 +33,11 @@ def get_2afc_score(d0s, d1s, targets):
     for idx, target in enumerate(targets):
         if target != 0.5:
             count += 1
-            scores += (d0s[idx] < d1s[idx]) * (1.0 - target) + (d1s[idx] < d0s[idx]) * target + (d1s[idx] == d0s[idx]) * 0.5
+            scores += (d0s[idx] < d1s[idx]) * (1.0 - target) + (d1s[idx] < d0s[idx]) * target + (
+                    d1s[idx] == d0s[idx]) * 0.5
 
-    #twoafc_score = torch.mean(scores)
-    twoafc_score = scores/count
+    # twoafc_score = torch.mean(scores)
+    twoafc_score = scores / count
     return twoafc_score
 
 
@@ -128,7 +129,10 @@ class Evaluator:
         elif self.config.mode == 'ssa':
             self.distance_attack_eval()
         elif self.config.mode == 'certified':
-            self.certified_eval()
+            if self.config.dataset == 'night':
+                self.certified_eval_for_night()
+            else:
+                self.certified_eval_for_lpips()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'knn':
@@ -141,7 +145,7 @@ class Evaluator:
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                       split='val', dataset=dataset, make_path=True).get_dataloader(
+                                          split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
             twoafc_score = self.get_2afc_score_eval(data_loader)
             print(f"BAPPS 2AFC score: {str(twoafc_score)}")
@@ -149,7 +153,25 @@ class Evaluator:
         return twoafc_score
 
     @torch.no_grad()
-    def certified_eval(self):
+    def certified_eval_for_lpips(self):
+
+        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                        'frameinterp']:
+            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                          split='val', dataset=dataset, make_path=True).get_dataloader(
+                batch_size=self.config.batch_size)
+            lpips_accuracy, lpips_certified = self.get_certified_accuracy(data_loader)
+
+        eps_list = np.array([36, 72, 108])
+        eps_float_list = eps_list / 255
+        for i, eps_float in enumerate(eps_float_list):
+            self.message.add('eps', eps_float, format='.5f')
+            self.message.add('bapps accuracy', lpips_accuracy[i], format='.5f')
+            self.message.add('bapps certified', lpips_certified[i], format='.5f')
+            logging.info(self.message.get_message())
+
+    @torch.no_grad()
+    def certified_eval_for_night(self):
 
         data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
                                                  split='test_imagenet').get_dataloader()
@@ -195,14 +217,23 @@ class Evaluator:
             correct = outputs.max(1)[1] == target
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
+            index_list = list()
             fy_fi[mask] = torch.inf
+
+            for idx, target_elem in enumerate(target):
+                if target_elem != 0.5:
+                    index_list.append(idx)
+
+            fy_fi = fy_fi[index_list]
+            correct = correct[index_list]
+
             radius = (fy_fi / bound).min(dim=1)[0]
 
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
                 running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
-            running_inputs += img_ref.size(0)
+            running_inputs += len(index_list) #img_ref.size(0)
 
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
@@ -336,7 +367,7 @@ class Evaluator:
             targets.append(target)
             # twoafc_score = get_2afc_score(d0s, d1s, targets)
 
-        twoafc_score = get_2afc_score(d0s, d1s, targets)
+        twoafc_score, count = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
