@@ -156,8 +156,7 @@ class Evaluator:
     @torch.no_grad()
     def certified_eval_for_lpips(self):
 
-        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
-                        'frameinterp']:
+        for dataset in ['traditional', 'cnn']:  # , 'superres', 'deblur', 'color','frameinterp']:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                           split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
@@ -234,9 +233,9 @@ class Evaluator:
             for i, eps_float in enumerate(eps_float_list):
                 certified = radius > eps_float
                 running_certified[i] += torch.sum(correct & certified).item()
-                running_accuracy[i] += correct.sum().cpu().numpy()#predicted.eq(target.data).cpu().sum().numpy()
+                running_accuracy[i] += correct.sum().cpu().numpy()  # predicted.eq(target.data).cpu().sum().numpy()
 
-            running_inputs += len(index_list) #img_ref.size(0)
+            running_inputs += len(index_list)  # img_ref.size(0)
             # print(len(index_list), running_inputs)
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs

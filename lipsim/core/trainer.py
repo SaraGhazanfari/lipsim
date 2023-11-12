@@ -491,8 +491,7 @@ class Trainer:
     @torch.no_grad()
     def certified_eval_for_lpips(self):
 
-        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
-                        'frameinterp']:
+        for dataset in ['traditional', 'cnn']:  # , 'superres', 'deblur', 'color','frameinterp']:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                           split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
