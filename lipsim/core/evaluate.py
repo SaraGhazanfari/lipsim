@@ -114,7 +114,7 @@ class Evaluator:
         elif self.config.mode == 'attack':
             if self.config.target == 'dreamsim':
                 print('dreamsim is loading as perceputal metric...')
-                self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model)
+                self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed)
             self.attack_eval()
         elif self.config.mode == 'ssa':
             self.distance_attack_eval()
