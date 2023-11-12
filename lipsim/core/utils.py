@@ -231,7 +231,8 @@ class BCERankingLoss(nn.Module):
         self.loss = torch.nn.BCELoss()
 
     def forward(self, logit, judge):
-        print(judge.shape, logit.shape)
+        judge = judge.squeeze()
+        print(judge.shape)
         per = (judge + 1.) / 2.
         return self.loss(logit, per)
 
