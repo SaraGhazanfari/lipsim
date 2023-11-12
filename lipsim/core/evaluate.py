@@ -223,8 +223,10 @@ class Evaluator:
             for idx, target_elem in enumerate(target):
                 if target_elem != 0.5:
                     index_list.append(idx)
-
+            print(index_list)
+            print('before', fy_fi)
             fy_fi = fy_fi[index_list]
+            print('After', fy_fi)
             correct = correct[index_list]
             bound = bound[index_list]
 
