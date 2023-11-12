@@ -319,7 +319,9 @@ class Evaluator:
         d1s = []
         targets = []
         # with torch.no_grad()
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
+        for i, data in tqdm(enumerate(test_loader), total=len(test_loader)):
+            print(len(data))
+            img_ref, img_left, img_right, target, idx = data
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
             dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
