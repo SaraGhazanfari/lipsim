@@ -222,10 +222,10 @@ class Trainer:
                         self._print_approximated_train_time(start_time)
                     global_step += 1
             else:
-                self.one_epoch_finetuning(data_loader, epoch_id, global_step)
+                global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
 
-            self._save_ckpt(global_step, epoch_id, final=True)
-            logging.info("Done training -- epoch limit reached.")
+        self._save_ckpt(global_step, epoch_id, final=True)
+        logging.info("Done training -- epoch limit reached.")
 
     def compute_gradient_norm(self):
         grad_norm = 0.
@@ -484,6 +484,7 @@ class Trainer:
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
+        return global_step
 
     @torch.no_grad()
     def lpips_eval(self):
