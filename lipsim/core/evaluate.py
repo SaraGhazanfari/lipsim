@@ -237,7 +237,7 @@ class Evaluator:
                 running_accuracy[i] += correct.sum().cpu().numpy()#predicted.eq(target.data).cpu().sum().numpy()
 
             running_inputs += len(index_list) #img_ref.size(0)
-            print(len(index_list), running_inputs)
+            # print(len(index_list), running_inputs)
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
 
