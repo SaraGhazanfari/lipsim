@@ -322,6 +322,7 @@ class Evaluator:
             targets.append(target)
             twoafc_score = get_2afc_score(d0s, d1s, targets)
             print(twoafc_score)
+            break
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
