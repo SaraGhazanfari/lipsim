@@ -103,7 +103,7 @@ class Evaluator:
         self.model = NormalizedModel(self.model, self.means, self.stds)
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
-        self.perceptual_metric = PerceptualMetric(backbone=self.model)
+        self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed) #PerceptualMetric(backbone=self.model)
 
         self.load_ckpt()
 
@@ -317,7 +317,8 @@ class Evaluator:
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
-
+            twoafc_score = get_2afc_score(d0s, d1s, targets)
+            print(twoafc_score)
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 

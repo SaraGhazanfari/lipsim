@@ -37,7 +37,6 @@ class GeneralAttack:
                                              decay_factor=1.0,
                                              eps_iter=0.01, clip_min=0.0, clip_max=1.0, targeted=False, ord=2)
             img_adv = attack(img_ref, target.long())
-            print(torch.norm(img_ref - img_adv, p=2, dim=(1, 2, 3)))
 
         return img_adv
 
