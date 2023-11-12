@@ -106,15 +106,15 @@ def main(config):
         # slurm_mem_per_cpu=100,
         timeout_min=config.timeout,
     )
-    if config.mode in ['train']: #, 'finetune']:
+    if config.mode in ['train', 'finetune']:
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
-    elif config.mode == 'finetune':
-        trainer = Trainer(config)
-        trainer()
+    # elif config.mode == 'finetune':
+    #     trainer = Trainer(config)
+    #     trainer()
     elif config.mode == 'classifier':
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)
