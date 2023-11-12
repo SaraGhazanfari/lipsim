@@ -221,12 +221,10 @@ class Evaluator:
             fy_fi[mask] = torch.inf
             index_list = list()
             for idx, target_elem in enumerate(target):
+                print(target_elem)
                 if target_elem != 0.5:
                     index_list.append(idx)
-            print(index_list)
-            print('before', fy_fi)
-            fy_fi = fy_fi[index_list]
-            print('After', fy_fi)
+
             correct = correct[index_list]
             bound = bound[index_list]
 
