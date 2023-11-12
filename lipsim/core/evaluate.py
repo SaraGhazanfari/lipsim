@@ -166,13 +166,13 @@ class Evaluator:
         eps_list = np.array([36, 72, 108])
         eps_float_list = eps_list / 255
         for i, eps_float in enumerate(eps_float_list):
-            acc = (result_dict['traditional']['acc'] * result_dict['traditional']['count'] + result_dict['cnn'][
-                'acc'] * result_dict['cnn']['count']) / (
+            acc = (result_dict['traditional']['acc'][i] * result_dict['traditional']['count'] + result_dict['cnn'][
+                'acc'][i] * result_dict['cnn']['count']) / (
                           result_dict['traditional']['count'] + result_dict['cnn']['count'])
 
-            certificate = (result_dict['traditional']['certificate'] * result_dict['traditional']['count'] +
+            certificate = (result_dict['traditional']['certificate'][i] * result_dict['traditional']['count'] +
                            result_dict['cnn'][
-                               'certificate'] * result_dict['cnn']['count']) / (
+                               'certificate'][i] * result_dict['cnn']['count']) / (
                                   result_dict['traditional']['count'] + result_dict['cnn']['count'])
             self.message.add('eps', eps_float, format='.5f')
             self.message.add('bapps accuracy', acc, format='.5f')
