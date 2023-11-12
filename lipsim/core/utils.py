@@ -181,7 +181,7 @@ class HingeLoss(torch.nn.Module):
         self.margin = margin
 
     def forward(self, x, y):
-        print(y)
+        print(x)
         y_rounded = torch.round(y)  # Map [0, 1] -> {0, 1}
         y_transformed = -1 * (1 - 2 * y_rounded)  # Map {0, 1} -> {-1, 1}
         return torch.max(torch.zeros(x.shape).to(self.device), self.margin + (-1 * (x * y_transformed))).sum()
