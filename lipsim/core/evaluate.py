@@ -223,6 +223,7 @@ class Evaluator:
             index_list = list()
 
             for idx, target_elem in enumerate(target):
+                print(target_elem)
                 if target_elem != 0.5:
                     index_list.append(idx)
 
