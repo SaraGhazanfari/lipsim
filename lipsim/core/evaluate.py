@@ -315,6 +315,7 @@ class Evaluator:
         d0s = []
         d1s = []
         targets = []
+        return 0
         # with torch.no_grad()
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
