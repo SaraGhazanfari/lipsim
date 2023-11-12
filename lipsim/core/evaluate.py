@@ -312,6 +312,7 @@ class Evaluator:
         d0s = []
         d1s = []
         targets = []
+        return 0
         # with torch.no_grad()
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
@@ -322,7 +323,6 @@ class Evaluator:
             targets.append(target)
             twoafc_score = get_2afc_score(d0s, d1s, targets)
             print(twoafc_score)
-            break
         twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
