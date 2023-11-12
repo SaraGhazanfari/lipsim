@@ -155,20 +155,28 @@ class Evaluator:
 
     @torch.no_grad()
     def certified_eval_for_lpips(self):
-
+        result_dict = {}
         for dataset in ['traditional', 'cnn']:  # , 'superres', 'deblur', 'color','frameinterp']:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                           split='val', dataset=dataset, make_path=True).get_dataloader(
                 batch_size=self.config.batch_size)
-            lpips_accuracy, lpips_certified = self.get_certified_accuracy(data_loader)
+            lpips_accuracy, lpips_certified, counts = self.get_certified_accuracy(data_loader)
+            result_dict[dataset] = {'acc': lpips_accuracy, 'certificate': lpips_certified, 'count': counts}
 
-            eps_list = np.array([36, 72, 108])
-            eps_float_list = eps_list / 255
-            for i, eps_float in enumerate(eps_float_list):
-                self.message.add('eps', eps_float, format='.5f')
-                self.message.add(f'bapps accuracy {dataset}', lpips_accuracy[i], format='.5f')
-                self.message.add(f'bapps certified {dataset}', lpips_certified[i], format='.5f')
-                logging.info(self.message.get_message())
+        eps_list = np.array([36, 72, 108])
+        eps_float_list = eps_list / 255
+        for i, eps_float in enumerate(eps_float_list):
+            acc = (result_dict['traditional']['acc'] * result_dict['traditional']['count'] + result_dict['cnn'][
+                'acc'] * result_dict['cnn']['count']) / (
+                          result_dict['traditional']['count'] + result_dict['cnn']['count'])
+            certificate = (result_dict['traditional']['certificate'] * result_dict['traditional']['count'] +
+                           result_dict['cnn'][
+                               'acc'] * result_dict['certificate']['count']) / (
+                                  result_dict['traditional']['count'] + result_dict['cnn']['count'])
+            self.message.add('eps', eps_float, format='.5f')
+            self.message.add(f'bapps accuracy {dataset}', acc, format='.5f')
+            self.message.add(f'bapps certified {dataset}', certificate, format='.5f')
+            logging.info(self.message.get_message())
 
     @torch.no_grad()
     def certified_eval_for_night(self):
@@ -178,8 +186,8 @@ class Evaluator:
         no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
                                                                          batch_size=self.config.batch_size,
                                                                          split='test_no_imagenet').get_dataloader()
-        imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
-        no_imagenet_accuracy, no_imagenet_certified = self.get_certified_accuracy(no_imagenet_data_loader)
+        imagenet_accuracy, imagenet_certified, _ = self.get_certified_accuracy(data_loader)
+        no_imagenet_accuracy, no_imagenet_certified, _ = self.get_certified_accuracy(no_imagenet_data_loader)
         overall_accuracy = (imagenet_accuracy * dataset_size + no_imagenet_accuracy * no_imagenet_dataset_size) / (
                 dataset_size + no_imagenet_dataset_size)
         overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
@@ -240,7 +248,7 @@ class Evaluator:
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
 
-        return accuracy, certified
+        return accuracy, certified, running_inputs
 
     def distance_attack_eval(self):
         from utils.visualization_utils import visualize_att_map
