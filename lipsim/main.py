@@ -15,7 +15,7 @@ from lipsim.eval_linear import LinearEvaluation
 
 warnings.filterwarnings("ignore")
 
-eval_mode = ['certified', 'attack', 'eval', 'ssa', 'lipsim', 'classifier', 'knn']
+eval_mode = ['certified', 'attack', 'eval', 'ssa', 'lipsim', 'classifier', 'knn', 'lpips']
 all_mode = ['train', 'finetune']
 all_mode.extend(eval_mode)
 
