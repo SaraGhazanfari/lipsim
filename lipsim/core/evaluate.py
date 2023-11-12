@@ -30,7 +30,7 @@ def get_2afc_score(d0s, d1s, targets):
     targets = torch.cat(targets, dim=0)
     scores = 0
     count = 0
-    print(targets)
+
     for idx, target in enumerate(targets):
         if target != 0.5:
             count += 1
@@ -216,13 +216,13 @@ class Evaluator:
                                                                                            requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
-            correct = outputs.max(1)[1] == target
+            correct = outputs.max(1)[1] == round(target)
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
             index_list = list()
+            print(correct)
             for idx, target_elem in enumerate(target):
-                print(target_elem)
                 if target_elem != 0.5:
                     index_list.append(idx)
 
