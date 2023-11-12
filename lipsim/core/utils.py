@@ -232,7 +232,6 @@ class BCERankingLoss(nn.Module):
 
     def forward(self, logit, judge):
         judge = judge.squeeze()
-        print(judge.shape)
         per = (judge + 1.) / 2.
         return self.loss(logit, per)
 
