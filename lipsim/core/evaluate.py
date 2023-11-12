@@ -221,9 +221,7 @@ class Evaluator:
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
             index_list = list()
-            print(torch.round(target))
-            print('-------------------')
-            print(correct)
+            print(torch.sum(correct))
             for idx, target_elem in enumerate(target):
                 if target_elem != 0.5:
                     index_list.append(idx)
