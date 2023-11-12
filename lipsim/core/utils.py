@@ -225,9 +225,21 @@ class FeatureCrossEntropy(nn.Module):
         self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
 
 
+class BCERankingLoss(nn.Module):
+    def __init__(self, chn_mid=32):
+        super(BCERankingLoss, self).__init__()
+        self.loss = torch.nn.BCELoss()
+
+    def forward(self, logit, judge):
+        per = (judge + 1.) / 2.
+        return self.loss(logit, per)
+
+
 def get_loss(config, margin=0, device='cuda:0'):
     if config.mode in ['lipsim', 'vanilla-eval']:
         return RMSELoss()
+    elif config.mode == 'finetune' and config.dataset == 'bapps':
+        return BCERankingLoss()
     elif config.mode == 'finetune':
         return HingeLoss(margin=config.margin, device=device)
     elif config.mode in ['train']:
