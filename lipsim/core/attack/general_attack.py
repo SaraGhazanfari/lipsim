@@ -33,11 +33,20 @@ class GeneralAttack:
             img_adv = attack(img_ref, target.long())
 
         elif attack_method == 'MI':  # MomentumIterativeAttack
-            attack = MomentumIterativeAttack(target_model, loss_fn=None, eps=self.config.eps, nb_iter=100,
-                                             decay_factor=1.0,
-                                             eps_iter=0.01, clip_min=0.0, clip_max=1.0, targeted=False, ord=2)
-            img_adv = attack(img_ref, target.long())
+            img_adv = self.generate_MIA_attack(img_ref, target, target_model, attack_norm)
 
+        return img_adv
+
+    def generate_MIA_attack(self, img_ref, target, target_model, attack_norm):
+        if attack_norm == 'L2':
+            attack = MomentumIterativeAttack(target_model, loss_fn=None, eps=self.config.eps, nb_iter=100,
+                                             decay_factor=1.0, eps_iter=0.01, clip_min=0.0, clip_max=1.0,
+                                             targeted=False, ord=2)
+        else:
+            attack = MomentumIterativeAttack(target_model, loss_fn=None, eps=self.config.eps, nb_iter=100,
+                                             decay_factor=1.0, eps_iter=0.01, clip_min=0.0, clip_max=1.0,
+                                             targeted=False, ord='inf')
+        img_adv = attack(img_ref, target.long())
         return img_adv
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
@@ -51,9 +60,8 @@ class GeneralAttack:
 
         else:
             adversary = L1PGDAttack(target_model, loss_fn=None, eps=10.0, nb_iter=50, eps_iter=0.01, rand_init=True,
-                                           clip_min=0.0, clip_max=1.0, targeted=False)
+                                    clip_min=0.0, clip_max=1.0, targeted=False)
         img_ref = adversary(img_ref, target_model(img_ref))
-
 
         return img_ref
 
