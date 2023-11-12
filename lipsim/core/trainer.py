@@ -458,6 +458,7 @@ class Trainer:
             self.lpips_eval()
 
     def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
+
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
@@ -484,7 +485,26 @@ class Trainer:
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
+        self.certified_eval_for_lpips()
         return global_step
+
+    @torch.no_grad()
+    def certified_eval_for_lpips(self):
+
+        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
+                        'frameinterp']:
+            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
+                                          split='val', dataset=dataset, make_path=True).get_dataloader(
+                batch_size=self.config.batch_size)
+            lpips_accuracy, lpips_certified = self.get_certified_accuracy(data_loader)
+
+            eps_list = np.array([36, 72, 108])
+            eps_float_list = eps_list / 255
+            for i, eps_float in enumerate(eps_float_list):
+                self.message.add('eps', eps_float, format='.5f')
+                self.message.add(f'bapps accuracy {dataset}', lpips_accuracy[i], format='.5f')
+                self.message.add(f'bapps certified {dataset}', lpips_certified[i], format='.5f')
+                logging.info(self.message.get_message())
 
     @torch.no_grad()
     def lpips_eval(self):
