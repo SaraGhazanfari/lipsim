@@ -5,7 +5,7 @@ import os
 from os.path import join
 import numpy as np
 # from dreamsim.model import download_weights, dreamsim
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from lipsim.core.attack.general_attack import GeneralAttack
@@ -42,18 +42,18 @@ def get_2afc_score(d0s, d1s, targets):
     return twoafc_score
 
 
-def show_images(index_tensor, inputs, adv_inputs, last_idx):
-    for index in range(index_tensor.shape[0]):
-        img = inputs[index_tensor[index]]
-        adv_image = adv_inputs[index_tensor[index]]
-        save_single_image(img, f'original/{last_idx + index}')
-        save_single_image(adv_image, f'adv/{last_idx + index}')
+# def show_images(index_tensor, inputs, adv_inputs, last_idx):
+#     for index in range(index_tensor.shape[0]):
+#         img = inputs[index_tensor[index]]
+#         adv_image = adv_inputs[index_tensor[index]]
+#         save_single_image(img, f'original/{last_idx + index}')
+#         save_single_image(adv_image, f'adv/{last_idx + index}')
 
 
-def save_single_image(img_ref, img_name):
-    plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
-    plt.axis('off')
-    plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
+# def save_single_image(img_ref, img_name):
+#     plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
+#     plt.axis('off')
+#     plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
 
 
 class Evaluator:
