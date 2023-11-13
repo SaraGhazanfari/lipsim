@@ -24,7 +24,6 @@ class KNNEval:
         self.rank, self.world_size, self.local_rank, self.is_distributed = 0, 1, 0, False
         utils.setup_logging(self.config, self.rank)
         self._setup_distributed_run()
-        self.model = self.model.module.embed
         logging.info('Reading data...')
         self._load_dataloader()
         logging.info('Loading Features...')
