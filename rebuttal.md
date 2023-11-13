@@ -10,12 +10,12 @@ hence our work tries to demonstrate the importance of having a
 robust perceptual metric and provide a framework for training one. 
 Based on the theoretical and empirical contributions,
 we believe it is fair to claim that our work succeeded in 
-(i) "demonstrating the threatens that come along with using non-robust
+(i) "demonstrating the threats that come along with using non-robust
 perceptual metrics" and (ii) "proposing a framework for training a 
 robust perceptual metric with provable guarantees on any 2AFC
 dataset (We show the results for NIGHT and BAPPS datasets that are 
 the only available 2AFC datasets)(iii) "providing experiments that 
-show the empirical robustness of LipSim metric in different settings 
+show the empirical robustness of the LipSim metric in different settings 
 than the 2AFC setting."
 
 # Reviewer KFDY
@@ -80,7 +80,7 @@ Attack for both $\ell_{\infty}$ and $\ell_{2}$. The results are as follows:
 
 There exist two methods that are based on randomized smoothing. Besides the fact that 
 they are computationally very expensive due to the Monte Carlo sampling 
-for each data point, the proof requires the distance metric to hold symmetry property 
+for each data point, the proof requires the distance metric to hold the symmetry property 
 and triangle inequality. As perceptual metrics generally don't hold 
 the triangle inequality, the triangle inequality approximation is 
 used which makes the bound excessively loose.
@@ -103,8 +103,8 @@ LPIPS, we find out that LipSim has better performance.
 we see LipSim is better than CLIP, which is a strong, weakly supervised 
 representation learning method and although other methods are showing better 
 performance in terms of natural score, their lack of robustness to 
-tiny perturbations make a huge gap between robusntess and accuracy.
-- On the other hand, the decent natural score of LipSim comes along with high 
+tiny perturbations make a huge gap between robustness and accuracy.
+- On the other hand, the decent natural score of LipSim comes with high 
 robustness that makes the metric much more reliable.
 
   
@@ -125,7 +125,7 @@ is important.**
 As mentioned in the paper, there exist previous works on the 
 robustness of perceptual metrics but our work is the first to 
 propose robust perceptual metrics with provable guarantees and 
-with higher certificate radius. There exist two methods that are 
+with a higher certificate radius. There exist two methods that are 
 based on randomized smoothing. Besides the fact that they are 
 computationally very expensive due to the Monte Carlo sampling 
 for each data point, the proof requires the distance metric to 
@@ -139,8 +139,8 @@ the bound excessively loose.
 someone have access to the model (white box) to actually 
 attack it. Please elaborate.**
 
-The code is accessible through github and the instructions to easily 
-loadin and using the metric is provided in the github repository.
+The code is accessible through GitHub and the instructions for
+loading and using the LipSim metric are provided in the GitHub repository.
 
 **3- Consider changing the colors in bar plot of Fig. 3.a. They are hard to distinguish.**
 
@@ -153,12 +153,11 @@ images with any illegal content that shouldn't be posted and spread on social me
 if the perceptual metrics we are using are not robust, tiny perturbations 
 could be crafted to mislead the model, and the illegal contents are not detected. 
 In the paper we have provided examples in Figure 1. that show the huge perceptual 
-mistake that DreamSim did while fed with the perturbed images with tiny perturbations.
+mistake that DreamSim made while fed with the perturbed images with tiny perturbations.
 
 **5- How about some non NN-based similarity metrics? I am guessing maybe there are not as good as NN-based ones but at least they might be more robust! Can you compare your method agains some of those m Metrics? Is DISTS in Fig. 3.a NN-based?**
 
-We have reported the results for the non-NN-based metrics with the "Low level" title
-in Figure 3.a.
+We have reported the results for the non-NN-based metrics with the "Low level" title in Figure 3.a.
 The natural scores are very low and they are not comparable with the recent metrics. 
 On the other hand, the pixel-wise methods are not capable of capturing the semantics 
 of the image and are very vulnerable to tiny perturbations, e.g. shifting only one 
@@ -234,7 +233,7 @@ regardless of perturbation magnitude?**
 perturbation 72/255 and beyond are still pretty low. 
 How do humans behave in those perturbations?**
 
-Human eye is completely robust to perturbed images with unbounded 
+The human eye is completely robust to perturbed images with unbounded 
 perturbation budgets. This paper is the first try to achieve 
 certified robustness for perceptual metrics, and tried to take 
 the first step by achieving certified robustness for 
