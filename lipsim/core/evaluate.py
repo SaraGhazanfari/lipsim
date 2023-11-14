@@ -41,9 +41,9 @@ def get_2afc_score(d0s, d1s, targets):
     twoafc_score = scores / count
     #todo get it back to normal
     outputs = torch.stack((d1s, d0s), dim=1)
-    correct = outputs.max(1)[1] == torch.round(targets)
-    print(torch.round(targets))
-    print(outputs.max(1)[1].squeeze())
+    correct = torch.round(targets).squeeze() == outputs.max(1)[1].squeeze() #outputs.max(1)[1] == torch.round(targets)
+    print(torch.round(targets).squeeze())
+    print(torch.sum(correct))
     print(correct.shape[0])
     print(torch.sum(correct)/correct.shape[0])
     return torch.sum(correct)/correct.shape[0], count
