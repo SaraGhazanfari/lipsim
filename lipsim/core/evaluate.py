@@ -94,9 +94,9 @@ class Evaluator:
         '''Run evaluation of model or eval under attack'''
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                          cache_dir='./checkpoints', device=self.device)
+        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+        # self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+        #                                   cache_dir='./checkpoints', device=self.device)
         cudnn.benchmark = True
 
         # create a mesage builder for logging
