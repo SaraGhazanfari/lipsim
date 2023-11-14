@@ -39,7 +39,11 @@ def get_2afc_score(d0s, d1s, targets):
 
     # twoafc_score = torch.mean(scores)
     twoafc_score = scores / count
-    return twoafc_score
+    #todo get it back to normal
+    outputs = np.stack((d1s, d0s), dim=1)
+    correct = outputs.max(1)[1] == torch.round(targets)
+    return torch.mean(correct)
+    #return twoafc_score
 
 
 # def show_images(index_tensor, inputs, adv_inputs, last_idx):
