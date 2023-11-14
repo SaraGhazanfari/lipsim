@@ -50,7 +50,7 @@ class KNNEval:
         ])
         dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
         self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
-        dataset_val = ReturnIndexDataset(os.path.join(self.config.data_dir, "val"), transform=transform)
+        dataset_val = ReturnIndexDataset(self.config.data_dir, transform=transform)
         self.train_loader = torch.utils.data.DataLoader(
             dataset_train,
             batch_size=self.config.batch_size,
