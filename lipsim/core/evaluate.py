@@ -149,7 +149,7 @@ class Evaluator:
 
         logging.info('Done with batched inference.')
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def lpips_eval(self):
         for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
                         'frameinterp']:
