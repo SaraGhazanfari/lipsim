@@ -7,7 +7,7 @@ import numpy as np
 # from dreamsim.model import download_weights, dreamsim
 # from matplotlib import pyplot as plt
 from tqdm import tqdm
-
+import lpips
 from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
@@ -133,6 +133,10 @@ class Evaluator:
             if self.config.target == 'dreamsim':
                 print('dreamsim is loading as perceputal metric...')
                 self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
+                                                          requires_bias=self.config.requires_bias)
+            elif self.config.target == 'lpips':
+                lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
+                self.perceptual_metric = PerceptualMetric(backbone=lpips_model.net,
                                                           requires_bias=self.config.requires_bias)
             self.attack_eval()
         elif self.config.mode == 'ssa':
