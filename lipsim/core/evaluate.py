@@ -352,7 +352,6 @@ class Evaluator:
 
             dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_0, img_1,
                                                                                    requires_grad=True)
-            print(dist_1.shape, dist_0.shape, torch.stack((dist_1, dist_0), dim=1).shape)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
