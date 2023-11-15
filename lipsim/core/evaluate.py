@@ -388,6 +388,8 @@ class Evaluator:
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
+            if i * self.batch_size == 1000:
+                break
             # twoafc_score = get_2afc_score(d0s, d1s, targets)
 
         twoafc_score, count = get_2afc_score(d0s, d1s, targets)
