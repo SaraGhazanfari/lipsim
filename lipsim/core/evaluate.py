@@ -119,7 +119,7 @@ class Evaluator:
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
 
-        self.load_ckpt()
+
         if self.config.target == 'dreamsim':
             print('dreamsim is loading as perceputal metric...')
             self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
@@ -135,6 +135,7 @@ class Evaluator:
         else:
             self.model = torch.nn.DataParallel(self.model)
             self.model = self.model.to(self.device)
+            self.load_ckpt()
             self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
         if self.config.mode == 'lipsim':
