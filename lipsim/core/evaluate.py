@@ -42,9 +42,7 @@ def get_2afc_score(d0s, d1s, targets):
     #todo get it back to normal
     outputs = torch.stack((d1s, d0s), dim=1)
     correct = torch.round(targets).squeeze() == outputs.max(1)[1].squeeze() #outputs.max(1)[1] == torch.round(targets)
-    print(torch.round(targets).squeeze())
-    print(torch.sum(correct))
-    print(correct.shape[0])
+
     print(torch.sum(correct)/correct.shape[0])
     return torch.sum(correct)/correct.shape[0], count
     #return twoafc_score
@@ -388,8 +386,8 @@ class Evaluator:
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
-            # if i * self.batch_size == 1000:
-            #     break
+            if i * self.batch_size == 1000 and self.config.dataset == 'bapps':
+                break
             # twoafc_score = get_2afc_score(d0s, d1s, targets)
 
         twoafc_score, count = get_2afc_score(d0s, d1s, targets)
