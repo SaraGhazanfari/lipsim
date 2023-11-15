@@ -130,7 +130,7 @@ class AutoAttack():
 
                     x = x_orig[start_idx:end_idx, :].clone().to(self.device)
                     y = y_orig[start_idx:end_idx].clone().to(self.device)
-                    output = self.get_logits(x).max(dim=1)[1].squeeze()
+                    output = self.get_logits(x).max(dim=1)[1]
                     y_adv[start_idx: end_idx] = output
                     correct_batch = y.eq(output)
                     robust_flags[start_idx:end_idx] = correct_batch.detach().to(robust_flags.device)
