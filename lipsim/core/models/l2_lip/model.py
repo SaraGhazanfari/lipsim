@@ -81,6 +81,20 @@ class ClassificationLayer(nn.Module):
         return self.finetuning_layer(x)
 
 
+class LPIPSMetric:
+    def __init__(self, lpips_metric):
+        self.lpips_metric = lpips_metric
+
+    def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
+                                    requires_normalization=False):
+        dist_0 = self.lpips_metric(img_ref, img_left)
+        dist_1 = self.lpips_metric(img_ref, img_right)
+        if not requires_grad:
+            dist_0 = dist_0.detach()
+            dist_1 = dist_1.detach()
+        return dist_0, dist_1, None
+
+
 class PerceptualMetric:
     def __init__(self, backbone, requires_bias=True):
         self.backbone = backbone
@@ -90,8 +104,8 @@ class PerceptualMetric:
     def add_bias_before_projection(self, embed_ref):
         return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
 
-    def get_cosine_score_between_images(self, img_ref, img_left, img_right, requires_grad=False,
-                                        requires_normalization=False):
+    def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
+                                    requires_normalization=False):
 
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)

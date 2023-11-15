@@ -464,9 +464,9 @@ class Trainer:
 
             start_time = time.time()
             epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-            dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right,
-                                                                                       requires_grad=True,
-                                                                                       requires_normalization=True)
+            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right,
+                                                                                   requires_grad=True,
+                                                                                   requires_normalization=True)
             logit = dist_0 - dist_1
             loss = self.criterion(logit.squeeze(), target)
             loss.backward()
@@ -573,10 +573,10 @@ class Trainer:
                 img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                     img_right.cuda(), target.cuda()
 
-                dist_0, dist_1, bound = self.perceptual_metric.get_cosine_score_between_images(img_ref,
-                                                                                               img_left=img_left,
-                                                                                               img_right=img_right,
-                                                                                               requires_normalization=True)
+                dist_0, dist_1, bound = self.perceptual_metric.get_distance_between_images(img_ref,
+                                                                                           img_left=img_left,
+                                                                                           img_right=img_right,
+                                                                                           requires_normalization=True)
 
                 outputs = torch.stack((dist_1, dist_0), dim=1)
                 predicted = outputs.argmax(axis=1)
@@ -617,7 +617,7 @@ class Trainer:
         if self.config.attack:
             img_ref = GeneralAttack(self.config).generate_attack(img_ref, img_left, img_right, target,
                                                                  target_model=self.model_wrapper(img_left, img_right))
-        dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_left, img_right)
+        dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)
@@ -634,8 +634,8 @@ class Trainer:
             else:
                 img_ref = img
                 img_0, img_1 = img_left, img_right
-            dist_0, dist_1, _ = self.perceptual_metric.get_cosine_score_between_images(img_ref, img_0, img_1,
-                                                                                       requires_grad=True)
+            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_0, img_1,
+                                                                                   requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
