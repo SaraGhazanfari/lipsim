@@ -51,7 +51,7 @@ class GeneralAttack:
 
     def generate_pgd_attack(self, attack_norm, img_ref, target_model):
         if attack_norm == 'L2':
-            adversary = L2PGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=50,
+            adversary = L2PGDAttack(target_model, loss_fn=nn.CrossEntropyLoss(), eps=self.config.eps, nb_iter=1000,
                                     rand_init=True, targeted=False, eps_iter=0.01, clip_min=0.0, clip_max=1.0)
 
         elif attack_norm == 'Linf':
