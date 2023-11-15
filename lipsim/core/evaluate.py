@@ -40,13 +40,13 @@ def get_2afc_score(d0s, d1s, targets):
 
     # twoafc_score = torch.mean(scores)
     twoafc_score = scores / count
-    #todo get it back to normal
+    # todo get it back to normal
     outputs = torch.stack((d1s, d0s), dim=1)
-    correct = torch.round(targets).squeeze() == outputs.max(1)[1].squeeze() #outputs.max(1)[1] == torch.round(targets)
+    correct = torch.round(targets).squeeze() == outputs.max(1)[1].squeeze()  # outputs.max(1)[1] == torch.round(targets)
 
-    print(torch.sum(correct)/correct.shape[0])
-    return torch.sum(correct)/correct.shape[0], count
-    #return twoafc_score
+    print(torch.sum(correct) / correct.shape[0])
+    return torch.sum(correct) / correct.shape[0], count
+    # return twoafc_score
 
 
 # def show_images(index_tensor, inputs, adv_inputs, last_idx):
@@ -118,9 +118,6 @@ class Evaluator:
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
-        self.model = torch.nn.DataParallel(self.model)
-        self.model = self.model.to(self.device)
-        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
         self.load_ckpt()
         if self.config.target == 'dreamsim':
@@ -134,6 +131,11 @@ class Evaluator:
 
         elif self.config.target == 'dists':
             self.perceptual_metric = DISTSMetric()
+
+        else:
+            self.model = torch.nn.DataParallel(self.model)
+            self.model = self.model.to(self.device)
+            self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
         if self.config.mode == 'lipsim':
             return self.model
