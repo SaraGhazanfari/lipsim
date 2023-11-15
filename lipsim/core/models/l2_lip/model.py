@@ -90,8 +90,8 @@ class LPIPSMetric:
         dist_0 = self.lpips_metric(img_ref, img_left)
         dist_1 = self.lpips_metric(img_ref, img_right)
         if not requires_grad:
-            dist_0 = dist_0.detach().squeeze()
-            dist_1 = dist_1.detach().squeeze()
+            dist_0 = dist_0.detach()
+            dist_1 = dist_1.detach()
         return dist_0, dist_1, None
 
 
