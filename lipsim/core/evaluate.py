@@ -136,6 +136,7 @@ class Evaluator:
                                                           requires_bias=self.config.requires_bias)
             elif self.config.target == 'lpips':
                 lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
+                lpips_model = lpips_model.to(self.device)
                 self.perceptual_metric = LPIPSMetric(lpips_model)
 
             self.attack_eval()
