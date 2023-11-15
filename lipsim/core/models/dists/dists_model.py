@@ -62,8 +62,7 @@ class DISTS(torch.nn.Module):
         self.alpha.data.normal_(0.1, 0.01)
         self.beta.data.normal_(0.1, 0.01)
         if load_weights:
-            print(os.getcwd())
-            weights = torch.load(os.path.join(os.getcwd(), 'weights.pt'))
+            weights = torch.load(os.path.join(os.getcwd(), 'lipsim/core/models/dists','weights.pt'))
             self.alpha.data = weights['alpha']
             self.beta.data = weights['beta']
 
