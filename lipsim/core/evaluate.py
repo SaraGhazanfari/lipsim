@@ -14,7 +14,8 @@ from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.eval_knn import KNNEval
 from lipsim.core.models.dreamsim.model import download_weights, dreamsim
 
-from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric, LPIPSMetric
+from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric, LPIPSMetric, \
+    DISTSMetric
 from lipsim.core import utils
 
 from lipsim.core.data.readers import readers_config, N_CLASSES
@@ -130,6 +131,9 @@ class Evaluator:
             lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
             lpips_model = lpips_model.to(self.device)
             self.perceptual_metric = LPIPSMetric(lpips_model)
+
+        elif self.config.target == 'dists':
+            self.perceptual_metric = DISTSMetric()
 
         if self.config.mode == 'lipsim':
             return self.model
