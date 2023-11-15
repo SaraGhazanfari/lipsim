@@ -4,6 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision.transforms import Normalize
+
+from lipsim.core.models.dists.dists_model import DISTS
 from lipsim.core.models.l2_lip.layers import PoolingLinear, PaddingChannels
 from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 
@@ -89,6 +91,20 @@ class LPIPSMetric:
                                     requires_normalization=False):
         dist_0 = self.lpips_metric(img_ref, img_left)
         dist_1 = self.lpips_metric(img_ref, img_right)
+        if not requires_grad:
+            dist_0 = dist_0.detach()
+            dist_1 = dist_1.detach()
+        return dist_0, dist_1, None
+
+
+class DISTSMetric:
+    def __init__(self):
+        self.dists_metric = DISTS()
+
+    def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
+                                    requires_normalization=False):
+        dist_0 = self.dists_metric(img_ref, img_left)
+        dist_1 = self.dists_metric(img_ref, img_right)
         if not requires_grad:
             dist_0 = dist_0.detach()
             dist_1 = dist_1.detach()
