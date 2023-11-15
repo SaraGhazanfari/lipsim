@@ -99,7 +99,7 @@ class LPIPSMetric:
 
 class DISTSMetric:
     def __init__(self):
-        self.dists_metric = DISTS()
+        self.dists_metric = DISTS().cuda()
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
                                     requires_normalization=False):
