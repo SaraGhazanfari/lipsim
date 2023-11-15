@@ -94,9 +94,9 @@ class Evaluator:
         '''Run evaluation of model or eval under attack'''
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        # self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-        #                                   cache_dir='./checkpoints', device=self.device)
+        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                          cache_dir='./checkpoints', device=self.device)
         cudnn.benchmark = True
 
         # create a mesage builder for logging
@@ -124,21 +124,20 @@ class Evaluator:
         self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
         self.load_ckpt()
+        if self.config.target == 'dreamsim':
+            print('dreamsim is loading as perceputal metric...')
+            self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
+                                                      requires_bias=self.config.requires_bias)
+        elif self.config.target == 'lpips':
+            lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
+            lpips_model = lpips_model.to(self.device)
+            self.perceptual_metric = LPIPSMetric(lpips_model)
 
         if self.config.mode == 'lipsim':
             return self.model
         elif self.config.mode == 'eval':
             self.vanilla_eval()
         elif self.config.mode == 'attack':
-            if self.config.target == 'dreamsim':
-                print('dreamsim is loading as perceputal metric...')
-                self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
-                                                          requires_bias=self.config.requires_bias)
-            elif self.config.target == 'lpips':
-                lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
-                lpips_model = lpips_model.to(self.device)
-                self.perceptual_metric = LPIPSMetric(lpips_model)
-
             self.attack_eval()
         elif self.config.mode == 'ssa':
             self.distance_attack_eval()
