@@ -104,7 +104,7 @@ class Evaluator:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+        self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
 
         if self.config.target == 'dreamsim':
