@@ -104,8 +104,6 @@ class Evaluator:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
-        self.model = NormalizedModel(self.model, self.means, self.stds)
 
         if self.config.target == 'dreamsim':
             print('dreamsim is loading as perceputal metric...')
@@ -119,7 +117,14 @@ class Evaluator:
         elif self.config.target == 'dists':
             self.perceptual_metric = DISTSMetric()
 
+        elif self.config.target == 'lipsim_v2':
+            self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+
         else:
+            self.model = L2LipschitzNetwork(self.config, self.n_classes)
+
+        if self.config.target in ['lipsim_v2', 'lipsim_v1']:
+            self.model = NormalizedModel(self.model, self.means, self.stds)
             self.model = torch.nn.DataParallel(self.model)
             self.model = self.model.to(self.device)
             self.load_ckpt()
