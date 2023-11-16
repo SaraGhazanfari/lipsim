@@ -48,17 +48,17 @@ class KNNEval:
             transforms.ToTensor(),
             # pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
-        # dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
+        dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
         self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
         dataset_val = ReturnIndexDataset(self.config.data_dir, transform=transform)
-        # self.train_loader = torch.utils.data.DataLoader(
-        #     dataset_train,
-        #     batch_size=self.config.batch_size,
-        #     num_workers=1,
-        #     sampler=self.sampler,
-        #     pin_memory=True,
-        #     drop_last=False,
-        # )
+        self.train_loader = torch.utils.data.DataLoader(
+            dataset_train,
+            batch_size=self.config.batch_size,
+            num_workers=1,
+            sampler=self.sampler,
+            pin_memory=True,
+            drop_last=False,
+        )
         self.test_loader = torch.utils.data.DataLoader(
             dataset_val,
             batch_size=self.config.batch_size,
