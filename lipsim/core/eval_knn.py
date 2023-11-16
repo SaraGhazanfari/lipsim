@@ -33,12 +33,15 @@ class KNNEval:
         cudnn.benchmark = True
         torch.cuda.init()
         torch.cuda.set_device(self.local_rank)
-        if self.is_distributed:
-            utils.setup_distributed_training(self.world_size, self.rank)
-            self.model = DistributedDataParallel(
-                self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-        else:
-            self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        try:
+            if self.is_distributed:
+                utils.setup_distributed_training(self.world_size, self.rank)
+                self.model = DistributedDataParallel(
+                    self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+            else:
+                self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        except Exception as e:
+            print(e)
         # utils.setup_distributed_training(self.world_size, self.rank)
 
     def _load_dataloader(self):
@@ -81,7 +84,6 @@ class KNNEval:
         self.train_labels = self.train_labels.cuda()
         self.test_labels = self.test_labels.cuda()
         print(self.train_features.shape)
-
 
     @torch.no_grad()
     def _extract_feature_pipeline(self):
