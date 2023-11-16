@@ -141,7 +141,7 @@ class Evaluator:
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'knn':
-            KNNEval(self.config, self.model).knn_classifier()
+            KNNEval(self.config, self.perceptual_metric.backbone).knn_classifier()
 
         logging.info('Done with batched inference.')
 
