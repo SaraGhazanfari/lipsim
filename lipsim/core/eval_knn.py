@@ -38,8 +38,7 @@ class KNNEval:
             self.model = DistributedDataParallel(
                 self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         else:
-            pass
-            #self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+            self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
         # utils.setup_distributed_training(self.world_size, self.rank)
 
     def _load_dataloader(self):
