@@ -6,6 +6,7 @@ import torch.nn as nn
 from torchvision.transforms import Normalize
 from lipsim.core.models.l2_lip.layers import PoolingLinear, PaddingChannels
 from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
+from lipsim.core.models.l2_lip.layers import SDPConvLin, SDPLin
 
 
 class NormalizedModel(nn.Module):
@@ -42,7 +43,8 @@ class L2LipschitzNetwork(nn.Module):
         self.config = config
 
         imsize = 224
-        self.conv1 = PaddingChannels(self.num_channels, 3, "zero")
+        # self.conv1 = PaddingChannels(self.num_channels, 3, "zero")
+        self.conv1 = SDPConvLin(3, self.num_channels)
 
         layers = []
         for _ in range(self.depth):  # config, input_size, cin, cout, kernel_size=3, epsilon=1e-6
@@ -61,7 +63,8 @@ class L2LipschitzNetwork(nn.Module):
             )
         self.linear = nn.Sequential(*layers_linear)
         self.base = nn.Sequential(*[self.conv1, self.convs, self.linear])
-        self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
+        # self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
+        self.last = SDPLin(in_channels, self.n_classes)
 
     def forward(self, x):
         x = self.base(x)
