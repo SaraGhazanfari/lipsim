@@ -24,6 +24,8 @@ import torch
 import torch.backends.cudnn as cudnn
 import sys
 
+from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
+
 
 def get_2afc_score(d0s, d1s, targets):
     d0s = torch.cat(d0s, dim=0)
@@ -47,20 +49,6 @@ def get_2afc_score(d0s, d1s, targets):
     print(torch.sum(correct) / correct.shape[0])
     return torch.sum(correct) / correct.shape[0], count
     # return twoafc_score
-
-
-# def show_images(index_tensor, inputs, adv_inputs, last_idx):
-#     for index in range(index_tensor.shape[0]):
-#         img = inputs[index_tensor[index]]
-#         adv_image = adv_inputs[index_tensor[index]]
-#         save_single_image(img, f'original/{last_idx + index}')
-#         save_single_image(adv_image, f'adv/{last_idx + index}')
-
-
-# def save_single_image(img_ref, img_name):
-#     plt.imshow(img_ref.squeeze().detach().cpu().numpy().transpose(1, 2, 0))
-#     plt.axis('off')
-#     plt.savefig(f'{img_name}.pdf', format="pdf", bbox_inches='tight', pad_inches=0)
 
 
 class Evaluator:
@@ -116,9 +104,8 @@ class Evaluator:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetwork(self.config, self.n_classes)
+        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.means, self.stds)
-
 
         if self.config.target == 'dreamsim':
             print('dreamsim is loading as perceputal metric...')
