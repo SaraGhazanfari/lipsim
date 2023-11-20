@@ -66,7 +66,7 @@ class Trainer:
                 'global_step': step,
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-                # 'scheduler': self.scheduler.state_dict()
+                'scheduler': self.scheduler.state_dict()
             }
             logging.debug("Saving checkpoint '{}'.".format(ckpt_name))
             torch.save(state, ckpt_path)
@@ -79,11 +79,11 @@ class Trainer:
         self.train_dir = self.config.train_dir
         self.ngpus = self.config.ngpus
 
-        # job_env = submitit.JobEnvironment()
-        self.rank = 0  # int(job_env.global_rank)
-        self.local_rank = 0  # int(job_env.local_rank)
-        self.num_nodes = 1  # int(job_env.num_nodes)
-        self.num_tasks = 1  # int(job_env.num_tasks)
+        job_env = submitit.JobEnvironment()
+        self.rank = int(job_env.global_rank)
+        self.local_rank = int(job_env.local_rank)
+        self.num_nodes = int(job_env.num_nodes)
+        self.num_tasks = int(job_env.num_tasks)
         self.is_master = bool(self.rank == 0)
 
         # Setup logging
@@ -151,10 +151,10 @@ class Trainer:
             logging.info(f'Number of parameters to train: {param_size}')
 
         download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-        #                                  cache_dir='./checkpoints')
-        # self.teacher_model = self.teacher_model.cuda()
-        # self.teacher_model.eval()
+        self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                         cache_dir='./checkpoints')
+        self.teacher_model = self.teacher_model.cuda()
+        self.teacher_model.eval()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
@@ -191,9 +191,8 @@ class Trainer:
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler, self.warmup = utils.get_scheduler(self.optimizer, self.config, num_steps)
-        if self.config.warmup_scheduler is not None:
-            logging.info(f"Warmup scheduler on {self.config.warmup_scheduler * 100:.0f}% of training")
+        self.scheduler = CosineAnnealingWarmupRestarts(
+            self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -210,19 +209,15 @@ class Trainer:
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
-            if self.config.mode == 'train':
-                for n_batch, data in enumerate(data_loader):
-                    if global_step == 2 and self.is_master:
-                        start_time = time.time()
-                    epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                    self.one_step_training(data, epoch, global_step, epoch_id)
-
-                    self._save_ckpt(global_step, epoch_id)
-                    if global_step == 20 and self.is_master:
-                        self._print_approximated_train_time(start_time)
-                    global_step += 1
-            else:
-                global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
+            for n_batch, data in enumerate(data_loader):
+                if global_step == 2 and self.is_master:
+                    start_time = time.time()
+                epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
+                self.one_step_training(data, epoch, global_step, epoch_id)
+                self._save_ckpt(global_step, epoch_id)
+                if global_step == 20 and self.is_master:
+                    self._print_approximated_train_time(start_time)
+                global_step += 1
 
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
@@ -301,12 +296,11 @@ class Trainer:
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
 
-        loss = self.criterion(original_out, embeddings) + self.criterion(jittered_out, embeddings)
+        loss = self.criterion([original_out, jittered_out], embeddings, epoch_id)
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
-        with self.warmup.dampening() if self.warmup else nullcontext():
-            self.scheduler.step(step)
+        self.scheduler.step(step)
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
         examples_per_second *= self.world_size
