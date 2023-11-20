@@ -188,10 +188,12 @@ class HingeLoss(torch.nn.Module):
 
 class FeatureCrossEntropy(nn.Module):
 
-    def __init__(self, out_dim=1792, warmup_teacher_temp=0.04, teacher_temp=0.04,
-                 warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1):
+    def __init__(self, out_dim=1792, warmup_teacher_temp=0.01, teacher_temp=0.01,
+                 warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1,
+                 center_momentum=0.9):
         super().__init__()
         self.student_temp = student_temp
+        self.center_momentum = center_momentum
         self.register_buffer("center", torch.zeros(1, out_dim, device='cuda'))
         self.teacher_temp_schedule = np.concatenate((
             np.linspace(warmup_teacher_temp,
@@ -203,14 +205,17 @@ class FeatureCrossEntropy(nn.Module):
         """
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
-        # student_out = student_output / self.student_temp
         temp = self.teacher_temp_schedule[epoch]
         teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
-        loss = torch.zeros((teacher_output.shape[0]), device='cuda')
+        total_loss = 0.
+        n_loss_terms = 0.
         for s_out in student_output:
-            loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
-        loss = torch.mean(loss)
-        return loss
+            loss = torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
+            total_loss += loss.mean()
+            n_loss_terms += 1
+        total_loss /= n_loss_terms
+        self.update_center(teacher_output)
+        return total_loss
 
     @torch.no_grad()
     def update_center(self, teacher_output):
@@ -224,13 +229,67 @@ class FeatureCrossEntropy(nn.Module):
         self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
 
 
-def get_loss(config, margin=0, device='cuda:0'):
-    if config.mode in ['lipsim', 'vanilla-eval']:
-        return RMSELoss()
-    elif config.mode == 'finetune':
-        return HingeLoss(margin=config.margin, device=device)
-    elif config.mode in ['train']:
-        return FeatureCrossEntropy()
+class CrossEntKLLoss(nn.Module):
+
+    def __init__(self, temp=1, alpha=0.5):
+      """
+      Calculate the knowledge distillation loss using Cross-Entropy Loss
+      student_outputs: outputs of the student model
+      teacher_outputs: outputs of the teacher model
+      temp: temperature parameter for softening the targets
+      alpha: weight parameter for balancing the distillation and standard Cross-Entropy Loss
+      """
+      super().__init__()
+      self.ce = nn.CrossEntropyLoss()
+      self.kl = nn.KLDivLoss()
+      self.temp = temp
+      self.alpha = alpha
+
+    def forward(self, student, teacher):
+      softmax_student = F.softmax(student / self.temp, dim=1)
+      softmax_teacher = F.softmax(teacher / self.temp, dim=1)
+      loss_ce = self.ce(softmax_student, softmax_teacher)
+      loss_kl = self.kl(softmax_student, softmax_teacher)
+      loss = (1 - self.alpha) * loss_ce + self.alpha * loss_kl
+      return loss
+
+class LossXent(nn.Module):
+
+  def __init__(self, config):
+    super(LossXent, self).__init__()
+    self.criterion = nn.CrossEntropyLoss()
+    self.n_classes = {
+      'mnist': 10,
+      'cifar10': 10,
+      'cifar100': 100,
+      'tiny-imagenet': 200,
+      'imagenet': 1000
+    }[config.dataset]
+    self.offset = config.loss_offset
+    self.temperature = config.loss_temp
+
+  def __call__(self, outputs, labels):
+    one_hot_labels = F.one_hot(labels, num_classes=self.n_classes)
+    offset_outputs = outputs - self.offset * one_hot_labels
+    offset_outputs /= self.temperature
+    loss = self.criterion(offset_outputs, labels) * self.temperature
+    return loss
+
+
+
+def get_loss(config):
+    if config.mode == 'hinge':
+        return HingeLoss(margin=config.margin)
+    if config.loss == 'mse':
+      return nn.MSELoss()
+    elif config.loss == 'rmse':
+      return RMSELoss()
+    elif config.loss == 'xent':
+      return CrossEntKLLoss(config.loss_temp, config.loss_alpha)
+    elif config.loss == 'dino':
+      return FeatureCrossEntropy(nepochs=config.epochs)
+    else:
+      raise ValueError("loss not recognized")
 
 
 def get_scheduler(optimizer, config, num_steps):
