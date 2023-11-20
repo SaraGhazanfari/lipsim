@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     # parameters training or eval
     parser.add_argument("--mode", type=str, default="train", choices=all_mode)
-    parser.add_argument("--train_dir", type=str, help="Name of the training directory.")
+    parser.add_argument("--train_dir", default=None, type=str, help="Name of the training directory.")
     parser.add_argument("--data_dir", type=str, help="Name of the data directory.")
     parser.add_argument("--dataset", type=str, default='imagenet', help="Dataset to use")
 
