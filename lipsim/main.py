@@ -103,7 +103,7 @@ def main(config):
         # slurm_qos=config.qos,
         # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
-        slurm_mem_per_cpu=16,
+        slurm_mem=16,
         timeout_min=config.timeout,
     )
     if config.mode in ['train', 'finetune']:
