@@ -284,12 +284,12 @@ class Trainer:
     def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
-        images, embeddings = data
+        # images, embeddings = data
         images, _ = data
-        embeddings = self.process_embedding(embeddings)
+        # embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        # embeddings = self._teacher_model_embed(original_imgs)
+        embeddings = self._teacher_model_embed(original_imgs)
         embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
