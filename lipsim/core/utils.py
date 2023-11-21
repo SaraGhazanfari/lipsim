@@ -157,7 +157,7 @@ def setup_distributed_training(world_size, rank):
     # host_name = stdout.decode().splitlines()[0]
     import platform
     host_name = platform.node()
-    dist_url = f'tcp://{host_name}:{get_port_number()}'
+    dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
