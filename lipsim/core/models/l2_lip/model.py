@@ -11,7 +11,6 @@ from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBase
 
 
 class NormalizedModel(nn.Module):
-
     def __init__(self, model, mean, std):
         super(NormalizedModel, self).__init__()
         self.model = model

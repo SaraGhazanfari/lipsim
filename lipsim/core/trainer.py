@@ -18,6 +18,7 @@ from tqdm import tqdm
 from dreamsim.model import download_weights, dreamsim
 from lipsim.core import utils
 from lipsim.core.attack.general_attack import GeneralAttack
+from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config, N_CLASSES
@@ -187,6 +188,7 @@ class Trainer:
             n_files = self.reader.n_train_files
 
         # define optimizer
+        # todo why adam?
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
         # define learning rate scheduler
@@ -248,6 +250,7 @@ class Trainer:
             (step == 1 and self.local_rank == 0)
 
     def process_gradients(self, step):
+        # todo what is this part?
         if self.config.gradient_clip_by_norm:
             if step == 0 and self.local_rank == 0:
                 logging.info("Clipping Gradient by norm: {}".format(

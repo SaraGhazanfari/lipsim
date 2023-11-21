@@ -99,7 +99,7 @@ class ImagenetReader(BaseReader):
         self.n_test_files = 50_000
         self.img_size = (None, 3, 224, 500)
         self.split = 'train' if self.is_training else 'val'
-
+        # todo put a better value for imagenet, it is basically like a bias
         self.means = (0.0000, 0.0000, 0.0000)
         self.stds = (1.0000, 1.0000, 1.0000)
 
