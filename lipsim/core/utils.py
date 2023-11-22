@@ -17,6 +17,8 @@ from torchvision import transforms
 import pytorch_warmup as warmup
 from PIL import ImageFilter, ImageOps
 
+from lipsim.core.data.readers import N_CLASSES
+
 
 class GaussianBlur(object):
     """
@@ -245,7 +247,7 @@ def get_loss(config, margin=0, device='cuda:0'):
     elif config.mode == 'finetune':
         return HingeLoss(margin=config.margin, device=device)
     elif config.mode in ['train']:
-        return nn.CrossEntropyLoss()
+        return FeatureCrossEntropy(out_dim=N_CLASSES[config.teacher_model_name], nepochs=config.epochs)
 
 
 def get_scheduler(optimizer, config, num_steps):
