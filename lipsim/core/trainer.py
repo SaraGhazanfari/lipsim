@@ -277,10 +277,7 @@ class Trainer:
 
     @torch.no_grad()
     def _teacher_model_embed(self, imgs):
-        teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                    cache_dir='./checkpoints')
-        teacher_model.eval()
-        return teacher_model.embed(imgs)
+        return self.teacher_model.embed(imgs)
 
     def one_step_training(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
