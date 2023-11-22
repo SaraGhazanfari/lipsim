@@ -21,9 +21,10 @@ from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
-from lipsim.core.data.readers import readers_config, N_CLASSES
+from lipsim.core.data.readers import readers_config
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
+from lipsim.core.utils import N_CLASSES
 
 # from core.models.dreamsim.model import dreamsim
 

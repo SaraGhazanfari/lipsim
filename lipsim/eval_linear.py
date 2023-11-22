@@ -10,8 +10,9 @@ import torch.backends.cudnn as cudnn
 from torch.nn.parallel import DistributedDataParallel
 
 from lipsim.core import utils
-from lipsim.core.data.readers import N_CLASSES, readers_config
+from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, ClassificationLayer
+from lipsim.core.utils import N_CLASSES
 
 
 class LinearEvaluation:

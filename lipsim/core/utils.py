@@ -3,21 +3,24 @@ import re
 import random
 import logging
 import glob
-import subprocess
 from os.path import join
 
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.distributed as dist
 import torch.nn.functional as F
-import torch.distributed as dist
+
 from torch.optim import lr_scheduler
 from torchvision import transforms
 import pytorch_warmup as warmup
 from PIL import ImageFilter, ImageOps
 
-from lipsim.core.data.readers import N_CLASSES
+N_CLASSES = {
+    'dino_vitb16': 768,
+    'open_clip_vitb32': 512,
+    'clip_vitb32': 512,
+    'ensemble': 1792
+}
 
 
 class GaussianBlur(object):

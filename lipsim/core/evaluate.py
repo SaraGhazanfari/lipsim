@@ -18,13 +18,14 @@ from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel,
     DISTSMetric
 from lipsim.core import utils
 
-from lipsim.core.data.readers import readers_config, N_CLASSES
+from lipsim.core.data.readers import readers_config
 import torch.nn as nn
 import torch
 import torch.backends.cudnn as cudnn
 import sys
 
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
+from lipsim.core.utils import N_CLASSES
 
 
 def get_2afc_score(d0s, d1s, targets):
