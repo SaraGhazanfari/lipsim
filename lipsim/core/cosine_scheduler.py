@@ -19,7 +19,7 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
                  optimizer: torch.optim.Optimizer,
                  first_cycle_steps: int,
                  cycle_mult: float = 1.,
-                 max_lr: float = 0.1,
+                 max_lr: float = 0.01,
                  min_lr: float = 0.001,
                  warmup_steps: int = 0,
                  gamma: float = 1.,
