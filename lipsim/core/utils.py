@@ -3,7 +3,9 @@ import re
 import random
 import logging
 import glob
+import uuid
 from os.path import join
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -160,12 +162,23 @@ def setup_distributed_training(world_size, rank):
     # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
     # stdout = subprocess.check_output(cmd.split())
     # host_name = stdout.decode().splitlines()[0]
-    import platform
-    host_name = platform.node()
-    dist_url = f'tcp://{host_name}:9000'
+    # import platform
+    # host_name = platform.node()
+    # dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
+    shared_folder = os.environ.get('folder_path')
+    dist_url = get_init_file(shared_folder).as_uri()
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
+
+
+def get_init_file(shared_folder):
+    # Init file must not exist, but it's parent dir must exist.
+    os.makedirs(str(shared_folder), exist_ok=True)
+    init_file = Path(shared_folder) / f"{uuid.uuid4().hex}_init"
+    if init_file.exists():
+        os.remove(str(init_file))
+    return init_file
 
 
 class RMSELoss(nn.Module):
