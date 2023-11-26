@@ -6,7 +6,7 @@ import glob
 import uuid
 from os.path import join
 from pathlib import Path
-
+import subprocess
 import numpy as np
 import torch
 import torch.nn as nn
@@ -159,15 +159,15 @@ def setup_distributed_training(world_size, rank):
         if var.upper() in os.environ:
             del os.environ[var.upper()]
     # get distributed url
-    # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
-    # stdout = subprocess.check_output(cmd.split())
-    # host_name = stdout.decode().splitlines()[0]
+    cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
+    stdout = subprocess.check_output(cmd.split())
+    host_name = stdout.decode().splitlines()[0]
     # import platform
     # host_name = platform.node()
-    # dist_url = f'tcp://{host_name}:9000'
+    dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
-    shared_folder = os.environ.get('folder_path')
-    dist_url = get_init_file(shared_folder).as_uri()
+    # shared_folder = os.environ.get('folder_path')
+    # dist_url = get_init_file(shared_folder).as_uri()
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
     print('| distributed init (rank {}): {}'.format(rank, dist_url), flush=True)
