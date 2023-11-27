@@ -11,6 +11,7 @@ from lipsim.core.data.imagenet_embedding_dataset import ImageNetEmbeddingDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.coco_datast import COCODataset
+from lipsim.core.data.tiny_imagenet import TinyImageNet
 
 
 class DataAugmentationDINO:
@@ -155,10 +156,55 @@ class ImagenetEmbeddingReader(BaseReader):
             self.path, self.path_embedding, split=split, transform=transform)
 
 
+class TinyImageNetReader(BaseReader):
+
+    def __init__(self, config, batch_size, num_gpus, is_training):
+        super(TinyImageNetReader, self).__init__(
+            config, batch_size, num_gpus, is_training)
+        self.batch_size = batch_size
+        self.is_training = is_training
+        self.n_classes = 200
+        self.height, self.width = 64, 64
+        self.n_train_files = 100000
+        self.n_test_files = 10000
+        self.img_size = (None, 3, 64, 64)
+
+        self.means = (0.0000, 0.0000, 0.0000)
+        self.stds = (1.0000, 1.0000, 1.0000)
+        if config.shift_data:
+            self.means = (0.485, 0.456, 0.406)
+
+        split = 'train' if self.is_training else 'val'
+        transform = self.transform()
+        self.dataset = TinyImageNet(self.path, split=split,
+                                    download=False, transform=transform)
+
+    def transform(self):
+        hue = 0.02
+        saturation = (.3, 2.)
+        brightness = 0.1
+        contrast = (.5, 2.)
+        if self.is_training:
+            transform = transforms.Compose([
+                transforms.RandomCrop(64, padding=4, padding_mode='reflect'),
+                transforms.RandomHorizontalFlip(),
+                transforms.ColorJitter(
+                    brightness=brightness, contrast=contrast,
+                    saturation=saturation, hue=hue),
+                transforms.ToTensor(),
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
+        return transform
+
+
 readers_config = {
     'imagenet': ImagenetReader,
     'imagenet_embedding': ImagenetEmbeddingReader,
     'night': NightDataset,
     'bapps': BAPPSDataset,
-    'coco': COCODataset
+    'coco': COCODataset,
+    'tiny': TinyImageNetReader
 }
