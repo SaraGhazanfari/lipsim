@@ -164,7 +164,7 @@ def setup_distributed_training(world_size, rank):
     host_name = stdout.decode().splitlines()[0]
     # import platform
     # host_name = platform.node()
-
+    print(os.getenv())
     dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
     # shared_folder = os.environ.get('folder_path')
