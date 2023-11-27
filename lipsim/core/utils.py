@@ -170,7 +170,6 @@ def setup_distributed_training(world_size, rank):
     dist_url = get_init_file(shared_folder).as_uri()
     dist.init_process_group(backend='nccl', init_method=dist_url,
                             world_size=world_size, rank=rank)
-    torch.cuda.set_device(rank)
     print('| distributed init (rank {}): {}'.format(rank, dist_url), flush=True)
     dist.barrier()
 
