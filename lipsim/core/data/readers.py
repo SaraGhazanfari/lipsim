@@ -206,5 +206,5 @@ readers_config = {
     'night': NightDataset,
     'bapps': BAPPSDataset,
     'coco': COCODataset,
-    'tiny': TinyImageNetReader
+    'tiny-imagenet': TinyImageNetReader
 }
