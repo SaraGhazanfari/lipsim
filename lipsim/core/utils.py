@@ -150,7 +150,7 @@ def get_port_number():
     return port
 
 
-def setup_distributed_training(world_size, rank):
+def setup_distributed_training(world_size, rank, dist_url):
     """ find a common host name on all nodes and setup distributed training """
     # make sure http proxy are unset, in order for the nodes to communicate
     for var in ['http_proxy', 'https_proxy']:
@@ -159,13 +159,12 @@ def setup_distributed_training(world_size, rank):
         if var.upper() in os.environ:
             del os.environ[var.upper()]
     # get distributed url
-    cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
-    stdout = subprocess.check_output(cmd.split())
-    host_name = stdout.decode().splitlines()[0]
+    # cmd = 'scontrol show hostnames ' + os.getenv('SLURM_JOB_NODELIST')
+    # stdout = subprocess.check_output(cmd.split())
+    # host_name = stdout.decode().splitlines()[0]
     # import platform
     # host_name = platform.node()
-    print(os.getenv())
-    dist_url = f'tcp://{host_name}:9000'
+    # dist_url = f'tcp://{host_name}:9000'
     # setup dist.init_process_group
     # shared_folder = os.environ.get('folder_path')
     # dist_url = get_init_file(shared_folder).as_uri()

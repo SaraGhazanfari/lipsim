@@ -1,10 +1,13 @@
 import os
 import shutil
 import sys
+import uuid
 import warnings
 import argparse
 from datetime import datetime
 from os.path import exists, realpath
+from pathlib import Path
+
 import submitit
 
 from lipsim.core.evaluate import Evaluator
@@ -26,6 +29,15 @@ def override_args(config, depth, num_channels, depth_linear, n_features):
     config.depth_linear = depth_linear
     config.n_features = n_features
     return config
+
+
+def get_init_file(shared_folder):
+    # Init file must not exist, but it's parent dir must exist.
+    os.makedirs(str(shared_folder), exist_ok=True)
+    init_file = Path(shared_folder) / f"{uuid.uuid4().hex}_init"
+    if init_file.exists():
+        os.remove(str(init_file))
+    return init_file
 
 
 def set_config(config):
@@ -99,13 +111,15 @@ def main(config):
         # exclusive=True,
         # slurm_account=config.account,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        #slurm_partition=config.partition,
+        # slurm_partition=config.partition,
         # slurm_qos=config.qos,
         # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
         slurm_mem='64GB',
         timeout_min=config.timeout,
     )
+    shared_folder = os.environ.get('folder_path')
+    config.dist_url = get_init_file(shared_folder).as_uri()
     if config.mode in ['train', 'finetune']:
         trainer = Trainer(config)
         job = executor.submit(trainer)
@@ -181,7 +195,8 @@ if __name__ == '__main__':
 
     # specific parameters for eval
     parser.add_argument("--attack", type=str,
-                        choices=['PGD-L2', 'PGD-Linf', 'PGD-L1', 'AA-L2', 'AA-Linf', 'CW-L2', 'CW-Linf', 'SQ-Linf', 'SQ-L2',
+                        choices=['PGD-L2', 'PGD-Linf', 'PGD-L1', 'AA-L2', 'AA-Linf', 'CW-L2', 'CW-Linf', 'SQ-Linf',
+                                 'SQ-L2',
                                  'DF-L2', 'MI-L2', 'MI-Linf'],
                         help="Choose the attack.")
     parser.add_argument("--eps", type=float, default=36)
