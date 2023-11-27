@@ -158,9 +158,9 @@ class ImagenetEmbeddingReader(BaseReader):
 
 class TinyImageNetReader(BaseReader):
 
-    def __init__(self, config, batch_size, num_gpus, is_training):
+    def __init__(self, config, batch_size, num_gpus, is_training, is_distributed=False):
         super(TinyImageNetReader, self).__init__(
-            config, batch_size, num_gpus, is_training)
+            config=config, batch_size=batch_size, is_training=is_training, is_distributed=is_distributed)
         self.batch_size = batch_size
         self.is_training = is_training
         self.n_classes = 200
