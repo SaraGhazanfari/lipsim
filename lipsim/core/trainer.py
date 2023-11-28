@@ -189,13 +189,18 @@ class Trainer:
             n_files = self.reader.n_train_files
 
         # define optimizer
-        # todo why adam?
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler = CosineAnnealingWarmupRestarts(
-            self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
+        lr_schedule = utils.cosine_scheduler(
+            base_value=self.config.lr * (self.batch_size * utils.get_world_size()) / 256.,  # linear scaling rule
+            final_value=self.config.min_lr,
+            epochs=self.config.epochs, niter_per_ep=len(data_loader),
+            warmup_epochs=self.config.warmup_epochs,
+        )
+        # self.scheduler = CosineAnnealingWarmupRestarts(
+        #     self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)

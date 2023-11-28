@@ -25,6 +25,20 @@ N_CLASSES = {
 }
 
 
+def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epochs=0, start_warmup_value=0):
+    warmup_schedule = np.array([])
+    warmup_iters = warmup_epochs * niter_per_ep
+    if warmup_epochs > 0:
+        warmup_schedule = np.linspace(start_warmup_value, base_value, warmup_iters)
+
+    iters = np.arange(epochs * niter_per_ep - warmup_iters)
+    schedule = final_value + 0.5 * (base_value - final_value) * (1 + np.cos(np.pi * iters / len(iters)))
+
+    schedule = np.concatenate((warmup_schedule, schedule))
+    assert len(schedule) == epochs * niter_per_ep
+    return schedule
+
+
 class GaussianBlur(object):
     """
     Apply Gaussian Blur to the PIL image.
@@ -132,15 +146,6 @@ def setup_logging(config, rank):
     f = open(filename, "a")
     logging.basicConfig(filename=filename, level=level, format=format_, datefmt='%H:%M:%S')
 
-
-# def get_open_port():
-#     import socket
-#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     s.bind(("", 0))
-#     s.listen(1)
-#     port = s.getsockname()[1]
-#     s.close()
-#     return port
 
 def get_port_number():
     from socket import socket

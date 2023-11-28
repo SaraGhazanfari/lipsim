@@ -177,7 +177,13 @@ if __name__ == '__main__':
     # parser.add_argument("--loss", type=str, default="xent", help="Define the loss to use for training.")
     parser.add_argument("--optimizer", type=str, default='adam')
     parser.add_argument("--scheduler", type=str, default="interp")
-    parser.add_argument("--lr", type=float, default=0.01)
+    parser.add_argument("--lr", default=0.0005, type=float, help="""Learning rate at the end of
+        linear warmup (highest LR used during training). The learning rate is linearly scaled
+        with the batch size, and specified here for a reference batch size of 256.""")
+    parser.add_argument("--warmup_epochs", default=10, type=int,
+                        help="Number of epochs for the linear learning-rate warm up.")
+    parser.add_argument('--min_lr', type=float, default=1e-6, help="""Target LR at the
+        end of optimization. We use a cosine LR schedule with linear warmup.""")
     parser.add_argument("--beta1", type=float, default=0.5)
     parser.add_argument("--beta2", type=float, default=0.9)
     parser.add_argument("--wd", type=float, default=0, help="Weight decay to use for training.")
