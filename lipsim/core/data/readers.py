@@ -184,15 +184,22 @@ class TinyImageNetReader(BaseReader):
         saturation = (.3, 2.)
         brightness = 0.1
         contrast = (.5, 2.)
+
         if self.is_training:
-            transform = transforms.Compose([
-                transforms.RandomCrop(64, padding=4, padding_mode='reflect'),
-                transforms.RandomHorizontalFlip(),
-                transforms.ColorJitter(
-                    brightness=brightness, contrast=contrast,
-                    saturation=saturation, hue=hue),
-                transforms.ToTensor(),
-            ])
+            transform = DataAugmentationDINO(
+                global_crops_scale=(0.4, 1.),
+                local_crops_scale=(0.05, 0.4),
+                local_crops_number=8
+            )
+
+            # transform = transforms.Compose([
+            #     transforms.RandomCrop(64, padding=4, padding_mode='reflect'),
+            #     transforms.RandomHorizontalFlip(),
+            #     transforms.ColorJitter(
+            #         brightness=brightness, contrast=contrast,
+            #         saturation=saturation, hue=hue),
+            #     transforms.ToTensor(),
+            # ])
         else:
             transform = transforms.Compose([
                 transforms.ToTensor(),
