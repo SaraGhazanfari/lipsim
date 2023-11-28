@@ -32,7 +32,7 @@ class TinyImageNet(VisionDataset):
         self.split = verify_str_arg(split, "split", ("train", "val",))
 
         if self._check_integrity():
-            # print('Files already downloaded and verified.')
+            print('Files already downloaded and verified.')
             pass
         elif download:
             self._download()
@@ -54,7 +54,6 @@ class TinyImageNet(VisionDataset):
         extract_archive(os.path.join(self.root, self.filename))
 
     def _check_integrity(self):
-        print(os.path.join(self.root, self.filename))
         return check_integrity(os.path.join(self.root, self.filename), self.md5)
 
     def __getitem__(self, index):
