@@ -306,7 +306,9 @@ class Trainer:
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
-        self.scheduler.step(step)
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = self.scheduler[epoch_id]
+        # self.scheduler.step(step)
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
         examples_per_second *= self.world_size
