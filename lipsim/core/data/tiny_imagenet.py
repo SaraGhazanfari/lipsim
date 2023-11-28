@@ -54,6 +54,7 @@ class TinyImageNet(VisionDataset):
         extract_archive(os.path.join(self.root, self.filename))
 
     def _check_integrity(self):
+        print(os.path.join(self.root, self.filename))
         return check_integrity(os.path.join(self.root, self.filename), self.md5)
 
     def __getitem__(self, index):
