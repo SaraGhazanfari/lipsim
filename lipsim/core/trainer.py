@@ -199,7 +199,7 @@ class Trainer:
         #     epochs=self.config.epochs, niter_per_ep=len(data_loader),
         #     warmup_epochs=self.config.warmup_epochs,
         # )
-        num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
+        num_steps = (self.reader.n_train_files // self.global_batch_size) #self.config.epochs *
         self.scheduler = CosineAnnealingWarmupRestarts(
             self.optimizer, first_cycle_steps=num_steps, warmup_steps=100)
 
