@@ -298,11 +298,11 @@ class Trainer:
             logging.info(f'images {original_imgs.shape}')
             logging.info(f'embeddings {embeddings.shape}')
         original_out = self.model(original_imgs)
-        jittered_out = self.model(jittered_imgs)
+        # jittered_out = self.model(jittered_imgs)
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
 
-        loss = self.criterion([original_out, jittered_out], embeddings, epoch_id)
+        loss = self.criterion([original_out], embeddings, epoch_id) #[original_out, jittered_out]
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
