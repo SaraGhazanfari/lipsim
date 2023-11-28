@@ -277,7 +277,7 @@ class Trainer:
 
     @torch.no_grad()
     def _teacher_model_embed(self, imgs):
-        print(imgs.shapa)
+        print(imgs.shape)
         return self.teacher_model.embed(imgs)
 
     def one_step_training(self, data, epoch, step, epoch_id=0):
