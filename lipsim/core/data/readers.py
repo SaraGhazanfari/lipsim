@@ -3,7 +3,7 @@ import os
 import torch
 from os.path import join, exists
 from torchvision import transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
 
 from torchvision.datasets import ImageNet, ImageFolder
@@ -74,8 +74,10 @@ class BaseReader:
     def load_dataset(self):
         """Load or download dataset."""
         sampler = None
+
         if self.is_distributed:
             sampler = DistributedSampler(self.dataset, shuffle=self.is_training)
+
         loader = DataLoader(self.dataset,
                             batch_size=self.batch_size,
                             num_workers=self.num_workers,
@@ -118,7 +120,6 @@ class ImagenetReader(BaseReader):
             ])
         split = 'train' if is_training else 'val'
         self.dataset = ImageFolder(os.path.join(self.path, split), transform=transform)
-        # self.dataset = ImageNet(self.path, split=split, transform=transform)
 
 
 class ImagenetEmbeddingReader(BaseReader):
@@ -165,7 +166,7 @@ class TinyImageNetReader(BaseReader):
         self.is_training = is_training
         self.n_classes = 200
         self.height, self.width = 64, 64
-        self.n_train_files = 100000
+        self.n_train_files = int(100000 / self.config.subset)
         self.n_test_files = 10000
         self.img_size = (None, 3, 64, 64)
 
@@ -178,6 +179,8 @@ class TinyImageNetReader(BaseReader):
         transform = self.transform()
         self.dataset = TinyImageNet(self.path, split=split,
                                     download=False, transform=transform)
+        subset_indices = torch.randperm(len(self.dataset))[:self.n_train_files]
+        self.dataset = Subset(self.dataset, subset_indices)
 
     def transform(self):
         hue = 0.02
