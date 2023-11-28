@@ -257,7 +257,6 @@ class Trainer:
             (step == 1 and self.local_rank == 0)
 
     def process_gradients(self, step):
-        # todo what is this part?
         if self.config.gradient_clip_by_norm:
             if step == 0 and self.local_rank == 0:
                 logging.info("Clipping Gradient by norm: {}".format(
