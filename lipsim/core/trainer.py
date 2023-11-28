@@ -193,7 +193,7 @@ class Trainer:
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        lr_schedule = utils.cosine_scheduler(
+        self.lr_schedule = utils.cosine_scheduler(
             base_value=self.config.lr * (self.batch_size * utils.get_world_size()) / 256.,  # linear scaling rule
             final_value=self.config.min_lr,
             epochs=self.config.epochs, niter_per_ep=len(data_loader),
