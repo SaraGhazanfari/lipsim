@@ -192,7 +192,6 @@ class Trainer:
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
         # define learning rate scheduler
-        num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
         # dino scheduler
         # self.scheduler = utils.cosine_scheduler(
         #     base_value=self.config.lr * 4.,  # linear scaling rule
@@ -200,6 +199,7 @@ class Trainer:
         #     epochs=self.config.epochs, niter_per_ep=len(data_loader),
         #     warmup_epochs=self.config.warmup_epochs,
         # )
+        num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
         self.scheduler = CosineAnnealingWarmupRestarts(
             self.optimizer, first_cycle_steps=num_steps, warmup_steps=100)
 
