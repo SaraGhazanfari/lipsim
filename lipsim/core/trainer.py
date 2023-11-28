@@ -193,14 +193,15 @@ class Trainer:
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler = utils.cosine_scheduler(
-            base_value=self.config.lr * 4.,  # linear scaling rule
-            final_value=self.config.min_lr,
-            epochs=self.config.epochs, niter_per_ep=len(data_loader),
-            warmup_epochs=self.config.warmup_epochs,
-        )
-        # self.scheduler = CosineAnnealingWarmupRestarts(
-        #     self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
+        # dino scheduler
+        # self.scheduler = utils.cosine_scheduler(
+        #     base_value=self.config.lr * 4.,  # linear scaling rule
+        #     final_value=self.config.min_lr,
+        #     epochs=self.config.epochs, niter_per_ep=len(data_loader),
+        #     warmup_epochs=self.config.warmup_epochs,
+        # )
+        self.scheduler = CosineAnnealingWarmupRestarts(
+            self.optimizer, first_cycle_steps=num_steps, warmup_steps=100)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -306,9 +307,9 @@ class Trainer:
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.scheduler[epoch_id]
-        # self.scheduler.step(step)
+        # for param_group in self.optimizer.param_groups:
+        #     param_group['lr'] = self.scheduler[epoch_id]
+        self.scheduler.step(step)
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
         examples_per_second *= self.world_size
