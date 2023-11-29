@@ -193,9 +193,11 @@ class BYOLLoss(nn.Module):
         super().__init__()
 
     def forward(self, x, y, epoch_id):
-        x = F.normalize(x, dim=-1, p=2)
-        y = F.normalize(y, dim=-1, p=2)
-        return 2 - 2 * (x * y).sum(dim=-1)
+        cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
+        return 2 - 2 * cos_sim(x, y)
+        # x = F.normalize(x, dim=-1, p=2)
+        # y = F.normalize(y, dim=-1, p=2)
+        # return 2 - 2 * (x * y).sum(dim=-1)
 
 
 class RMSELoss(nn.Module):
