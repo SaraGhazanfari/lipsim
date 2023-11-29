@@ -298,16 +298,14 @@ class Trainer:
             logging.info(f'images {original_imgs.shape}')
             logging.info(f'embeddings {embeddings.shape}')
         original_out = self.model(original_imgs)
-        # jittered_out = self.model(jittered_imgs)
+        jittered_out = self.model(jittered_imgs)
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
 
-        loss = self.criterion(original_out, embeddings, epoch_id) #[original_out, jittered_out]
+        loss = self.criterion([original_out, jittered_out], embeddings, epoch_id)
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
-        # for param_group in self.optimizer.param_groups:
-        #     param_group['lr'] = self.scheduler[epoch_id]
         self.scheduler.step(step)
         seconds_per_batch = time.time() - batch_start_time
         examples_per_second = self.global_batch_size / seconds_per_batch
