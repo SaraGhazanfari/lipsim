@@ -216,6 +216,7 @@ class FeatureCrossEntropy(nn.Module):
     def __init__(self, out_dim=1792, warmup_teacher_temp=0.04, teacher_temp=0.04,
                  warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1):
         super().__init__()
+        self.teacher_temp = teacher_temp
         self.student_temp = student_temp
         self.register_buffer("center", torch.zeros(1, out_dim, device='cuda'))
         self.teacher_temp_schedule = np.concatenate((
@@ -229,8 +230,8 @@ class FeatureCrossEntropy(nn.Module):
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
         # student_out = student_output / self.student_temp
-        temp = self.teacher_temp_schedule[epoch]
-        teacher_out = F.softmax(teacher_output / temp, dim=-1) #(teacher_output - self.center)
+        # temp = self.teacher_temp_schedule[epoch]
+        teacher_out = F.softmax(teacher_output / self.teacher_temp, dim=-1) #(teacher_output - self.center)
         loss = torch.zeros((teacher_output.shape[0]), device='cuda')
         for s_out in student_output:
             loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)

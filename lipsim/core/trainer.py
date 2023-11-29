@@ -24,7 +24,7 @@ from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
-from lipsim.core.utils import N_CLASSES
+from lipsim.core.utils import N_CLASSES, RMSELoss
 
 # from core.models.dreamsim.model import dreamsim
 
@@ -318,6 +318,7 @@ class Trainer:
             self.message.add("step", step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
             self.message.add("loss", loss, format=".4f")
+            self.message.add("RMSE", RMSELoss()(original_out, embeddings))
             if self.config.print_grad_norm:
                 grad_norm = self.compute_gradient_norm()
                 self.message.add("grad", grad_norm, format=".4f")
