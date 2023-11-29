@@ -112,7 +112,7 @@ def main(config):
         # exclusive=True,
         # slurm_account=config.account,
         slurm_job_name=f'{config.train_dir[-4:]}_{config.mode}',
-        # slurm_partition=config.partition,
+        slurm_partition=config.partition,
         # slurm_qos=config.qos,
         # slurm_constraint=config.constraint,
         slurm_signal_delay_s=0,
