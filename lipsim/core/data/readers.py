@@ -85,6 +85,7 @@ class BaseReader:
                             pin_memory=False,
                             prefetch_factor=self.prefetch_factor,
                             sampler=sampler)
+        print(len(self.dataset))
         return loader, sampler
 
 
