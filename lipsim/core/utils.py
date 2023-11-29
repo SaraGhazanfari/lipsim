@@ -192,7 +192,7 @@ class BYOLLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, x, y):
+    def forward(self, x, y, epoch_id):
         x = F.normalize(x, dim=-1, p=2)
         y = F.normalize(y, dim=-1, p=2)
         return 2 - 2 * (x * y).sum(dim=-1)
