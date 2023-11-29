@@ -303,7 +303,6 @@ class Trainer:
             logging.info(f'outputs {original_out.shape}')
 
         loss = self.criterion(original_out, embeddings, epoch_id) #[original_out, jittered_out]
-        print(loss)
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
