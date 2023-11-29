@@ -31,17 +31,17 @@ class TinyImageNet(VisionDataset):
         self.loader = default_loader
         self.split = verify_str_arg(split, "split", ("train", "val",))
 
-        if self._check_integrity():
-            print('Files already downloaded and verified.')
-            pass
-        elif download:
-            self._download()
-        else:
-            raise RuntimeError(
-                'Dataset not found. You can use download=True to download it.')
-        if not os.path.isdir(self.dataset_path):
-            print('Extracting...')
-            extract_archive(os.path.join(root, self.filename))
+        # if self._check_integrity():
+        #     print('Files already downloaded and verified.')
+        #     pass
+        # elif download:
+        #     self._download()
+        # else:
+        #     raise RuntimeError(
+        #         'Dataset not found. You can use download=True to download it.')
+        # if not os.path.isdir(self.dataset_path):
+        #     print('Extracting...')
+        #     extract_archive(os.path.join(root, self.filename))
 
         _, class_to_idx = find_classes(os.path.join(self.dataset_path, 'wnids.txt'))
 
