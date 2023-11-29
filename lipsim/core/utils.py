@@ -188,6 +188,16 @@ def get_init_file(shared_folder):
     return init_file
 
 
+class BYOLLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, y):
+        x = F.normalize(x, dim=-1, p=2)
+        y = F.normalize(y, dim=-1, p=2)
+        return 2 - 2 * (x * y).sum(dim=-1)
+
+
 class RMSELoss(nn.Module):
 
     def __init__(self, reduction: str = 'mean'):
@@ -231,7 +241,7 @@ class FeatureCrossEntropy(nn.Module):
         """
         # student_out = student_output / self.student_temp
         # temp = self.teacher_temp_schedule[epoch]
-        teacher_out = F.softmax(teacher_output / self.teacher_temp, dim=-1) #(teacher_output - self.center)
+        teacher_out = F.softmax(teacher_output / self.teacher_temp, dim=-1)  # (teacher_output - self.center)
         loss = torch.zeros((teacher_output.shape[0]), device='cuda')
         for s_out in student_output:
             loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
@@ -264,14 +274,14 @@ class BCERankingLoss(nn.Module):
 
 
 def get_loss(config, margin=0, device='cuda:0'):
-    if config.mode in ['lipsim', 'vanilla-eval']:
+    if config.loss == 'rmse':
         return RMSELoss()
-    # elif config.mode == 'finetune' and config.dataset == 'bapps':
-    #     return BCERankingLoss()
-    elif config.mode == 'finetune':
+    elif config.loss == 'hinge':
         return HingeLoss(margin=config.margin, device=device)
-    elif config.mode in ['train']:
+    elif config.loss == 'cross':
         return FeatureCrossEntropy(out_dim=N_CLASSES[config.teacher_model_name], nepochs=config.epochs)
+    elif config.loss == 'byol':
+        return BYOLLoss()
 
 
 def get_scheduler(optimizer, config, num_steps):

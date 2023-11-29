@@ -174,7 +174,8 @@ if __name__ == '__main__':
     parser.add_argument("--normalize_data", action='store_true', help="Normalize dataset.")
 
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training.")
-    # parser.add_argument("--loss", type=str, default="xent", help="Define the loss to use for training.")
+    parser.add_argument("--loss", type=str, default="rmse", choices=['rmse', 'hinge', 'cross', 'byol'],
+                        help="Define the loss to use for training.")
     parser.add_argument("--optimizer", type=str, default='adam')
     parser.add_argument("--scheduler", type=str, default="interp")
     parser.add_argument("--lr", default=0.0005, type=float, help="""Learning rate at the end of
