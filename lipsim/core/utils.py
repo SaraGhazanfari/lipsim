@@ -230,23 +230,23 @@ class FeatureCrossEntropy(nn.Module):
         """
         # student_out = student_output / self.student_temp
         temp = self.teacher_temp_schedule[epoch]
-        teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
+        teacher_out = F.softmax(teacher_output / temp, dim=-1) #(teacher_output - self.center)
         loss = torch.zeros((teacher_output.shape[0]), device='cuda')
         for s_out in student_output:
             loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
         loss = torch.mean(loss)
         return loss
 
-    @torch.no_grad()
-    def update_center(self, teacher_output):
-        """
-        Update center used for teacher output.
-        """
-        batch_center = torch.sum(teacher_output, dim=0, keepdim=True)
-        dist.all_reduce(batch_center)
-        batch_center = batch_center / (len(teacher_output) * dist.get_world_size())
-        # ema update
-        self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
+    # @torch.no_grad()
+    # def update_center(self, teacher_output):
+    #     """
+    #     Update center used for teacher output.
+    #     """
+    #     batch_center = torch.sum(teacher_output, dim=0, keepdim=True)
+    #     dist.all_reduce(batch_center)
+    #     batch_center = batch_center / (len(teacher_output) * dist.get_world_size())
+    #     # ema update
+    #     self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
 
 
 class BCERankingLoss(nn.Module):
