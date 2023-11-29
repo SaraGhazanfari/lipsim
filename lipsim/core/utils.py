@@ -243,6 +243,7 @@ class FeatureCrossEntropy(nn.Module):
         # temp = self.teacher_temp_schedule[epoch]
         teacher_out = F.softmax(teacher_output / self.teacher_temp, dim=-1)  # (teacher_output - self.center)
         loss = torch.zeros((teacher_output.shape[0]), device='cuda')
+        student_output = [student_output] if type(student_output) != list else student_output
         for s_out in student_output:
             loss += torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
         loss = torch.mean(loss)
