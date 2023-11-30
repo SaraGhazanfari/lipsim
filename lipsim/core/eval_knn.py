@@ -33,7 +33,7 @@ class KNNEval:
         cudnn.benchmark = True
         torch.cuda.init()
         torch.cuda.set_device(self.local_rank)
-        self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        # self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
         # try:
         #     if self.is_distributed:
         #         utils.setup_distributed_training(self.world_size, self.rank)
