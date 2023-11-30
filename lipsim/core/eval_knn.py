@@ -114,6 +114,7 @@ class KNNEval:
         # start_index = 0
 
         for samples, index in metric_logger.log_every(data_loader, 10):
+            print('Here we are at index: ', index)
             samples = samples.cuda(non_blocking=True)
             index = index.cuda(non_blocking=True)
             feats = self.model(samples).clone()
