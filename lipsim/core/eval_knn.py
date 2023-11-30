@@ -114,7 +114,6 @@ class KNNEval:
         # start_index = 0
 
         for samples, index in metric_logger.log_every(data_loader, 10):
-            print('Here we are at index: ', index)
             samples = samples.to('cuda:0', non_blocking=True)
             index = index.to('cuda:0', non_blocking=True)
             feats = self.model(samples).clone()
@@ -123,7 +122,7 @@ class KNNEval:
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
                 features = features.to('cuda:0', non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
-            features[index, :] = feats
+            features[index, :] = feats.to('cuda:0')
         return features
 
     def knn_classifier(self):
