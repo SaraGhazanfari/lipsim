@@ -295,7 +295,8 @@ class Trainer:
         if step == 0 and self.local_rank == 0:
             logging.info(f'outputs {original_out.shape}')
 
-        loss = self.criterion([original_out, jittered_out], embeddings, epoch_id)
+        loss = (self.criterion(original_out, embeddings, epoch_id) + self.criterion(jittered_out, embeddings,
+                                                                                    epoch_id)) / 2
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
