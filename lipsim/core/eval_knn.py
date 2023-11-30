@@ -33,15 +33,16 @@ class KNNEval:
         cudnn.benchmark = True
         torch.cuda.init()
         torch.cuda.set_device(self.local_rank)
-        try:
-            if self.is_distributed:
-                utils.setup_distributed_training(self.world_size, self.rank)
-                self.model = DistributedDataParallel(
-                    self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-            else:
-                self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-        except Exception as e:
-            print(e)
+        self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        # try:
+        #     if self.is_distributed:
+        #         utils.setup_distributed_training(self.world_size, self.rank)
+        #         self.model = DistributedDataParallel(
+        #             self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+        #     else:
+        #         self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        # except Exception as e:
+        #     print(e)
         # utils.setup_distributed_training(self.world_size, self.rank)
 
     def _load_dataloader(self):
@@ -111,6 +112,7 @@ class KNNEval:
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
         # start_index = 0
+
         for samples, index in metric_logger.log_every(data_loader, 10):
             samples = samples.cuda(non_blocking=True)
             index = index.cuda(non_blocking=True)
