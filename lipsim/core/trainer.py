@@ -312,7 +312,7 @@ class Trainer:
             self.message.add("step", step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
             self.message.add("loss", loss, format=".4f")
-            self.message.add("RMSE", RMSELoss()(original_out, embeddings))
+            self.message.add("RMSE", RMSELoss()(original_out, embeddings), format=".4f")
             if self.config.print_grad_norm:
                 grad_norm = self.compute_gradient_norm()
                 self.message.add("grad", grad_norm, format=".4f")
