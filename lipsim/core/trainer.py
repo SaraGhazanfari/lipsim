@@ -215,6 +215,7 @@ class Trainer:
         self.best_checkpoint = None
         self.best_accuracy = None
         self.best_accuracy = [0., 0.]
+        print('EPOCHS: ', self.config.epochs)
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
