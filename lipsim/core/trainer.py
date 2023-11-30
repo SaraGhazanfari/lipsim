@@ -23,7 +23,8 @@ from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 
-from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
+from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric
+from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.utils import N_CLASSES, RMSELoss
 
 # from core.models.dreamsim.model import dreamsim
@@ -144,7 +145,7 @@ class Trainer:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetwork(self.config, self.n_classes)
+        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
         self.model = self.model.cuda()
 
@@ -191,17 +192,9 @@ class Trainer:
         # define optimizer
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
-        # define learning rate scheduler
-        # dino scheduler
-        # self.scheduler = utils.cosine_scheduler(
-        #     base_value=self.config.lr * 4.,  # linear scaling rule
-        #     final_value=self.config.min_lr,
-        #     epochs=self.config.epochs, niter_per_ep=len(data_loader),
-        #     warmup_epochs=self.config.warmup_epochs,
-        # )
         num_steps = (self.config.epochs * self.reader.n_train_files // self.global_batch_size)
         self.scheduler = CosineAnnealingWarmupRestarts(
-            self.optimizer, first_cycle_steps=num_steps, warmup_steps=100)
+            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=2000)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -390,7 +383,7 @@ class Trainer:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetwork(self.config, self.n_classes)
+        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
 
         # for param in self.backbone.parameters():

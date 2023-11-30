@@ -25,20 +25,6 @@ N_CLASSES = {
 }
 
 
-def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epochs=0, start_warmup_value=0):
-    warmup_schedule = np.array([])
-    warmup_iters = warmup_epochs * niter_per_ep
-    if warmup_epochs > 0:
-        warmup_schedule = np.linspace(start_warmup_value, base_value, warmup_iters)
-
-    iters = np.arange(epochs * niter_per_ep - warmup_iters)
-    schedule = final_value + 0.5 * (base_value - final_value) * (1 + np.cos(np.pi * iters / len(iters)))
-
-    schedule = np.concatenate((warmup_schedule, schedule))
-    assert len(schedule) == epochs * niter_per_ep
-    return schedule
-
-
 class GaussianBlur(object):
     """
     Apply Gaussian Blur to the PIL image.
@@ -225,7 +211,7 @@ class HingeLoss(torch.nn.Module):
 
 class FeatureCrossEntropy(nn.Module):
 
-    def __init__(self, out_dim=1792, warmup_teacher_temp=0.04, teacher_temp=0.01,
+    def __init__(self, out_dim=1792, warmup_teacher_temp=0.01, teacher_temp=0.01,
                  warmup_teacher_temp_epochs=0, nepochs=50, student_temp=0.1):
         super().__init__()
         self.teacher_temp = teacher_temp
@@ -318,7 +304,7 @@ def get_optimizer(config, params):
     lr, wd = config.lr, config.wd
     betas = (config.beta1, config.beta2)
     if config.optimizer == 'sgd':
-        opt = torch.optim.SGD(params, lr=lr, weight_decay=wd, momentum=0.9, nesterov=config.nesterov)
+        opt = torch.optim.SGD(params, lr=lr, weight_decay=wd, momentum=0.9) #, nesterov=config.nesterov)
     elif config.optimizer == 'adam':
         opt = torch.optim.Adam(params, lr=lr, weight_decay=wd, betas=betas)
     elif config.optimizer == 'adamw':

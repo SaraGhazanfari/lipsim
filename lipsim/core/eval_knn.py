@@ -4,7 +4,6 @@ import os
 import torch
 from torch import nn
 from torch.backends import cudnn
-from torch.nn.parallel import DistributedDataParallel
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 from lipsim.core import utils
@@ -33,17 +32,7 @@ class KNNEval:
         cudnn.benchmark = True
         torch.cuda.init()
         torch.cuda.set_device(self.local_rank)
-        # self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-        # try:
-        #     if self.is_distributed:
-        #         utils.setup_distributed_training(self.world_size, self.rank)
-        #         self.model = DistributedDataParallel(
-        #             self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-        #     else:
-        #         self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
-        # except Exception as e:
-        #     print(e)
-        # utils.setup_distributed_training(self.world_size, self.rank)
+        self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
 
     def _load_dataloader(self):
         transform = transforms.Compose([
