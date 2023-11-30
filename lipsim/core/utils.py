@@ -304,7 +304,7 @@ def get_optimizer(config, params):
     lr, wd = config.lr, config.wd
     betas = (config.beta1, config.beta2)
     if config.optimizer == 'sgd':
-        opt = torch.optim.SGD(params, lr=lr, weight_decay=wd, momentum=0.9) #, nesterov=config.nesterov)
+        opt = torch.optim.SGD(params, lr=0, weight_decay=wd, momentum=0.9) #, nesterov=config.nesterov)
     elif config.optimizer == 'adam':
         opt = torch.optim.Adam(params, lr=lr, weight_decay=wd, betas=betas)
     elif config.optimizer == 'adamw':
