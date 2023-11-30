@@ -115,13 +115,13 @@ class KNNEval:
 
         for samples, index in metric_logger.log_every(data_loader, 10):
             print('Here we are at index: ', index)
-            samples = samples.cuda(non_blocking=True)
-            index = index.cuda(non_blocking=True)
+            samples = samples.to(self.model.device, non_blocking=True)
+            index = index.to(self.model.device, non_blocking=True)
             feats = self.model(samples).clone()
 
             if features is None:  # dist.get_rank() == 0 and
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
-                features = features.cuda(non_blocking=True)
+                features = features.to(self.model.device, non_blocking=True)
                 logging.info(f"Storing features into tensor of shape {features.shape}")
             features[index, :] = feats
         return features
