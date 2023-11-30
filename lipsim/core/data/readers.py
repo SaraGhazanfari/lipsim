@@ -93,7 +93,8 @@ class ImagenetReader(BaseReader):
         self.config = config
         self.batch_size = batch_size
         self.is_training = is_training
-        self.n_classes = 768
+        # self.n_classes = 768
+        self.n_classes = 1000
         self.height, self.width = 224, 500
         self.n_train_files = 1_281_167
         self.n_test_files = 50_000
@@ -104,11 +105,16 @@ class ImagenetReader(BaseReader):
         self.stds = (1.0000, 1.0000, 1.0000)
 
         if is_training:
-            transform = DataAugmentationDINO(
-                global_crops_scale=(0.4, 1.),
-                local_crops_scale=(0.05, 0.4),
-                local_crops_number=8
-            )
+            # transform = DataAugmentationDINO(
+            #     global_crops_scale=(0.4, 1.),
+            #     local_crops_scale=(0.05, 0.4),
+            #     local_crops_number=8
+            # )
+            transform = transforms.Compose([
+               transforms.RandomResizedCrop(224),
+               transforms.RandomHorizontalFlip(),
+               transforms.ToTensor(),
+            ])
 
         else:
             transform = transforms.Compose([

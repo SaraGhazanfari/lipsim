@@ -7,8 +7,8 @@ from datetime import datetime
 from os.path import exists, realpath
 import submitit
 
-# from lipsim.core.evaluate import Evaluator
 from lipsim.core.trainer import Trainer
+# from lipsim.core.evaluate import Evaluator
 # from lipsim.eval_linear import LinearEvaluation
 
 # from lipsim.core.evaluate import Evaluator
@@ -159,7 +159,11 @@ if __name__ == '__main__':
     parser.add_argument("--normalize_data", action='store_true', help="Normalize dataset.")
 
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training.")
-    # parser.add_argument("--loss", type=str, default="xent", help="Define the loss to use for training.")
+    parser.add_argument("--loss", type=str, default="xent", help="Define the loss to use for training.")
+    parser.add_argument("--loss_temp", type=float, default=1)
+    parser.add_argument("--loss_alpha", type=float, default=0.5)
+    parser.add_argument("--loss_offset", type=float, default=0.5)
+
     parser.add_argument("--optimizer", type=str, default='adam')
     parser.add_argument("--scheduler", type=str, default="interp")
     parser.add_argument("--lr", type=float, default=0.01)
@@ -204,6 +208,9 @@ if __name__ == '__main__':
                         help='dino_vitb16 open_clip_vitb32 clip_vitb32')
 
     parser.add_argument("--margin", type=float, default=0)
+
+    parser.add_argument("--lipsim_ckpt", type=str)
+    parser.add_argument("--adv_training", action='store_true', default=False)
 
     # parse all arguments
     config = parser.parse_args()

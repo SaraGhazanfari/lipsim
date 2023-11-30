@@ -194,31 +194,34 @@ class FeatureCrossEntropy(nn.Module):
         super().__init__()
         self.student_temp = student_temp
         self.center_momentum = center_momentum
-        self.register_buffer("center", torch.zeros(1, out_dim, device='cuda'))
+        self.register_buffer("center_dino", torch.zeros(1, 768, device='cuda'))
+        self.register_buffer("center_open_clip", torch.zeros(1, 512, device='cuda'))
+        self.register_buffer("center_clip", torch.zeros(1, 512, device='cuda'))
         self.teacher_temp_schedule = np.concatenate((
             np.linspace(warmup_teacher_temp,
                         teacher_temp, warmup_teacher_temp_epochs),
             np.ones(nepochs - warmup_teacher_temp_epochs) * teacher_temp
         ))
 
-    def forward(self, student_output, teacher_output, epoch):
+    def extract_embedding(self, embedding):
+        dino_embed = embedding[:, :768]
+        open_clip_embed = embedding[:, 768:768 + 512]
+        clip_embed = embedding[:, 768 + 512:]
+        return dino_embed, open_clip_embed, clip_embed
+
+    def forward_on_embedding(self, embed, student_output, teacher_output, epoch):
         """
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
+        center = getattr(self, f'center_{embed}')
         temp = self.teacher_temp_schedule[epoch]
-        teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
-        total_loss = 0.
-        n_loss_terms = 0.
-        for s_out in student_output:
-            loss = torch.sum(-teacher_out * F.log_softmax(s_out / self.student_temp, dim=-1), dim=-1)
-            total_loss += loss.mean()
-            n_loss_terms += 1
-        total_loss /= n_loss_terms
-        self.update_center(teacher_output)
-        return total_loss
+        teacher_out = F.softmax((teacher_output - center) / temp, dim=-1)
+        loss = torch.sum(-teacher_out * F.log_softmax(student_output / self.student_temp, dim=-1), dim=-1)
+        self.update_center(embed, teacher_output)
+        return loss.mean()
 
     @torch.no_grad()
-    def update_center(self, teacher_output):
+    def update_center(self, embed, teacher_output):
         """
         Update center used for teacher output.
         """
@@ -226,8 +229,26 @@ class FeatureCrossEntropy(nn.Module):
         dist.all_reduce(batch_center)
         batch_center = batch_center / (len(teacher_output) * dist.get_world_size())
         # ema update
-        self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)
+        if embed == 'dino':
+          self.center_dino = self.center_dino * self.center_momentum + batch_center * (1 - self.center_momentum)
+        elif embed == 'open_clip':
+          self.center_open_clip = self.center_open_clip * self.center_momentum + batch_center * (1 - self.center_momentum)
+        elif embed == 'clip':
+          self.center_clip = self.center_clip * self.center_momentum + batch_center * (1 - self.center_momentum)
+        else:
+          raise ValueError('wrong embedding')
 
+    def forward(self, student_outs, teacher_out, epoch):
+        name_embedding = ('dino', 'open_clip', 'clip')
+        loss = 0.
+        count = 0
+        for student_out in student_outs:
+            student_embeddings = self.extract_embedding(student_out) 
+            teacher_embeddings = self.extract_embedding(teacher_out) 
+            for embed, st, te in zip(name_embedding, student_embeddings, teacher_embeddings):
+                loss += self.forward_on_embedding(embed, st, te, epoch)
+                count += 1
+        return loss / count
 
 class CrossEntKLLoss(nn.Module):
 

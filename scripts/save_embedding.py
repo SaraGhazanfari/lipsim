@@ -3,6 +3,9 @@ import os
 from os.path import join, exists
 import torch
 from PIL import Image
+
+import sys
+# sys.path.append('../')
 from lipsim.core.models.dreamsim.model import dreamsim
 from torchvision.transforms import transforms
 import submitit
@@ -66,17 +69,21 @@ if __name__ == '__main__':
     # parser.add_argument("--folder_name", type=str, default='.')
     args = parser.parse_args()
 
+    count = 0
     folder_list = []
     for root, dirs, files in os.walk(args.imagenet_dir):
         if root != join(args.imagenet_dir, args.split): continue
         for class_dir in dirs[4:]:
             folder_list.append(class_dir)
+            count += 1
+            if count > 10: break
+        if count > 10: break
 
     save_embedding = ImagenetEmbedding(args)
 
     # cluster = 'slurm' if not args.local else 'local'
     executor = submitit.AutoExecutor(
-        folder=f'./save_embbeding', cluster='slurm')
+        folder=f'./save_embedding', cluster='slurm')
     executor.update_parameters(
         gpus_per_node=1,
         nodes=1,

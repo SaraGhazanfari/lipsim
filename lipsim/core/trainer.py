@@ -22,10 +22,10 @@ from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config, N_CLASSES
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, L2LipschitzNetwork, PerceptualMetric
+from lipsim.core.models.classification_model import LipschitzClassification
 
 # from core.models.dreamsim.model import dreamsim
-
-os.environ["NCCL_DEBUG"] = "INFO"
+# os.environ["NCCL_DEBUG"] = "INFO"
 
 
 class Trainer:
@@ -136,31 +136,33 @@ class Trainer:
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                              is_distributed=self.is_distributed)
+        self.test_reader = Reader(config=self.config, batch_size=self.batch_size,
+                                  is_distributed=self.is_distributed, is_training=False)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
-        self.n_classes = N_CLASSES[self.config.teacher_model_name]
+        # self.n_classes = N_CLASSES[self.config.teacher_model_name]
+        self.n_classes = self.reader.n_classes
 
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
         self.model = self.model.cuda()
 
+        # self.model = LipschitzClassification(self.config, self.n_classes)
+        # self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        # self.model = self.model.cuda()
+
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
-
-        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-        #                                  cache_dir='./checkpoints')
-        # self.teacher_model = self.teacher_model.cuda()
-        # self.teacher_model.eval()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
         if self.is_distributed:
             utils.setup_distributed_training(self.world_size, self.rank)
             self.model = DistributedDataParallel(
-                self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+                self.model, device_ids=[self.local_rank], output_device=self.local_rank,
+                find_unused_parameters=False)
             if self.local_rank == 0:
                 logging.info('Model defined with DistributedDataParallel')
         else:
@@ -183,8 +185,8 @@ class Trainer:
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler = CosineAnnealingWarmupRestarts(
-            self.optimizer, first_cycle_steps=num_steps, warmup_steps=1000)
+        self.scheduler = CosineAnnealingWarmupRestarts(self.optimizer,
+              max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=20000)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -205,7 +207,7 @@ class Trainer:
                 if global_step == 2 and self.is_master:
                     start_time = time.time()
                 epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-                self.one_step_training(data, epoch, global_step, epoch_id)
+                self.one_step_training_lipsim(data, epoch, global_step, epoch_id)
                 self._save_ckpt(global_step, epoch_id)
                 if global_step == 20 and self.is_master:
                     self._print_approximated_train_time(start_time)
@@ -271,6 +273,45 @@ class Trainer:
         return teacher_model.embed(imgs)
 
     def one_step_training(self, data, epoch, step, epoch_id=0):
+
+        self.optimizer.zero_grad()
+
+        batch_start_time = time.time()
+        images, labels = data
+        images, labels = images.cuda(), labels.cuda()
+
+        if step == 0 and self.local_rank == 0:
+          logging.info(f'images {images.shape}')
+          logging.info(f'labels {labels.shape}')
+
+        outputs = self.model(images)
+        if step == 0 and self.local_rank == 0:
+          logging.info(f'outputs {outputs.shape}')
+
+        loss = self.criterion(outputs, labels)
+        loss.backward()
+        self.process_gradients(step)
+        self.optimizer.step()
+        self.scheduler.step(step)
+
+        seconds_per_batch = time.time() - batch_start_time
+        examples_per_second = self.batch_size / seconds_per_batch
+        examples_per_second *= self.world_size
+
+        if self._to_print(step):
+          lr = self.optimizer.param_groups[0]['lr']
+          self.message.add("epoch", epoch, format="4.2f")
+          self.message.add("step", step, width=5, format=".0f")
+          self.message.add("lr", lr, format=".6f")
+          self.message.add("loss", loss, format=".4f")
+          if self.config.print_grad_norm:
+            grad_norm = self.compute_gradient_norm()
+            self.message.add("grad", grad_norm, format=".4f")
+          self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
+          logging.info(self.message.get_message())
+
+
+    def one_step_training_lipsim(self, data, epoch, step, epoch_id=0):
         self.optimizer.zero_grad()
         batch_start_time = time.time()
         images, embeddings = data
@@ -278,7 +319,6 @@ class Trainer:
         embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        # embeddings = self._teacher_model_embed(original_imgs)
         embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
@@ -307,6 +347,7 @@ class Trainer:
                 self.message.add("grad", grad_norm, format=".4f")
             self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
             logging.info(self.message.get_message())
+
 
     def finetune_func(self):
 
