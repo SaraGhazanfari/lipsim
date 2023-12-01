@@ -45,7 +45,7 @@ class TinyImageNet(VisionDataset):
 
         _, class_to_idx = find_classes(os.path.join(self.dataset_path, 'wnids.txt'))
 
-        self.data = make_dataset(self.root, self.base_folder, self.split, class_to_idx)
+        self.data = make_dataset(self.root, self.split, class_to_idx)
 
     def _download(self):
         print('Downloading...')
@@ -81,9 +81,9 @@ def find_classes(class_file):
     return classes, class_to_idx
 
 
-def make_dataset(root, base_folder, dirname, class_to_idx):
+def make_dataset(root, dirname, class_to_idx):
     images = []
-    dir_path = os.path.join(root, base_folder, dirname)
+    dir_path = os.path.join(root, dirname)
 
     if dirname == 'train':
         for fname in sorted(os.listdir(dir_path)):
