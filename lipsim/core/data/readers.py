@@ -167,7 +167,7 @@ class TinyImageNetReader(BaseReader):
         self.is_training = is_training
         self.n_classes = 200
         self.height, self.width = 64, 64
-        self.n_train_files = int(100000 / self.config.subset)
+        self.n_train_files = 100000  # int(100000 / self.config.subset)
         self.n_test_files = 10000
         self.img_size = (None, 3, 64, 64)
 
@@ -180,8 +180,8 @@ class TinyImageNetReader(BaseReader):
         transform = self.transform()
         self.dataset = TinyImageNet(self.path, split=split,
                                     download=False, transform=transform)
-        subset_indices = torch.randperm(len(self.dataset))[:self.n_train_files]
-        self.dataset = Subset(self.dataset, subset_indices)
+        # subset_indices = torch.randperm(len(self.dataset))[:self.n_train_files]
+        # self.dataset = Subset(self.dataset, subset_indices)
 
     def transform(self):
         hue = 0.02
