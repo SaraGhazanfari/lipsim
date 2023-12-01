@@ -306,6 +306,7 @@ class Trainer:
         examples_per_second *= self.world_size
         if self._to_print(step):
             lr = self.optimizer.param_groups[0]['lr']
+            self.message.add("epoch_d", epoch_id)
             self.message.add("epoch", epoch, format="4.2f")
             self.message.add("step", step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
