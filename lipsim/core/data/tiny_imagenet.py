@@ -19,7 +19,7 @@ class TinyImageNet(VisionDataset):
                puts it in root directory. If dataset is already downloaded, it is not
                downloaded again.
     """
-    base_folder = 'tiny-imagenet-200/'
+    # base_folder = 'tiny-imagenet-200/'
     url = 'http://cs231n.stanford.edu/tiny-imagenet-200.zip'
     filename = 'tiny-imagenet-200.zip'
     md5 = '90528d7ca1a48142e341f4ef8d21d0de'
@@ -27,7 +27,7 @@ class TinyImageNet(VisionDataset):
     def __init__(self, root, split='train', transform=None, target_transform=None, download=False):
         super(TinyImageNet, self).__init__(root, transform=transform, target_transform=target_transform)
 
-        self.dataset_path = os.path.join(root, self.base_folder)
+        self.dataset_path = root #os.path.join(root, self.base_folder)
         self.loader = default_loader
         self.split = verify_str_arg(split, "split", ("train", "val",))
 
