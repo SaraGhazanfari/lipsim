@@ -203,6 +203,8 @@ class Trainer:
             logging.info("Number of files on worker: {}".format(n_files))
             logging.info("Start training")
 
+        print('data_loader', len(data_loader))
+
         # training loop
         start_epoch, global_step = 0, 0
         self.best_checkpoint = None
