@@ -147,8 +147,12 @@ class DinoPlusProjector(nn.Module):
         if not os.path.isfile(fname):
             torch.hub.download_url_to_file(url=dino_weights[self.dino_variant], dst=fname)
         state_dict = torch.load(fname, map_location="cpu")
-        state_dict = state_dict['student']['head']
-        state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+        state_dict = state_dict['student']
+        head_state_dict = []
+        for k, v in state_dict.items():
+            if k.startswith('module.head'):
+                head_state_dict[k.replace('module.', '')] = v
+
         msg = self.projector.load_state_dict(state_dict, strict=False)
         logging.info(f'Pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
         logging.info(f'Number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
