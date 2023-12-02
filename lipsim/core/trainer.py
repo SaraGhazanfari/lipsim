@@ -146,7 +146,7 @@ class Trainer:
 
         # load model
         self.backbone = L2LipschitzNetworkV2(self.config, self.n_classes)
-        self.backbone = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        self.backbone = NormalizedModel(self.backbone, self.reader.means, self.reader.stds)
         self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes, backbone=self.backbone)
         self.model = self.model.cuda()
 
