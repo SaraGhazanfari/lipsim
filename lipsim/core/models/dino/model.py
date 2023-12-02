@@ -140,9 +140,10 @@ class DinoPlusProjector(nn.Module):
         self.dino = MultiCropWrapper(backbone, head)
 
     def load_head(self, cache_dir):
-        torch.hub.download_url_to_file(url=dino_weights[self.dino_variant],
-                                       dst=os.path.join(cache_dir, f'{self.dino_variant}.pth'))
-        state_dict = torch.load(cache_dir, map_location="cpu")
+        fname = os.path.join(cache_dir, f'{self.dino_variant}.pth')
+        if not os.path.isfile(fname):
+            torch.hub.download_url_to_file(url=dino_weights[self.dino_variant], dst=fname)
+        state_dict = torch.load(fname, map_location="cpu")
         print(state_dict)
 
     def forward(self, x):
