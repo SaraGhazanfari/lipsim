@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from torch.nn.init import trunc_normal_
+
 from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 from lipsim.core.models.l2_lip.layers import SDPConvLin, SDPLin
 
@@ -45,4 +47,36 @@ class L2LipschitzNetworkV2(nn.Module):
         x = self.last(x)
         if self.config.mode == 'ssa':
             x = x / torch.norm(x, p=2, dim=(1)).unsqueeze(1)
+        return x
+
+
+class L2LipschitzNetworkPlusProjector(nn.Module):
+    def __init__(self, config, n_classes, backbone, out_dim=65536, nlayers=3, hidden_dim=2048, bottleneck_dim=256):
+        super(L2LipschitzNetworkPlusProjector, self).__init__()
+        self.backbone = backbone
+        self.n_classes = n_classes
+        self.config = config
+        layers = [SDPLin(n_classes, hidden_dim)]
+        layers.append(nn.GELU())
+        for _ in range(nlayers - 2):
+            layers.append(SDPLin(hidden_dim, hidden_dim))
+            layers.append(nn.GELU())
+        layers.append(SDPLin(hidden_dim, bottleneck_dim))
+        self.projector = nn.Sequential(*layers)
+        # self.apply(self._init_weights)
+        self.last_layer = nn.utils.weight_norm(SDPLin(bottleneck_dim, out_dim, bias=False))
+        self.last_layer.weight_g.data.fill_(1)
+        self.last_layer.weight_g.requires_grad = False
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.projector(x)
+        x = nn.functional.normalize(x, dim=-1, p=2)
+        x = self.last_layer(x)
         return x

@@ -24,7 +24,7 @@ from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric
-from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
+from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2, L2LipschitzNetworkPlusProjector
 from lipsim.core.utils import N_CLASSES, RMSELoss
 
 # from core.models.dreamsim.model import dreamsim
@@ -145,8 +145,9 @@ class Trainer:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
-        self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        self.backbone = L2LipschitzNetworkV2(self.config, self.n_classes)
+        self.backbone = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes, backbone=self.backbone)
         self.model = self.model.cuda()
 
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
