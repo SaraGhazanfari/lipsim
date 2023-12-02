@@ -25,6 +25,10 @@ N_CLASSES = {
 }
 
 
+def get_parameter_number(model):
+    return np.sum([p.numel() for p in model.parameters() if p.requires_grad])
+
+
 class GaussianBlur(object):
     """
     Apply Gaussian Blur to the PIL image.
@@ -304,7 +308,7 @@ def get_optimizer(config, params):
     lr, wd = config.lr, config.wd
     betas = (config.beta1, config.beta2)
     if config.optimizer == 'sgd':
-        opt = torch.optim.SGD(params, lr=0, weight_decay=wd, momentum=0.9) #, nesterov=config.nesterov)
+        opt = torch.optim.SGD(params, lr=0, weight_decay=wd, momentum=0.9)  # , nesterov=config.nesterov)
     elif config.optimizer == 'adam':
         opt = torch.optim.Adam(params, lr=lr, weight_decay=wd, betas=betas)
     elif config.optimizer == 'adamw':

@@ -150,7 +150,7 @@ class Trainer:
         self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes, backbone=self.backbone)
         self.model = self.model.cuda()
 
-        param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
+        param_size = utils.get_parameter_number(self.model)
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
