@@ -54,7 +54,7 @@ class L2LipschitzNetworkV2(nn.Module):
 
 
 class L2LipschitzNetworkPlusProjector(nn.Module):
-    def __init__(self, config, n_classes, backbone, out_dim=65536, nlayers=3, hidden_dim=2048, bottleneck_dim=256):
+    def __init__(self, config, n_classes, backbone, out_dim=2048, nlayers=3, hidden_dim=2048, bottleneck_dim=256):
         super(L2LipschitzNetworkPlusProjector, self).__init__()
         self.backbone = backbone
         self.n_classes = n_classes
@@ -71,7 +71,7 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
         self.last_layer.weight_g.data.fill_(1)
         self.last_layer.weight_g.requires_grad = False
         print(f'Number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
-        print(f'Number of parameters for backbone: {utils.get_parameter_number(self.projector)}')
+        print(f'Number of parameters for projector: {utils.get_parameter_number(self.projector)}')
         print(f'Number of parameters for last layer: {utils.get_parameter_number(self.last_layer)}')
 
     def _init_weights(self, m):
