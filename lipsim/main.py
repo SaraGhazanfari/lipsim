@@ -34,7 +34,6 @@ def override_args(config, depth, num_channels, depth_linear, n_features):
 def get_init_file(shared_folder):
     # Init file must not exist, but it's parent dir must exist.
     shared_folder = '/home/sg7457' if not shared_folder else shared_folder
-    print(shared_folder)
     os.makedirs(str(shared_folder), exist_ok=True)
     init_file = Path(shared_folder) / f"{uuid.uuid4().hex}_init"
     if init_file.exists():
@@ -128,9 +127,6 @@ def main(config):
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
-    # elif config.mode == 'finetune':
-    #     trainer = Trainer(config)
-    #     trainer()
     elif config.mode == 'classifier':
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)

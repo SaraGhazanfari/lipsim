@@ -70,9 +70,9 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
         self.last_layer = nn.utils.weight_norm(SDPLin(bottleneck_dim, out_dim, bias=False))
         self.last_layer.weight_g.data.fill_(1)
         self.last_layer.weight_g.requires_grad = False
-        logging.info(f'Number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
+        logging.info(f'LipSim: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
         logging.info(
-            f'Number of parameters for projector: {utils.get_parameter_number(self.projector) + utils.get_parameter_number(self.last_layer)}')
+            f'LipSim: number of parameters for projector: {utils.get_parameter_number(self.projector) + utils.get_parameter_number(self.last_layer)}')
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):

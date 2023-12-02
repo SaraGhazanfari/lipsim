@@ -133,9 +133,8 @@ class DINOHead(nn.Module):
         return x
 
 
-class DinoPlusProjector(nn.Module):
+class DinoPlusProjector:
     def __init__(self, dino_variant='dino_vitb8', in_dim=768, out_dim=2048, cache_dir='./'):
-        super().__init__()
         self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant)
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
@@ -153,10 +152,10 @@ class DinoPlusProjector(nn.Module):
             if k.startswith('module.head'):
                 head_state_dict[k.replace('module.', '')] = v
 
-        msg = self.projector.load_state_dict(state_dict, strict=False)
-        logging.info(f'Pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
-        logging.info(f'Number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
-        logging.info(f'Number of parameters for projector: {utils.get_parameter_number(self.projector)}')
+        msg = self.projector.load_state_dict(head_state_dict, strict=False)
+        logging.info(f'Dino: pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
+        logging.info(f'Dino: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
+        logging.info(f'Dino: number of parameters for projector: {utils.get_parameter_number(self.projector)}')
 
-    def forward(self, x):
+    def embed(self, x):
         return self.dino(x)

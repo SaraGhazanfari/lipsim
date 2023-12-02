@@ -73,7 +73,6 @@ class KNNEval:
         self.test_features = self.test_features.cuda()
         self.train_labels = self.train_labels.cuda()
         self.test_labels = self.test_labels.cuda()
-        print(self.train_features.shape)
 
     @torch.no_grad()
     def _extract_feature_pipeline(self):

@@ -148,7 +148,8 @@ class Trainer:
         # load model
         self.backbone = L2LipschitzNetworkV2(self.config, self.n_classes)
         self.backbone = NormalizedModel(self.backbone, self.reader.means, self.reader.stds)
-        self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes, backbone=self.backbone)
+        self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes,
+                                                     backbone=self.backbone)
         self.model = self.model.cuda()
 
         param_size = utils.get_parameter_number(self.model)
@@ -205,8 +206,6 @@ class Trainer:
         if self.local_rank == 0:
             logging.info("Number of files on worker: {}".format(n_files))
             logging.info("Start training")
-
-        print('data_loader', len(data_loader))
 
         # training loop
         start_epoch, global_step = 0, 0
