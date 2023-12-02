@@ -22,6 +22,7 @@ from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
+from lipsim.core.models.dino.model import DinoPlusProjector
 
 from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2, L2LipschitzNetworkPlusProjector
@@ -154,9 +155,10 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                         cache_dir='./checkpoints')
+        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+        # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+        #                                  cache_dir='./checkpoints')
+        self.teacher_model = DinoPlusProjector(self.config.teacher_model_name)
         self.teacher_model = self.teacher_model.cuda()
         self.teacher_model.eval()
 
