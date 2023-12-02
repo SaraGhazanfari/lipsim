@@ -1,4 +1,5 @@
 import math
+import os.path
 import warnings
 import torch
 from torch import nn
@@ -140,7 +141,7 @@ class DinoPlusProjector(nn.Module):
 
     def load_head(self, cache_dir):
         torch.hub.download_url_to_file(url=dino_weights[self.dino_variant],
-                                       dst=cache_dir)
+                                       dst=os.path.join(cache_dir, f'{self.dino_variant}.pth'))
         state_dict = torch.load(cache_dir, map_location="cpu")
         print(state_dict)
 
