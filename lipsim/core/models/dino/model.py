@@ -144,7 +144,7 @@ class DinoPlusProjector(nn.Module):
         if not os.path.isfile(fname):
             torch.hub.download_url_to_file(url=dino_weights[self.dino_variant], dst=fname)
         state_dict = torch.load(fname, map_location="cpu")
-        print(state_dict)
+        print(state_dict.keys())
 
     def forward(self, x):
         return self.dino(x)
