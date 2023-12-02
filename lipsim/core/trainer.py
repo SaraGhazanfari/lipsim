@@ -160,8 +160,8 @@ class Trainer:
         # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
         #                                  cache_dir='./checkpoints')
         self.teacher_model = DinoPlusProjector(self.config.teacher_model_name, cache_dir='./checkpoints')
-        self.teacher_model = self.teacher_model.cuda()
-        self.teacher_model.eval()
+        # self.teacher_model = self.teacher_model.cuda()
+        # self.teacher_model.eval()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training

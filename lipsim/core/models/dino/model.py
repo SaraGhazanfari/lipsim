@@ -139,7 +139,7 @@ class DinoPlusProjector:
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
         self.load_head(cache_dir)
-        self.dino = MultiCropWrapper(self.backbone, self.projector)
+        self.dino = MultiCropWrapper(self.backbone, self.projector).cuda()
 
     def load_head(self, cache_dir):
         fname = os.path.join(cache_dir, f'{self.dino_variant}.pth')
@@ -157,5 +157,6 @@ class DinoPlusProjector:
         logging.info(f'Dino: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
         logging.info(f'Dino: number of parameters for projector: {utils.get_parameter_number(self.projector)}')
 
+    @torch.no_grad()
     def embed(self, x):
         return self.dino(x)
