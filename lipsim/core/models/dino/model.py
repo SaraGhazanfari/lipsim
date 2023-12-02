@@ -1,8 +1,11 @@
+import logging
 import math
 import os.path
 import warnings
 import torch
 from torch import nn
+
+from lipsim.core import utils
 
 dino_weights = {
     'dino_vits16': 'https://dl.fbaipublicfiles.com/dino/dino_deitsmall16_pretrain/dino_deitsmall16_pretrain_full_checkpoint.pth',
@@ -68,7 +71,7 @@ class MultiCropWrapper(nn.Module):
         # disable layers dedicated to ImageNet labels classification
         backbone.fc, backbone.head = nn.Identity(), nn.Identity()
         self.backbone = backbone
-        self.head = head
+        self.projector = head
 
     def forward(self, x):
         # convert to list
@@ -89,7 +92,7 @@ class MultiCropWrapper(nn.Module):
             output = torch.cat((output, _out))
             start_idx = end_idx
         # Run the head forward on the concatenated features.
-        return self.head(output)
+        return self.projector(output)
 
 
 class DINOHead(nn.Module):
@@ -133,18 +136,23 @@ class DINOHead(nn.Module):
 class DinoPlusProjector(nn.Module):
     def __init__(self, dino_variant='dino_vitb8', in_dim=768, out_dim=2048, cache_dir='./'):
         super().__init__()
-        backbone = torch.hub.load('facebookresearch/dino:main', dino_variant)
-        head = DINOHead(in_dim, out_dim)
+        self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant)
+        self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
         self.load_head(cache_dir)
-        self.dino = MultiCropWrapper(backbone, head)
+        self.dino = MultiCropWrapper(self.backbone, self.projector)
 
     def load_head(self, cache_dir):
         fname = os.path.join(cache_dir, f'{self.dino_variant}.pth')
         if not os.path.isfile(fname):
             torch.hub.download_url_to_file(url=dino_weights[self.dino_variant], dst=fname)
         state_dict = torch.load(fname, map_location="cpu")
-        print(state_dict['student'].keys())
+        state_dict = state_dict['student']['head']
+        state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+        msg = self.projector.load_state_dict(state_dict, strict=False)
+        logging.info(f'Pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
+        logging.info(f'Number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
+        logging.info(f'Number of parameters for projector: {utils.get_parameter_number(self.projector)}')
 
     def forward(self, x):
         return self.dino(x)
