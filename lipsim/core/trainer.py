@@ -158,7 +158,7 @@ class Trainer:
         # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
         # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
         #                                  cache_dir='./checkpoints')
-        self.teacher_model = DinoPlusProjector(self.config.teacher_model_name)
+        self.teacher_model = DinoPlusProjector(self.config.teacher_model_name, cache_dir='./checkpoints')
         self.teacher_model = self.teacher_model.cuda()
         self.teacher_model.eval()
 
