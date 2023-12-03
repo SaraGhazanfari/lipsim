@@ -153,9 +153,6 @@ class DinoPlusProjector:
         for k, v in state_dict.items():
             if k.startswith('module.head'):
                 head_state_dict[k.replace('module.head.', '')] = v
-            if 'last_layer.weight' in k:
-                head_state_dict['last_layer.weight_v'] = v
-                head_state_dict['last_layer.weight_g'] = torch.ones_like(v)
 
         print(self.projector)
         print(head_state_dict)
