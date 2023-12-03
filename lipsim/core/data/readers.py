@@ -52,7 +52,7 @@ class BaseReader:
         self.batch_size = batch_size
         self.is_training = is_training
         self.is_distributed = is_distributed
-        self.num_workers = 4
+        self.num_workers = 1
         self.prefetch_factor = self.batch_size * 2
         self.path = join(self.get_data_dir(), self.config.dataset)
 
