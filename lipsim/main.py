@@ -94,7 +94,7 @@ def set_config(config):
 def main(config):
     config = set_config(config)
 
-    ncpus = 20
+    ncpus = 40
     # default: set tasks_per_node equal to number of gpus
     tasks_per_node = config.ngpus
     if config.mode in ['eval', 'eval_best', 'certified', 'attack']:
