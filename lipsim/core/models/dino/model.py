@@ -156,8 +156,8 @@ class DinoPlusProjector:
 
         print(self.projector)
         print(head_state_dict)
-        print('last_layer.weight' in head_state_dict)
-        msg = self.projector.load_state_dict(head_state_dict, strict=True)
+        msg = self.projector.load_state_dict(head_state_dict, strict=False)
+        self.projector.last_layer.weight = head_state_dict['last_layer.weight']
         print('############################################')
         print(self.projector.last_layer.weight)
         logging.info(f'Dino: pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
