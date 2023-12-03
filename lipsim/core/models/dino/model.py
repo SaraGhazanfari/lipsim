@@ -151,9 +151,13 @@ class DinoPlusProjector:
         for k, v in state_dict.items():
             if k.startswith('module.head'):
                 head_state_dict[k.replace('module.head.', '')] = v
+            if k == 'last_layer.weight':
+                head_state_dict['last_layer.weight_v'] = v
+                head_state_dict['last_layer.weight_g'] = torch.ones_like(v)
+
         print(self.projector)
         print(head_state_dict)
-        msg = self.projector.load_state_dict(head_state_dict, strict=True)
+        msg = self.projector.load_state_dict(head_state_dict, strict=False)
         logging.info(f'Dino: pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
         logging.info(f'Dino: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
         logging.info(f'Dino: number of parameters for projector: {utils.get_parameter_number(self.projector)}')
