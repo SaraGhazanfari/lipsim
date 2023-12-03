@@ -154,12 +154,9 @@ class DinoPlusProjector:
             if k.startswith('module.head'):
                 head_state_dict[k.replace('module.head.', '')] = v
 
-        print(self.projector)
-        print(head_state_dict)
         msg = self.projector.load_state_dict(head_state_dict, strict=False)
         self.projector.last_layer.weight = head_state_dict['last_layer.weight']
-        print('############################################')
-        print(self.projector.last_layer.weight)
+
         logging.info(f'Dino: pretrained weights found at {self.dino_variant}.pth and loaded with msg: {msg}')
         logging.info(f'Dino: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
         logging.info(f'Dino: number of parameters for projector: {utils.get_parameter_number(self.projector)}')
