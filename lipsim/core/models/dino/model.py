@@ -150,7 +150,7 @@ class DinoPlusProjector:
         head_state_dict = dict()
         for k, v in state_dict.items():
             if k.startswith('module.head'):
-                head_state_dict[k.replace('module.', '')] = v
+                head_state_dict[k.replace('module.head.', '')] = v
         print(self.projector)
         print(head_state_dict)
         msg = self.projector.load_state_dict(head_state_dict, strict=True)
