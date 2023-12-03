@@ -116,7 +116,9 @@ class DINOHead(nn.Module):
             self.mlp = nn.Sequential(*layers)
         self.apply(self._init_weights)
         self.last_layer = nn.utils.weight_norm(nn.Linear(bottleneck_dim, out_dim, bias=False))
+        print('last_layer: ', self.last_layer.weight_g.shape)
         self.last_layer.weight_g.data.fill_(1)
+        print('last_layer: ', self.last_layer.weight_g.shape)
         if norm_last_layer:
             self.last_layer.weight_g.requires_grad = False
 
