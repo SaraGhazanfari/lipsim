@@ -289,18 +289,21 @@ class Trainer:
         # embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        embeddings = self._teacher_model_embed(original_imgs)
+        embeddings, projector_out = self._teacher_model_embed(original_imgs)
         embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
             logging.info(f'embeddings {embeddings.shape}')
-        original_out = self.model(original_imgs)
-        jittered_out = self.model(jittered_imgs)
+        original_embed, projector_out_student = self.model(original_imgs)
+        jittered_embed, projector_out_jittered = self.model(jittered_imgs)
         if step == 0 and self.local_rank == 0:
-            logging.info(f'outputs {original_out.shape}')
+            logging.info(
+                f'Embedding dimension {original_embed.shape} Projector output dimension: {projector_out_student.shape}')
 
-        loss = (self.criterion(original_out, embeddings, epoch_id) + self.criterion(jittered_out, embeddings,
-                                                                                    epoch_id)) / 2
+        loss = ((self.criterion(original_embed, embeddings, epoch_id) + self.criterion(jittered_embed, embeddings,
+                                                                                       epoch_id)) / 2
+                + (self.criterion(projector_out_student, projector_out, epoch_id) + self.criterion(
+                    projector_out_jittered, projector_out, epoch_id)) / 2) / 2
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
@@ -315,7 +318,7 @@ class Trainer:
             self.message.add("step", step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
             self.message.add("loss", loss, format=".4f")
-            self.message.add("RMSE", RMSELoss()(original_out, embeddings), format=".4f")
+            self.message.add("RMSE", RMSELoss()(original_embed, embeddings), format=".4f")
             if self.config.print_grad_norm:
                 grad_norm = self.compute_gradient_norm()
                 self.message.add("grad", grad_norm, format=".4f")

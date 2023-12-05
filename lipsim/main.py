@@ -133,6 +133,12 @@ def main(config):
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
+    elif config.mode == 'knn':
+        evaluate = Evaluator(config)
+        job = executor.submit(evaluate)
+        job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode in eval_mode:
         evaluate = Evaluator(config)
         model = evaluate()

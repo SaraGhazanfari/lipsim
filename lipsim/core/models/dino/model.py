@@ -92,7 +92,7 @@ class MultiCropWrapper(nn.Module):
             output = torch.cat((output, _out))
             start_idx = end_idx
         # Run the head forward on the concatenated features.
-        return self.projector(output)
+        return _out, self.projector(output)
 
 
 class DINOHead(nn.Module):

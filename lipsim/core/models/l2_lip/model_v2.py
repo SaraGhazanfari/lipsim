@@ -67,9 +67,10 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
         layers.append(SDPLin(hidden_dim, bottleneck_dim))
         self.projector = nn.Sequential(*layers)
         # self.apply(self._init_weights)
-        self.last_layer = nn.utils.weight_norm(SDPLin(bottleneck_dim, out_dim, bias=False))
-        self.last_layer.weight_g.data.fill_(1)
-        self.last_layer.weight_g.requires_grad = False
+        self.last_layer = SDPLin(bottleneck_dim, out_dim,
+                                 bias=False)  # nn.utils.weight_norm(SDPLin(bottleneck_dim, out_dim, bias=False))
+        # self.last_layer.weight_g.data.fill_(1)
+        # self.last_layer.weight_g.requires_grad = False
         logging.info(f'LipSim: number of parameters for backbone: {utils.get_parameter_number(self.backbone)}')
         logging.info(
             f'LipSim: number of parameters for projector: {utils.get_parameter_number(self.projector) + utils.get_parameter_number(self.last_layer)}')
@@ -81,8 +82,8 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        x = self.backbone(x)
-        x = self.projector(x)
-        x = nn.functional.normalize(x, dim=-1, p=2)
+        embedding = self.backbone(x)
+        x = self.projector(embedding)
+        # x = nn.functional.normalize(x, dim=-1, p=2)
         x = self.last_layer(x)
-        return x
+        return embedding, x
