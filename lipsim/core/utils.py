@@ -196,7 +196,7 @@ class RMSELoss(nn.Module):
         super().__init__()
         self.mse = nn.MSELoss(reduction=reduction)
 
-    def forward(self, yhat, y, epoch):
+    def forward(self, yhat, y, epoch=0):
         return torch.sqrt(self.mse(yhat, y))
 
 
