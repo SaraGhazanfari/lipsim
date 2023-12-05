@@ -84,6 +84,6 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
     def forward(self, x):
         embedding = self.backbone(x)
         x = self.projector(embedding)
-        x = nn.functional.normalize(x, dim=-1, p=2)
+        # x = nn.functional.normalize(x, dim=-1, p=2)
         x = self.last_layer(x)
         return embedding, x
