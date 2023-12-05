@@ -137,7 +137,7 @@ class DINOHead(nn.Module):
 
 class DinoPlusProjector:
     def __init__(self, dino_variant='dino_vitb8', in_dim=768, out_dim=65536, cache_dir='./'):
-        self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant)
+        self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant).cuda()
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
         # self.load_head(cache_dir)
