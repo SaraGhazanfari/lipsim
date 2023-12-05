@@ -73,8 +73,12 @@ class Evaluator:
         new_checkpoint = {}
         for k, v in checkpoint['model_state_dict'].items():
             if 'alpha' not in k:
+                if k.starswith('module.backbone'):
+                    new_checkpoint[k.replace('module.backbone.', '')] = v
                 new_checkpoint[k] = v
-        self.model.load_state_dict(new_checkpoint)
+
+        msg = self.model.load_state_dict(new_checkpoint, strict=False)
+        logging.info(f'Dino: pretrained weights found at {ckpt_path} and loaded with msg: {msg}')
         epoch = checkpoint['epoch']
         return epoch
 
