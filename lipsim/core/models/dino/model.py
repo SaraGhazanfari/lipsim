@@ -163,4 +163,4 @@ class DinoPlusProjector:
 
     @torch.no_grad()
     def embed(self, x):
-        return self.dino(x)
+        return self.backbone(x)

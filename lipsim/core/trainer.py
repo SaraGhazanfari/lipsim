@@ -146,10 +146,10 @@ class Trainer:
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
-        self.backbone = L2LipschitzNetworkV2(self.config, self.n_classes)
-        self.backbone = NormalizedModel(self.backbone, self.reader.means, self.reader.stds)
-        self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes,
-                                                     backbone=self.backbone)
+        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+        self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
+        # self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes,
+        #                                              backbone=self.backbone)
         self.model = self.model.cuda()
 
         param_size = utils.get_parameter_number(self.model)
@@ -289,16 +289,16 @@ class Trainer:
         # embeddings = self.process_embedding(embeddings)
         original_imgs, jittered_imgs = images[:, 0, :, :], images[:, 1, :, :]
         original_imgs, jittered_imgs = original_imgs.cuda(), jittered_imgs.cuda()
-        embeddings, projector_out = self._teacher_model_embed(original_imgs)
+        embeddings = self._teacher_model_embed(original_imgs)
         embeddings = embeddings.cuda()
         if step == 0 and self.local_rank == 0:
             logging.info(f'images {original_imgs.shape}')
             logging.info(f'embeddings {embeddings.shape}')
-        original_embed, projector_out_student = self.model(original_imgs)
-        jittered_embed, projector_out_jittered = self.model(jittered_imgs)
+        original_embed = self.model(original_imgs)
+        jittered_embed = self.model(jittered_imgs)
         if step == 0 and self.local_rank == 0:
             logging.info(
-                f'Embedding dimension {original_embed.shape} Projector output dimension: {projector_out_student.shape}')
+                f'Embedding dimension {original_embed.shape}')
 
         loss = (self.criterion(original_embed, embeddings, epoch_id) + self.criterion(jittered_embed, embeddings,
                                                                                        epoch_id)) / 2
