@@ -300,7 +300,7 @@ class Trainer:
             logging.info(
                 f'Embedding dimension {original_embed.shape} Projector output dimension: {projector_out_student.shape}')
 
-        embed_loss = (self.criterion(original_embed, embeddings, epoch_id) + self.criterion(jittered_embed, embeddings,
+        embed_loss = (RMSELoss()(original_embed, embeddings, epoch_id) + RMSELoss()(jittered_embed, embeddings,
                                                                                        epoch_id)) / 2
 
         projector_loss = (self.criterion(projector_out_student, projector_out, epoch_id) + self.criterion(
