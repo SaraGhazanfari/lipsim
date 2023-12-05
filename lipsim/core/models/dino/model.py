@@ -140,8 +140,8 @@ class DinoPlusProjector:
         self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant)
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
-        self.load_head(cache_dir)
-        self.dino = MultiCropWrapper(self.backbone, self.projector).cuda()
+        # self.load_head(cache_dir)
+        # self.dino = MultiCropWrapper(self.backbone, self.projector).cuda()
 
     def load_head(self, cache_dir):
         fname = os.path.join(cache_dir, f'{self.dino_variant}.pth')
