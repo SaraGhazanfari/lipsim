@@ -85,7 +85,7 @@ class L2LipschitzNetworkPlusProjector(nn.Module):
         embedding = self.backbone(x)
         x = self.projector(embedding)
         x = nn.functional.normalize(x, dim=-1, p=2)
-        print(f'Norm before the weight normalization: {torch.norm(self.last_linear_layer(x), p=2, dim=1)}')
+        print(f'Norm before the weight normalization: {torch.norm(self.last_linear_layer.weight, p=2, dim=1)}')
         x = self.last_layer(x)
-        print(f'Norm after the weight normalization: {torch.norm(x, p=2, dim=1)}')
+        print(f'Norm after the weight normalization: {torch.norm(self.last_linear_layer.weight, p=2, dim=1)}')
         return x  # embedding, x
