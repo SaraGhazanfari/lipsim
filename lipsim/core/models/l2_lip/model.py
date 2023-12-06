@@ -51,7 +51,7 @@ class L2LipschitzNetwork(nn.Module):
                 SDPBasedLipschitzConvLayer(self.num_channels, self.conv_size)
             )
         layers.append(nn.AvgPool2d(4, divisor_override=4))
-        # layers.append(nn.AvgPool2d(4, divisor_override=4))
+        layers.append(nn.AvgPool2d(4, divisor_override=4))
         self.convs = nn.Sequential(*layers)
 
         layers_linear = [nn.Flatten()]
@@ -65,10 +65,11 @@ class L2LipschitzNetwork(nn.Module):
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
 
     def forward(self, x):
+        print(x.shape)
         x = self.base(x)
+        print(x.shape)
         x = self.last(x)
-        if self.config.mode == 'ssa':
-            x = x / torch.norm(x, p=2, dim=(1)).unsqueeze(1)
+        print(x.shape)
         return x
 
 
