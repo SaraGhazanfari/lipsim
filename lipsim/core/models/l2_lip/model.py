@@ -51,7 +51,7 @@ class L2LipschitzNetwork(nn.Module):
                 SDPBasedLipschitzConvLayer(self.num_channels, self.conv_size)
             )
         layers.append(nn.AvgPool2d(4, divisor_override=4))
-        layers.append(nn.AvgPool2d(4, divisor_override=4))
+        # layers.append(nn.AvgPool2d(4, divisor_override=4))
         self.convs = nn.Sequential(*layers)
 
         layers_linear = [nn.Flatten()]
