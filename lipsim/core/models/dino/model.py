@@ -165,7 +165,7 @@ class DinoPlusProjector:
     def embed(self, x):
         embedding = self.backbone(x)
         normalization_factor, _ = torch.max(torch.abs(embedding), dim=1)
-        print(embedding.shape, normalization_factor.shape)
+        normalization_factor = normalization_factor.unsqueeze(1)
         out = embedding / (10 * normalization_factor)
         # print(torch.max(torch.abs(out), dim=1))
         # print(torch.norm(out, p=2, dim=1))
