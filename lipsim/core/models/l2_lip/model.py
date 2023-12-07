@@ -65,11 +65,8 @@ class L2LipschitzNetwork(nn.Module):
         self.last = PoolingLinear(in_channels, self.n_classes, agg="trunc")
 
     def forward(self, x):
-        print(x.shape)
         x = self.base(x)
-        print(x.shape)
         x = self.last(x)
-        print(x.shape)
         return x
 
 

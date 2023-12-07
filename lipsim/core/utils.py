@@ -22,10 +22,10 @@ N_CLASSES = {
     'open_clip_vitb32': 512,
     'clip_vitb32': 512,
     'ensemble': 1792,
-    'dinov2_vits14_reg': 1000,
-    'dinov2_vitb14_reg': 1000,
-    'dinov2_vits14': 1000,
-    'dinov2_vitb14': 1000
+    'dinov2_vits14_reg': 768,
+    'dinov2_vitb14_reg': 768,
+    'dinov2_vits14': 768,
+    'dinov2_vitb14': 768
 }
 
 
