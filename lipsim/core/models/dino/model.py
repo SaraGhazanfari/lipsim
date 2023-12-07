@@ -7,11 +7,16 @@ from torch import nn
 
 from lipsim.core import utils
 
-dino_weights = {
+dino_projector_weights = {
     'dino_vits16': 'https://dl.fbaipublicfiles.com/dino/dino_deitsmall16_pretrain/dino_deitsmall16_pretrain_full_checkpoint.pth',
     'dino_vits8': 'https://dl.fbaipublicfiles.com/dino/dino_deitsmall8_pretrain/dino_deitsmall8_pretrain_full_checkpoint.pth',
     'dino_vitb16': 'https://dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain_full_checkpoint.pth',
     'dino_vitb8': 'https://dl.fbaipublicfiles.com/dino/dino_vitbase8_pretrain/dino_vitbase8_pretrain_full_checkpoint.pth',
+}
+
+dino_backbone_weights = {
+    'dinov1': 'facebookresearch/dino:main',
+    'dinov2': 'facebookresearch/dinov2'
 }
 
 
@@ -137,7 +142,9 @@ class DINOHead(nn.Module):
 
 class DinoPlusProjector:
     def __init__(self, dino_variant='dino_vitb8', in_dim=768, out_dim=65536, cache_dir='./'):
-        self.backbone = torch.hub.load('facebookresearch/dino:main', dino_variant).cuda()
+        base_url = dino_backbone_weights['dinov2'] if dino_variant.startswith('dinov2') else dino_backbone_weights[
+            'dinov1']
+        self.backbone = torch.hub.load(base_url, dino_variant).cuda()
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
         # self.load_head(cache_dir)
@@ -146,7 +153,7 @@ class DinoPlusProjector:
     def load_head(self, cache_dir):
         fname = os.path.join(cache_dir, f'{self.dino_variant}.pth')
         if not os.path.isfile(fname):
-            torch.hub.download_url_to_file(url=dino_weights[self.dino_variant], dst=fname)
+            torch.hub.download_url_to_file(url=dino_projector_weights[self.dino_variant], dst=fname)
         state_dict = torch.load(fname, map_location="cpu")
         state_dict = state_dict['student']
         head_state_dict = dict()
