@@ -23,7 +23,7 @@ N_CLASSES = {
     'clip_vitb32': 512,
     'ensemble': 1792,
     'dinov2_vits14_reg': 1000,
-    'original_dinov2_vitb14_reg': 1000
+    'dinov2_vitb14_reg': 1000
 }
 
 
