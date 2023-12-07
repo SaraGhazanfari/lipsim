@@ -25,7 +25,8 @@ N_CLASSES = {
     'dinov2_vits14_reg': 768,
     'dinov2_vitb14_reg': 768,
     'dinov2_vits14': 768,
-    'dinov2_vitb14': 768
+    'dinov2_vitb14': 768,
+    'dino_vitb8': 768
 }
 
 
