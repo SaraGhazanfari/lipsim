@@ -135,14 +135,14 @@ class Trainer:
             self.world_size, self.global_batch_size))
 
         torch.cuda.set_device(self.local_rank)
-
+        self.get_teacher_model()
+        self.n_classes = N_CLASSES[self.config.teacher_model_name]
         # load dataset
         Reader = readers_config[self.config.dataset]
         self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
                              is_distributed=self.is_distributed)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
-        self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
@@ -155,7 +155,7 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-        self.get_teacher_model()
+
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
