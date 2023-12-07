@@ -32,7 +32,7 @@ class KNNEval:
         cudnn.benchmark = True
         torch.cuda.init()
         torch.cuda.set_device(self.local_rank)
-        self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
+        # self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
 
     def _load_dataloader(self):
         transform = transforms.Compose([
