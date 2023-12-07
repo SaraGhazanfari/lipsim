@@ -147,6 +147,8 @@ class DinoPlusProjector:
         self.backbone = torch.hub.load(base_url, dino_variant).cuda()
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
+        # self.normalization_weight = torch.nn.Parameter(torch.randn(1, in_dim))
+        # self.normalization_weight.requires_grad = True
         # self.load_head(cache_dir)
         # self.dino = MultiCropWrapper(self.backbone, self.projector).cuda()
 
@@ -170,8 +172,9 @@ class DinoPlusProjector:
 
     @torch.no_grad()
     def embed(self, x):
-        embedding = self.backbone(x)
-        normalization_factor, _ = torch.max(torch.abs(embedding), dim=1)
-        normalization_factor = normalization_factor.unsqueeze(1)
-        out = embedding / (10 * normalization_factor)
-        return out
+        return self.backbone(x) / 100
+        # normalization_factor, _ = torch.max(torch.abs(embedding), dim=1)
+        # normalization_factor = normalization_factor.unsqueeze(1)
+        # out = embedding / (10 * normalization_factor)
+        # out = embedding/self.normalization_weight
+        # return out
