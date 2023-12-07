@@ -223,8 +223,8 @@ if __name__ == '__main__':
     parser.add_argument("--dreamsim_path", type=str,
                         default='/gpfswork/rech/dci/uuc79vj/lipsim/dreamsim_ckpts')
     parser.add_argument("--teacher_model_name", type=str, default='ensemble',
-                        choices=['original_dino_vitb8, original_dino_vitb16, dino_vitb16 open_clip_vitb32 clip_vitb32',
-                                 'ensemble'])
+                        choices=['original_dino_vitb8', 'original_dino_vitb16', 'dino_vitb16', 'open_clip_vitb32',
+                                 'clip_vitb32', 'ensemble'])
     parser.add_argument("--target", type=str, default='lipsim',
                         help='dreamsim, lipsim')
     parser.add_argument("--margin", type=float, default=0)
