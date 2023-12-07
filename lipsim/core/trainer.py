@@ -155,12 +155,7 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-        # download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        # self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-        #                                  cache_dir='./checkpoints')
-        self.teacher_model = DinoPlusProjector(self.config.teacher_model_name, cache_dir='./checkpoints')
-        # self.teacher_model = self.teacher_model.cuda()
-        # self.teacher_model.eval()
+        self.get_teacher_model()
 
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
@@ -226,6 +221,17 @@ class Trainer:
 
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
+
+    def get_teacher_model(self):
+        if self.config.teacher_model_name.startswith('original_'):
+            self.config.teacher_model_name = self.config.teacher_model_name.replace('original_', '')
+            self.teacher_model = DinoPlusProjector(self.config.teacher_model_name, cache_dir='./checkpoints')
+        else:
+            download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+            self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                             cache_dir='./checkpoints')
+            self.teacher_model = self.teacher_model.cuda()
+            self.teacher_model.eval()
 
     def compute_gradient_norm(self):
         grad_norm = 0.
