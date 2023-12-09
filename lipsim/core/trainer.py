@@ -224,7 +224,7 @@ class Trainer:
         if self.config.teacher_model_name.startswith('original_'):
             self.config.teacher_model_name = self.config.teacher_model_name.replace('original_', '')
             self.teacher_model = DinoPlusProjector(dino_variant=self.config.teacher_model_name,
-                                                   cache_dir='./checkpoints', batch_size=self.config.batch_size)
+                                                   cache_dir='./checkpoints')
         else:
             download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
             self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,

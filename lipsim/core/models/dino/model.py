@@ -141,13 +141,13 @@ class DINOHead(nn.Module):
 
 
 class DinoPlusProjector:
-    def __init__(self, batch_size, dino_variant='dino_vitb8', in_dim=768, out_dim=65536, cache_dir='./'):
+    def __init__(self, dino_variant='dino_vitb8', in_dim=768, out_dim=65536, cache_dir='./'):
         base_url = dino_backbone_weights['dinov2'] if dino_variant.startswith('dinov2') else dino_backbone_weights[
             'dinov1']
         self.backbone = torch.hub.load(base_url, dino_variant).cuda()
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
-        self.batch_norm = nn.BatchNorm1d(batch_size, affine=False)
+        self.batch_norm = nn.BatchNorm1d(in_dim, affine=False)
         # self.normalization_weight = torch.nn.Parameter(torch.randn(1, in_dim))
         # self.normalization_weight.requires_grad = True
         # self.load_head(cache_dir)
