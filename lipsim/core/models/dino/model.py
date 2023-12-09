@@ -147,7 +147,7 @@ class DinoPlusProjector:
         self.backbone = torch.hub.load(base_url, dino_variant).cuda()
         self.projector = DINOHead(in_dim, out_dim)
         self.dino_variant = dino_variant
-        self.batch_norm = nn.BatchNorm1d(in_dim, affine=False)
+        self.batch_norm = nn.BatchNorm1d(in_dim, affine=False).cuda()
         # self.normalization_weight = torch.nn.Parameter(torch.randn(1, in_dim))
         # self.normalization_weight.requires_grad = True
         # self.load_head(cache_dir)
