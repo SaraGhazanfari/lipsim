@@ -155,8 +155,6 @@ class Trainer:
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
 
-
-
         # setup distributed process if training is distributed
         # and use DistributedDataParallel for distributed training
         if self.is_distributed:
@@ -225,7 +223,8 @@ class Trainer:
     def get_teacher_model(self):
         if self.config.teacher_model_name.startswith('original_'):
             self.config.teacher_model_name = self.config.teacher_model_name.replace('original_', '')
-            self.teacher_model = DinoPlusProjector(self.config.teacher_model_name, cache_dir='./checkpoints')
+            self.teacher_model = DinoPlusProjector(dino_variant=self.config.teacher_model_name,
+                                                   cache_dir='./checkpoints', batch_size=self.config.batch_size)
         else:
             download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
             self.teacher_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
@@ -306,7 +305,7 @@ class Trainer:
                 f'Embedding dimension {original_embed.shape}')
 
         loss = (self.criterion(original_embed, embeddings, epoch_id) + self.criterion(jittered_embed, embeddings,
-                                                                                       epoch_id)) / 2
+                                                                                      epoch_id)) / 2
 
         # projector_loss = (self.criterion(projector_out_student, projector_out, epoch_id) + self.criterion(
         #            projector_out_jittered, projector_out, epoch_id)) / 2
