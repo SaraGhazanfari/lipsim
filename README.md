@@ -1,5 +1,3 @@
-# lipsim
-
 # LipSim: A Provably Robust Perceptual Similarity Metric
 ### [Paper](https://arxiv.org/abs/2310.18274) | [Training Scheme](#training) | [Results](#results) | [Commands](#commands) | [Bibtex](#bibtex)
 ## Abstract
