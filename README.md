@@ -1,5 +1,5 @@
 # LipSim: A Provably Robust Perceptual Similarity Metric
-### [Paper](https://arxiv.org/abs/2310.18274) | [Training Scheme](#training) | [Results](#results) | [Commands](#commands) | [Bibtex](#bibtex)
+### [Paper](https://arxiv.org/abs/2310.18274) | [Training Scheme](#training) | [Results](#results) | [Commands](#commands) | [Checkpoints](#checkpoints)  | [Bibtex](#bibtex) 
 ## Abstract
 <p align="justify"> In this work, we demonstrate the vulnerability of state-of-the-art perceptual similarity metrics based on an ensemble of ViT-based feature extractors to adversarial attacks. We then propose a framework to train a robust perceptual similarity metric called LipSim (Lipschitz Similarity Metric) with provable guarantees. By leveraging 1-Lipschitz neural networks as the backbone, LipSim provides guarded areas around each data point and certificates for all perturbations within an ℓ2 ball. Finally, a comprehensive set of experiments shows the performance of LipSim in terms of natural and certified scores and on the image retrieval application.</p>
 
@@ -47,6 +47,16 @@ python -m lipsim.main --mode certified --dataset night --model-name small --trai
 python -m lipsim.main --mode attack --dataset imagenet-1k --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local --attack AA-L2 --eps 1.0
 ```
 <a name="bibtex"></a>
+
+<a name="checkpoints"></a>
+##  Checkpoints
+| LipSim Version | Link |
+| ---- | --- |
+| Pretrained | [Link](https://drive.google.com/file/d/1Y39Wnpxq3ZS8JMRe6j-Yx7x3E_nardbv/view?usp=drive_link) |
+| Finetuned - (0.2 margin)| [Link](https://drive.google.com/file/d/1XGxMAXozph72x9sRPUgkcJ7ql7IWacyM/view?usp=sharing) | 
+| Finetuned - (0.5 margin)| [Link](https://drive.google.com/file/d/1i5zP72O-vzxgFOyKn2JPUAqaD9mz2rDI/view?usp=sharing) | 
+
+
 ## Citation
 ```
 @article{ghazanfari2023lipsim,
