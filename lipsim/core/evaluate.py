@@ -1,29 +1,26 @@
 import glob
 import logging
 import os
-
+import sys
 from os.path import join
+
 import numpy as np
+import torch
+import torch.backends.cudnn as cudnn
+import torch.nn as nn
 # from dreamsim.model import download_weights, dreamsim
 # from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+from lipsim.core import utils
 from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
+from lipsim.core.data.readers import readers_config
 from lipsim.core.eval_knn import KNNEval
 from lipsim.core.models.dreamsim.model import download_weights, dreamsim
-
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric, LPIPSMetric, \
     DISTSMetric
-from lipsim.core import utils
-
-from lipsim.core.data.readers import readers_config
-import torch.nn as nn
-import torch
-import torch.backends.cudnn as cudnn
-import sys
-
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.utils import N_CLASSES
 
@@ -32,24 +29,9 @@ def get_2afc_score(d0s, d1s, targets):
     d0s = torch.cat(d0s, dim=0)
     d1s = torch.cat(d1s, dim=0)
     targets = torch.cat(targets, dim=0)
-    scores = 0
-    count = 0
-
-    for idx, target in enumerate(targets):
-        if target != 0.5:
-            count += 1
-            scores += (d0s[idx] < d1s[idx]) * (1.0 - target) + (d1s[idx] < d0s[idx]) * target + (
-                    d1s[idx] == d0s[idx]) * 0.5
-
-    # twoafc_score = torch.mean(scores)
-    twoafc_score = scores / count
-    # todo get it back to normal
-    outputs = torch.stack((d1s, d0s), dim=1)
-    correct = torch.round(targets).squeeze() == outputs.max(1)[1].squeeze()  # outputs.max(1)[1] == torch.round(targets)
-
-    print(torch.sum(correct) / correct.shape[0])
-    return torch.sum(correct) / correct.shape[0], count
-    # return twoafc_score
+    scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
+    twoafc_score = torch.mean(scores)
+    return twoafc_score
 
 
 class Evaluator:
@@ -109,7 +91,7 @@ class Evaluator:
         self.stds = (1.0000, 1.0000, 1.0000)
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
 
-        # load model
+        # Different perceptual metrics used while evaluation
 
         if self.config.target == 'dreamsim':
             print('dreamsim is loading as perceputal metric...')
@@ -126,36 +108,37 @@ class Evaluator:
 
         elif self.config.target == 'lipsim_v2':
             self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+            self.create_lipsim_perceputal_metric()
 
         else:
             self.model = L2LipschitzNetwork(self.config, self.n_classes)
-
-        if self.config.target in ['lipsim_v2', 'lipsim_v1']:
-            self.model = NormalizedModel(self.model, self.means, self.stds)
-            self.model = torch.nn.DataParallel(self.model)
-            self.model = self.model.to(self.device)
-            self.load_ckpt()
-            self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
+            self.create_lipsim_perceputal_metric()
 
         if self.config.mode == 'lipsim':
             return self.model
-        elif self.config.mode == 'eval':
-            self.vanilla_eval()
-        elif self.config.mode == 'attack':
-            self.attack_eval()
-        elif self.config.mode == 'ssa':
-            self.distance_attack_eval()
+
         elif self.config.mode == 'certified':
             if self.config.dataset == 'night':
                 self.certified_eval_for_night()
             else:
                 self.certified_eval_for_lpips()
+        elif self.config.mode == 'attack':
+            self.attack_eval()
+        elif self.config.mode == 'ssa':
+            self.distance_attack_eval()
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'knn':
             KNNEval(self.config, self.perceptual_metric.backbone).knn_classifier()
 
         logging.info('Done with batched inference.')
+
+    def create_lipsim_perceputal_metric(self):
+        self.model = NormalizedModel(self.model, self.means, self.stds)
+        self.model = torch.nn.DataParallel(self.model)
+        self.model = self.model.to(self.device)
+        self.load_ckpt()
+        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
 
     # @torch.no_grad()
     def lpips_eval(self):
@@ -261,7 +244,6 @@ class Evaluator:
                 running_accuracy[i] += correct.sum().cpu().numpy()  # predicted.eq(target.data).cpu().sum().numpy()
 
             running_inputs += len(index_list)  # img_ref.size(0)
-            # print(len(index_list), running_inputs)
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
 
@@ -392,8 +374,6 @@ class Evaluator:
             d0s.append(dist_0)
             d1s.append(dist_1)
             targets.append(target)
-            if i * self.batch_size == 1000 and self.config.dataset == 'bapps':
-                break
             # twoafc_score = get_2afc_score(d0s, d1s, targets)
 
         twoafc_score, count = get_2afc_score(d0s, d1s, targets)

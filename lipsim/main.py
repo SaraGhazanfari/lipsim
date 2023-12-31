@@ -1,9 +1,9 @@
+import argparse
 import os
 import shutil
 import sys
 import uuid
 import warnings
-import argparse
 from datetime import datetime
 from os.path import exists, realpath
 from pathlib import Path
@@ -18,7 +18,7 @@ from lipsim.eval_linear import LinearEvaluation
 
 warnings.filterwarnings("ignore")
 
-eval_mode = ['certified', 'attack', 'eval', 'ssa', 'lipsim', 'classifier', 'knn', 'lpips']
+eval_mode = ['certified', 'attack', 'ssa', 'lipsim', 'classifier', 'knn', 'lpips']
 all_mode = ['train', 'finetune']
 all_mode.extend(eval_mode)
 
