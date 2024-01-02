@@ -117,8 +117,8 @@ class PerceptualMetric:
     def add_bias_before_projection(self, embed_ref):
         norm_ref = torch.norm(embed_ref, p=2, dim=(1))
         bias = torch.ones_like(embed_ref)
-        print(bias)
-        bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1])
+        print(norm_ref)
+        bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
         print(norm_ref)
         bias = (2 / sqrt(embed_ref.shape[1])) * bias
         print(bias)
