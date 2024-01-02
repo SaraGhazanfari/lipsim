@@ -122,10 +122,7 @@ class PerceptualMetric:
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)
         embed_x1 = self.backbone(img_right)
-
-
         embed_ref = self.add_one_dim(embed_ref)
-        print(torch.norm(embed_ref, p=2, dim=(1)))
         embed_x0 = self.add_one_dim(embed_x0)
         embed_x1 = self.add_one_dim(embed_x1)
 
