@@ -8,7 +8,7 @@ from lipsim.core.attack.deepfool_attack import DeepFool
 
 class GeneralAttack:
     def __init__(self, config):
-        self.attack_names = {'AA': ['apgd-ce', 'apgd-t', 'fab-t', 'square'], 'APGD': ['apgd-ce'], 'APGDT': ['apgd-t'],
+        self.attack_names = {'AA': ['apgd-ce', 'square'], 'APGD': ['apgd-ce'], 'APGDT': ['apgd-t'],
                              'FAB': ['fab-t'], 'SQ': ['square']}
         self.config = config
 
