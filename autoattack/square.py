@@ -221,7 +221,6 @@ class SquareAttack():
     def attack_single_run(self, x, y):
         with torch.no_grad():
             adv = x.clone()
-            print('YES HERE: ', x.shape)
             c, h, w = x.shape[1:]
             n_features = c * h * w
             n_ex_total = x.shape[0]
