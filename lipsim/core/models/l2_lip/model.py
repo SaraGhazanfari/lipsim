@@ -115,33 +115,38 @@ class PerceptualMetric:
         self.requires_bias = requires_bias
 
     def add_bias_before_projection(self, embed_ref):
-        return embed_ref + (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
+        norm_ref = torch.norm(embed_ref, p=2, dim=(1))
+        bias = torch.ones_like(embed_ref)
+        print(bias)
+        bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1])
+        print(norm_ref)
+        bias = (2 / sqrt(embed_ref.shape[1])) * bias
+        print(bias)
+        return embed_ref + bias
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
                                     requires_normalization=False):
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)
         embed_x1 = self.backbone(img_right)
-        embed_ref = self.add_one_dim(embed_ref)
-        embed_x0 = self.add_one_dim(embed_x0)
-        embed_x1 = self.add_one_dim(embed_x1)
 
-        # if not requires_grad:
-        #     embed_ref = embed_ref.detach()
-        #     embed_x0 = embed_x0.detach()
-        #     embed_x1 = embed_x1.detach()
-        # if self.requires_bias:
-        #     embed_ref = self.add_bias_before_projection(embed_ref)
-        #     embed_x0 = self.add_bias_before_projection(embed_x0)
-        #     embed_x1 = self.add_bias_before_projection(embed_x1)
-        #
-        # if requires_normalization:
-        #     norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-        #     embed_ref = embed_ref / norm_ref
-        #     norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-        #     embed_x0 = embed_x0 / norm_x_0
-        #     norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-        #     embed_x1 = embed_x1 / norm_x_1
+        if not requires_grad:
+            embed_ref = embed_ref.detach()
+            embed_x0 = embed_x0.detach()
+            embed_x1 = embed_x1.detach()
+
+        if self.requires_bias:
+            embed_ref = self.add_bias_before_projection(embed_ref)
+            embed_x0 = self.add_bias_before_projection(embed_x0)
+            embed_x1 = self.add_bias_before_projection(embed_x1)
+
+        if requires_normalization:
+            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
+            embed_ref = embed_ref / norm_ref
+            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+            embed_x0 = embed_x0 / norm_x_0
+            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
+            embed_x1 = embed_x1 / norm_x_1
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
