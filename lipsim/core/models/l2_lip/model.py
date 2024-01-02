@@ -123,23 +123,31 @@ class PerceptualMetric:
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)
         embed_x1 = self.backbone(img_right)
+        print(embed_ref.shape)
+        norm_ref = torch.norm(embed_ref, p=2, dim=(1))
+        embed_ref = torch.cat((embed_ref, norm_ref), dim=1)
+        print(embed_ref.shape)
+        norm_x_0 = torch.norm(embed_x0, p=2, dim=(1))
+        embed_x0 = torch.cat((embed_x0, norm_x_0), dim=1)
+        norm_x_1 = torch.norm(embed_x1, p=2, dim=(1))
+        embed_x1 = torch.cat((embed_x1, norm_x_1), dim=1)
 
-        if not requires_grad:
-            embed_ref = embed_ref.detach()
-            embed_x0 = embed_x0.detach()
-            embed_x1 = embed_x1.detach()
-        if self.requires_bias:
-            embed_ref = self.add_bias_before_projection(embed_ref)
-            embed_x0 = self.add_bias_before_projection(embed_x0)
-            embed_x1 = self.add_bias_before_projection(embed_x1)
-
-        if requires_normalization:
-            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-            embed_ref = embed_ref / norm_ref
-            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-            embed_x0 = embed_x0 / norm_x_0
-            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-            embed_x1 = embed_x1 / norm_x_1
+        # if not requires_grad:
+        #     embed_ref = embed_ref.detach()
+        #     embed_x0 = embed_x0.detach()
+        #     embed_x1 = embed_x1.detach()
+        # if self.requires_bias:
+        #     embed_ref = self.add_bias_before_projection(embed_ref)
+        #     embed_x0 = self.add_bias_before_projection(embed_x0)
+        #     embed_x1 = self.add_bias_before_projection(embed_x1)
+        #
+        # if requires_normalization:
+        #     norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
+        #     embed_ref = embed_ref / norm_ref
+        #     norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+        #     embed_x0 = embed_x0 / norm_x_0
+        #     norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
+        #     embed_x1 = embed_x1 / norm_x_1
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)

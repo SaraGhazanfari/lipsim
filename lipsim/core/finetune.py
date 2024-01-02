@@ -190,7 +190,7 @@ class Finetuner(Trainer, Evaluator):
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
-        self.certified_eval_for_lpips()
+
         return global_step
 
     def log_training(self, epoch, epoch_id, examples_per_second, global_step, loss, start_time):
