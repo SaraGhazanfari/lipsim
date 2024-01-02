@@ -121,12 +121,15 @@ def main(config):
     )
     shared_folder = os.environ.get('folder_path')
     config.dist_url = get_init_file(shared_folder).as_uri()
-    if config.mode in ['train', 'finetune']:
+    if config.mode == 'train':
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
+    elif config.mode == 'finetune':
+        trainer = (config)
+        trainer()
     elif config.mode == 'classifier':
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)

@@ -1,31 +1,26 @@
+import glob
+import logging
 import os
-import time
 import pprint
 import socket
-import logging
-import glob
+import time
 from os.path import join, exists
-from contextlib import nullcontext
 
 import submitit
-import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-from torch import nn
-from torch.nn.parallel import DistributedDataParallel
-from torch.distributed.elastic.multiprocessing.errors import record
-from tqdm import tqdm
 from dreamsim.model import download_weights, dreamsim
+from torch import nn
+from torch.distributed.elastic.multiprocessing.errors import record
+from torch.nn.parallel import DistributedDataParallel
+
 from lipsim.core import utils
-from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.bapps_dataset import BAPPSDataset
-from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 from lipsim.core.models.dino.model import DinoPlusProjector
-
 from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric, L2LipschitzNetwork
-from lipsim.core.utils import N_CLASSES, RMSELoss
+from lipsim.core.utils import N_CLASSES
 
 # from core.models.dreamsim.model import dreamsim
 
@@ -147,8 +142,6 @@ class Trainer:
         # load model
         self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
-        # self.model = L2LipschitzNetworkPlusProjector(config=self.config, n_classes=self.n_classes,
-        #                                              backbone=self.backbone)
         self.model = self.model.cuda()
 
         param_size = utils.get_parameter_number(self.model)
@@ -306,11 +299,6 @@ class Trainer:
 
         loss = (self.criterion(original_embed, embeddings, epoch_id) + self.criterion(jittered_embed, embeddings,
                                                                                       epoch_id)) / 2
-
-        # projector_loss = (self.criterion(projector_out_student, projector_out, epoch_id) + self.criterion(
-        #            projector_out_jittered, projector_out, epoch_id)) / 2
-
-        # loss = 0.9 * embed_loss + 0.1 * projector_loss
         loss.backward()
         self.process_gradients(step)
         self.optimizer.step()
@@ -331,330 +319,3 @@ class Trainer:
                 self.message.add("grad", grad_norm, format=".4f")
             self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
             logging.info(self.message.get_message())
-
-    def finetune_func(self):
-
-        cudnn.benchmark = True
-        self.train_dir = self.config.train_dir
-        self.ngpus = torch.cuda.device_count()
-
-        self.rank = 0
-        self.local_rank = 0
-        self.num_nodes = 1
-        self.num_tasks = 1
-        self.is_master = True
-
-        # Setup logging
-        utils.setup_logging(self.config, self.rank)
-
-        torch.cuda.init()
-
-        self.message = utils.MessageBuilder()
-        # print self.config parameters
-        if self.local_rank == 0:
-            logging.info(self.config.cmd)
-            pp = pprint.PrettyPrinter(indent=2, compact=True)
-            logging.info(pp.pformat(vars(self.config)))
-        # print infos
-        if self.local_rank == 0:
-            logging.info(f"PyTorch version: {torch.__version__}.")
-            logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
-            logging.info(f"Hostname: {socket.gethostname()}.")
-
-        # ditributed settings
-        self.world_size = 1
-        self.is_distributed = False
-
-        assert self.num_nodes == 1 and self.num_tasks == 1
-        logging.info("Single node training.")
-
-        if not self.is_distributed:
-            self.batch_size = self.config.batch_size * self.ngpus
-        else:
-            self.batch_size = self.config.batch_size
-
-        self.global_batch_size = self.batch_size * self.world_size
-        logging.info('World Size={} => Total batch size {}'.format(
-            self.world_size, self.global_batch_size))
-
-        torch.cuda.set_device(self.local_rank)
-
-        # load dataset
-        Reader = readers_config[self.config.dataset]
-        self.reader = Reader(config=self.config, batch_size=self.batch_size, is_training=True,
-                             is_distributed=self.is_distributed)
-
-        if self.config.dataset == 'night':
-            data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                          split='train').get_dataloader()
-        else:
-            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                          split='train', dataset='traditional', make_path=True).get_dataloader(
-                batch_size=self.config.batch_size)
-        if self.local_rank == 0:
-            logging.info(f"Using dataset: {self.config.dataset}")
-        self.n_classes = N_CLASSES[self.config.teacher_model_name]
-
-        # load model
-        self.model = L2LipschitzNetwork(self.config, self.n_classes)
-        self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
-
-        # for param in self.backbone.parameters():
-        #     param.requires_grad = False
-        # self.model = LipSimNetwork(self.config, n_classes=self.n_classes, backbone=self.backbone)
-
-        self.model = self.model.cuda()
-        self.perceptual_metric = PerceptualMetric(backbone=self.model)
-        param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
-        if self.local_rank == 0:
-            logging.info(f'Number of parameters to train: {param_size}')
-
-        if self.is_distributed:
-            utils.setup_distributed_training(self.world_size, self.rank)
-            self.model = DistributedDataParallel(
-                self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-            if self.local_rank == 0:
-                logging.info('Model defined with DistributedDataParallel')
-        else:
-            self.model = nn.DataParallel(self.model, device_ids=[0])  # range(torch.cuda.device_count()))
-
-        self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
-        self.saved_ckpts = set([0])
-        self._load_state()
-        # define set for saved ckpt
-
-        sampler = None
-        if sampler is not None:
-            assert sampler.num_replicas == self.world_size
-
-        if self.is_distributed:
-            n_files = sampler.num_samples
-        else:
-            n_files = self.reader.n_train_files
-
-        # define optimizer
-
-        # define learning rate scheduler
-        num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        self.scheduler, self.warmup = utils.get_scheduler(self.optimizer, self.config, num_steps)
-        if self.config.warmup_scheduler is not None:
-            logging.info(f"Warmup scheduler on {self.config.warmup_scheduler * 100:.0f}% of training")
-
-        # define the loss
-        self.criterion = utils.get_loss(self.config)
-
-        if self.local_rank == 0:
-            logging.info("Number of files on worker: {}".format(n_files))
-            logging.info("Start training")
-
-        # training loop
-        start_epoch, global_step = 0, 0
-        self.best_checkpoint = None
-        self.best_accuracy = None
-        self.best_accuracy = [0., 0.]
-
-        epoch_id = 0
-        self.optimizer.zero_grad()
-        for epoch_id in range(start_epoch, self.config.epochs):
-            if self.is_distributed:
-                sampler.set_epoch(epoch_id)
-            global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
-        self._save_ckpt(global_step, epoch_id, final=True)
-        logging.info("Done training -- epoch limit reached.")
-        if self.config.dataset == 'night':
-            self.night_complete_eval()
-        else:
-            self.lpips_eval()
-
-    def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
-
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
-
-            start_time = time.time()
-            epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
-            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right,
-                                                                                   requires_grad=True,
-                                                                                   requires_normalization=True)
-            logit = dist_0 - dist_1
-            loss = self.criterion(logit.squeeze(), target)
-            loss.backward()
-            self.process_gradients(global_step)
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            with self.warmup.dampening() if self.warmup else nullcontext():
-                self.scheduler.step(global_step)
-            seconds_per_batch = time.time() - start_time
-            examples_per_second = self.global_batch_size / seconds_per_batch
-            examples_per_second *= self.world_size
-
-            self._save_ckpt(global_step, epoch_id)
-            if global_step == 20 and self.is_master:
-                self._print_approximated_train_time(start_time)
-            global_step += 1
-            self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
-        self.certified_eval_for_lpips()
-        return global_step
-
-    @torch.no_grad()
-    def certified_eval_for_lpips(self):
-
-        for dataset in ['traditional', 'cnn']:  # , 'superres', 'deblur', 'color','frameinterp']:
-            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                          split='val', dataset=dataset, make_path=True).get_dataloader(
-                batch_size=self.config.batch_size)
-            lpips_accuracy, lpips_certified = self.get_certified_accuracy(data_loader)
-
-            eps_list = np.array([36, 72, 108])
-            eps_float_list = eps_list / 255
-            for i, eps_float in enumerate(eps_float_list):
-                self.message.add('eps', eps_float, format='.5f')
-                self.message.add(f'bapps accuracy {dataset}', lpips_accuracy[i], format='.5f')
-                self.message.add(f'bapps certified {dataset}', lpips_certified[i], format='.5f')
-                logging.info(self.message.get_message())
-
-    @torch.no_grad()
-    def lpips_eval(self):
-        for dataset in ['traditional', 'cnn', 'superres', 'deblur', 'color',
-                        'frameinterp']:
-            data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
-                                          split='val', dataset=dataset, make_path=True).get_dataloader(
-                batch_size=self.config.batch_size)
-            twoafc_score = self.get_2afc_score_eval(data_loader)
-            logging.info(f"BAPPS 2AFC score: {str(twoafc_score)}")
-        return twoafc_score
-
-    def log_training(self, epoch, epoch_id, examples_per_second, global_step, loss, start_time):
-        if self._to_print(global_step):
-            lr = self.optimizer.param_groups[0]['lr']
-            self.message.add("epoch", epoch, format="4.2f")
-            self.message.add("step", global_step, width=5, format=".0f")
-            self.message.add("lr", lr, format=".6f")
-            self.message.add("loss", loss, format=".4f")
-            if self.config.print_grad_norm:
-                grad_norm = self.compute_gradient_norm()
-                self.message.add("grad", grad_norm, format=".4f")
-            self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
-            logging.info(self.message.get_message())
-        self._save_ckpt(global_step, epoch_id)
-        if global_step == 20 and self.is_master:
-            self._print_approximated_train_time(start_time)
-
-    def night_complete_eval(self):
-        data_loader, dataset_size = NightDataset(config=self.config, batch_size=self.config.batch_size,
-                                                 split='test_imagenet').get_dataloader()
-        no_imagenet_data_loader, no_imagenet_dataset_size = NightDataset(config=self.config,
-                                                                         batch_size=self.config.batch_size,
-                                                                         split='test_no_imagenet').get_dataloader()
-
-        imagenet_accuracy, imagenet_certified = self.get_certified_accuracy(data_loader)
-        torch.cuda.empty_cache()
-        no_imagenet_accuracy, no_imagenet_certified = self.get_certified_accuracy(no_imagenet_data_loader)
-        torch.cuda.empty_cache()
-        overall_accuracy = (imagenet_accuracy * dataset_size + no_imagenet_accuracy * no_imagenet_dataset_size) / (
-                dataset_size + no_imagenet_dataset_size)
-        overall_certified = (imagenet_certified * dataset_size + no_imagenet_certified * no_imagenet_dataset_size) / (
-                dataset_size + no_imagenet_dataset_size)
-        eps_list = np.array([36, 72, 108, 255])
-        eps_float_list = eps_list / 255
-        for i, eps_float in enumerate(eps_float_list):
-            self.message.add('eps', eps_float, format='.5f')
-            self.message.add('imagenet accuracy', imagenet_accuracy[i], format='.5f')
-            self.message.add('imagenet certified', imagenet_certified[i], format='.5f')
-
-            self.message.add('no imagenet accuracy', no_imagenet_accuracy[i], format='.5f')
-            self.message.add('no imagenet certified', no_imagenet_certified[i], format='.5f')
-
-            self.message.add('Overall accuracy', overall_accuracy[i], format='.5f')
-            self.message.add('Overall certified', overall_certified[i], format='.5f')
-            logging.info(self.message.get_message())
-
-    def get_certified_accuracy(self, data_loader):
-        # self.model.eval()
-        running_accuracy = np.zeros(4)
-        running_certified = np.zeros(4)
-        running_inputs = 0
-        lip_cst = 2
-        eps_list = np.array([36, 72, 108, 255])
-        eps_float_list = eps_list / 255
-        with torch.no_grad():
-            for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
-                img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                    img_right.cuda(), target.cuda()
-
-                dist_0, dist_1, bound = self.perceptual_metric.get_distance_between_images(img_ref,
-                                                                                           img_left=img_left,
-                                                                                           img_right=img_right,
-                                                                                           requires_normalization=True)
-
-                outputs = torch.stack((dist_1, dist_0), dim=1)
-                predicted = outputs.argmax(axis=1)
-                correct = outputs.max(1)[1] == target
-                fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
-                mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
-                fy_fi[mask] = torch.inf
-                radius = (fy_fi / bound).min(dim=1)[0]
-                for i, eps_float in enumerate(eps_float_list):
-                    certified = radius > eps_float
-                    running_certified[i] += torch.sum(correct & certified).item()
-                    running_accuracy[i] += predicted.eq(target.data).cpu().sum().numpy()
-                running_inputs += img_ref.size(0)
-
-        accuracy = running_accuracy / running_inputs
-        certified = running_certified / running_inputs
-
-        return accuracy, certified
-
-    def get_2afc_score_eval(self, test_loader):
-        logging.info("Evaluating NIGHTS dataset.")
-        d0s = []
-        d1s = []
-        targets = []
-        # with torch.no_grad()
-        for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(test_loader), total=len(test_loader)):
-            img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
-                img_right.cuda(), target.cuda()
-            dist_0, dist_1, target = self.one_step_2afc_score_eval(img_ref, img_left, img_right, target)
-            d0s.append(dist_0)
-            d1s.append(dist_1)
-            targets.append(target)
-
-        twoafc_score = get_2afc_score(d0s, d1s, targets)
-        return twoafc_score
-
-    def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
-        if self.config.attack:
-            img_ref = GeneralAttack(self.config).generate_attack(img_ref, img_left, img_right, target,
-                                                                 target_model=self.model_wrapper(img_left, img_right))
-        dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right)
-        if len(dist_0.shape) < 1:
-            dist_0 = dist_0.unsqueeze(0)
-            dist_1 = dist_1.unsqueeze(0)
-        dist_0 = dist_0.unsqueeze(1)
-        dist_1 = dist_1.unsqueeze(1)
-        target = target.unsqueeze(1)
-        return dist_0, dist_1, target
-
-    def model_wrapper(self, img_left, img_right):
-        def metric_model(img):
-            if len(img.shape) > 4:
-                img_ref, img_0, img_1 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1), img[:, 2, :, :].squeeze(
-                    1)
-            else:
-                img_ref = img
-                img_0, img_1 = img_left, img_right
-            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_0, img_1,
-                                                                                   requires_grad=True)
-            return torch.stack((dist_1, dist_0), dim=1)
-
-        return metric_model
-
-
-def get_2afc_score(d0s, d1s, targets):
-    d0s = torch.cat(d0s, dim=0)
-    d1s = torch.cat(d1s, dim=0)
-    targets = torch.cat(targets, dim=0)
-    scores = (d0s < d1s) * (1.0 - targets) + (d1s < d0s) * targets + (d1s == d0s) * 0.5
-    twoafc_score = torch.mean(scores)
-    return twoafc_score
