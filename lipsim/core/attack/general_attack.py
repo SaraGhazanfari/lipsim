@@ -4,18 +4,19 @@ from torch import nn
 
 from autoattack import AutoAttack
 from lipsim.core.attack.deepfool_attack import DeepFool
-from lipsim.core.attack.square_attack import Square
 
 
 class GeneralAttack:
     def __init__(self, config):
+        self.attack_names = {'AA': ['apgd-ce', 'apgd-t', 'fab-t', 'square'], 'APGD': 'apgd-ce', 'APGDT': 'apgd-t',
+                             'FAB': 'fab-t', 'SQ': 'square'}
         self.config = config
 
     def generate_attack(self, img_ref, img_0, img_1, target=None, target_model=None, is_dist_attack=False):
         attack_method, attack_norm = self.config.attack.split('-')
-        if attack_method == 'AA':  # AutoAttack
-            img_adv = self.generate_auto_attack(attack_norm, img_0, img_1, img_ref, is_dist_attack, target,
-                                                target_model)
+        if attack_method in ['AA', 'APGD', 'APGDT', 'FAB', 'SQ']:  # AutoAttack
+            img_adv = self.generate_auto_attack(attack_method, attack_norm, img_0, img_1, img_ref, is_dist_attack,
+                                                target, target_model)
 
         if attack_method == 'CW':  # CarliniWagner
             img_adv = self.generate_carlini_attack(img_ref, target, target_model)
@@ -23,10 +24,10 @@ class GeneralAttack:
         elif attack_method == 'PGD':
             img_adv = self.generate_pgd_attack(attack_norm, img_ref, target_model)
 
-        elif attack_method == 'SQ':  # Square
-            attack = Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
-                            p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
-            img_adv = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
+        # elif attack_method == 'SQ':  # Square
+        #     attack = Square(target_model, norm='L2', eps=self.config.eps, n_queries=5000, n_restarts=1,
+        #                     p_init=.8, seed=0, verbose=False, loss='margin', resc_schedule=True)
+        #     img_adv = attack.perturb(torch.stack((img_ref, img_0, img_1), dim=1), target.long())
 
         elif attack_method == 'DF':  # DeepFool
             attack = DeepFool(target_model, steps=50, overshoot=0.02)
@@ -72,10 +73,11 @@ class GeneralAttack:
         img_adv = adversary(img_ref, target.long())
         return img_adv
 
-    def generate_auto_attack(self, attack_norm, img_0, img_1, img_ref, is_dist_attack, target, target_model):
+    def generate_auto_attack(self, attack_method, attack_norm, img_0, img_1, img_ref, is_dist_attack, target,
+                             target_model):
         adversary = AutoAttack(target_model, norm=attack_norm, eps=self.config.eps, version='standard',
                                device='cuda')
-        adversary.attacks_to_run = ['square']  # ['apgd-ce', 'apgd-t', 'fab-t', 'square']
+        adversary.attacks_to_run = self.attack_names[attack_method]  # ['apgd-ce', 'apgd-t', 'fab-t', 'square']
         if is_dist_attack:
             img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
                                                         bs=img_ref.shape[0])
