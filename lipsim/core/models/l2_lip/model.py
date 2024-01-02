@@ -118,7 +118,6 @@ class PerceptualMetric:
         norm_ref = torch.norm(embed_ref, p=2, dim=(1))
         bias = torch.ones_like(embed_ref)
         bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
-        print(bias[norm_ref > 1, :])
         bias = (2 / sqrt(embed_ref.shape[1])) * bias
         return embed_ref + bias
 
