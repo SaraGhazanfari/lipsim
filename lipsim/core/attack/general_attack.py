@@ -75,7 +75,7 @@ class GeneralAttack:
     def generate_auto_attack(self, attack_norm, img_0, img_1, img_ref, is_dist_attack, target, target_model):
         adversary = AutoAttack(target_model, norm=attack_norm, eps=self.config.eps, version='standard',
                                device='cuda')
-        # adversary.attacks_to_run = ['apgd-ce']
+        adversary.attacks_to_run = ['apgd-t']  # ['apgd-ce', 'apgd-t', 'fab-t', 'square']
         if is_dist_attack:
             img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
                                                         bs=img_ref.shape[0])
