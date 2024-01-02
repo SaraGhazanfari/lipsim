@@ -31,7 +31,7 @@ class Finetuner(Trainer, Evaluator):
     def __init__(self, config):
         super(Finetuner, self).__init__(config)
 
-    def finetune_func(self):
+    def __call__(self):
 
         cudnn.benchmark = True
         self.train_dir = self.config.train_dir

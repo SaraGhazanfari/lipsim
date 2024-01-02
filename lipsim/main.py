@@ -129,8 +129,11 @@ def main(config):
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'finetune':
-        trainer = Finetuner(config)
-        trainer()
+        finetuner = Finetuner(config)
+        job = executor.submit(finetuner())
+        job_id = job.job_id
+        folder = config.train_dir.split('/')[-1]
+        print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'classifier':
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)
