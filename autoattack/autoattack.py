@@ -110,6 +110,8 @@ class AutoAttack():
 
         # checks on type of defense
         if self.version != 'rand':
+            print(y_orig.shape)
+            print(y_orig[:bs])
             checks.check_randomized(self.get_logits, x_orig[:bs].to(self.device),
                 y_orig[:bs].to(self.device), bs=bs, logger=self.logger)
         n_cls = checks.check_range_output(self.get_logits, x_orig[:bs].to(self.device),
