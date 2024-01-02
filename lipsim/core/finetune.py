@@ -116,6 +116,7 @@ class Finetuner(Trainer, Evaluator):
             self.model = nn.DataParallel(self.model, device_ids=[0])  # range(torch.cuda.device_count()))
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
+        self.optimizer.param_groups[0]['lr'] = self.config.lr
         self.saved_ckpts = set([0])
         self._load_state()
         # define set for saved ckpt
