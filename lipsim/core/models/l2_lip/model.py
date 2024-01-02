@@ -122,15 +122,12 @@ class PerceptualMetric:
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)
         embed_x1 = self.backbone(img_right)
-        norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-        print(embed_ref.shape, norm_ref.shape)
-        embed_ref = torch.cat((embed_ref, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_ref, 2))), dim=1)
-        print(embed_ref.shape)
+
+
+        embed_ref = self.add_one_dim(embed_ref)
         print(torch.norm(embed_ref, p=2, dim=(1)))
-        norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-        embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_x_0, 2))), dim=1)
-        norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-        embed_x1 = torch.cat((embed_x1, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_x_1, 2))), dim=1)
+        embed_x0 = self.add_one_dim(embed_x0)
+        embed_x1 = self.add_one_dim(embed_x1)
 
         # if not requires_grad:
         #     embed_ref = embed_ref.detach()
@@ -153,3 +150,8 @@ class PerceptualMetric:
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
+
+    def add_one_dim(self, embed_x0):
+        norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+        embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_x_0) - torch.pow(norm_x_0, 2))), dim=1)
+        return embed_x0
