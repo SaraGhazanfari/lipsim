@@ -134,7 +134,7 @@ class Finetuner(Trainer, Evaluator):
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
         self.scheduler = CosineAnnealingWarmupRestarts(
-            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=2000)
+            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=20)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
