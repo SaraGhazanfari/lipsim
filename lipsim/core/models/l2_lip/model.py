@@ -119,19 +119,18 @@ class PerceptualMetric:
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
                                     requires_normalization=False):
-
         embed_ref = self.backbone(img_ref)
         embed_x0 = self.backbone(img_left)
         embed_x1 = self.backbone(img_right)
         norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
         print(embed_ref.shape, norm_ref.shape)
-        embed_ref = torch.cat((embed_ref, torch.ones_like(norm_ref) - norm_ref ** 2), dim=1)
+        embed_ref = torch.cat((embed_ref, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_ref, 2))), dim=1)
         print(embed_ref.shape)
         print(torch.norm(embed_ref, p=2, dim=(1)))
         norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-        embed_x0 = torch.cat((embed_x0, torch.ones_like(norm_ref) - norm_x_0 ** 2), dim=1)
+        embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_x_0, 2))), dim=1)
         norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-        embed_x1 = torch.cat((embed_x1, torch.ones_like(norm_ref) - norm_x_1 ** 2), dim=1)
+        embed_x1 = torch.cat((embed_x1, torch.sqrt(torch.ones_like(norm_ref) - torch.pow(norm_x_1, 2))), dim=1)
 
         # if not requires_grad:
         #     embed_ref = embed_ref.detach()
