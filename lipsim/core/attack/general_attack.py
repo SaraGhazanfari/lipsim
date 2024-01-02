@@ -80,6 +80,7 @@ class GeneralAttack:
             img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
                                                         bs=img_ref.shape[0])
         else:
+            print(img_ref.shape)
             img_ref = adversary.run_standard_evaluation(img_ref, target.long(), bs=img_ref.shape[
                 0])  # torch.stack((img_ref, img_0, img_1), dim=1)
             print(img_ref.shape)
