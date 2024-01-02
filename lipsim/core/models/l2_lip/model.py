@@ -126,34 +126,31 @@ class PerceptualMetric:
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
                                     requires_normalization=False):
-        embed_ref = self.backbone(img_ref)
-        embed_x0 = self.backbone(img_left)
-        embed_x1 = self.backbone(img_right)
 
-        if not requires_grad:
-            embed_ref = embed_ref.detach()
-            embed_x0 = embed_x0.detach()
-            embed_x1 = embed_x1.detach()
-
-        if self.requires_bias:
-            embed_ref = self.add_bias_before_projection(embed_ref)
-            embed_x0 = self.add_bias_before_projection(embed_x0)
-            embed_x1 = self.add_bias_before_projection(embed_x1)
-
-        if requires_normalization:
-            norm_ref = torch.norm(embed_ref, p=2, dim=(1)).unsqueeze(1)
-            embed_ref = embed_ref / norm_ref
-            norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-            embed_x0 = embed_x0 / norm_x_0
-            norm_x_1 = torch.norm(embed_x1, p=2, dim=(1)).unsqueeze(1)
-            embed_x1 = embed_x1 / norm_x_1
+        embed_ref = self.get_embedding_per_image(img_ref, requires_grad, requires_normalization)
+        embed_x0 = self.get_embedding_per_image(img_left, requires_grad, requires_normalization)
+        embed_x1 = self.get_embedding_per_image(img_right, requires_grad, requires_normalization)
 
         bound = torch.norm(embed_x0 - embed_x1, p=2, dim=(1)).unsqueeze(1)
         dist_0 = 1 - self.cos_sim(embed_ref, embed_x0)
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
 
-    def add_one_dim(self, embed_x0):
-        norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-        embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_x_0) - torch.pow(norm_x_0, 2))), dim=1)
-        return embed_x0
+    def get_embedding_per_image(self, img, requires_grad=False, requires_normalization=False):
+        embed = self.backbone(img)
+
+        if not requires_grad:
+            embed = embed.detach()
+
+        if self.requires_bias:
+            embed = self.add_bias_before_projection(embed)
+
+        if requires_normalization:
+            norm_embed = torch.norm(embed, p=2, dim=(1)).unsqueeze(1)
+            embed = embed / norm_embed
+
+        return embed
+# def add_one_dim(self, embed_x0):
+#     norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
+#     embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_x_0) - torch.pow(norm_x_0, 2))), dim=1)
+#     return embed_x0
