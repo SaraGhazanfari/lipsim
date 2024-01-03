@@ -134,7 +134,7 @@ class Finetuner(Trainer, Evaluator):
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
         self.scheduler = CosineAnnealingWarmupRestarts(
-            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=20)
+            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=200)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -151,7 +151,6 @@ class Finetuner(Trainer, Evaluator):
 
         epoch_id = 0
         self.optimizer.zero_grad()
-        self.optimizer.param_groups[0]['lr'] = self.config.lr
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
@@ -179,6 +178,7 @@ class Finetuner(Trainer, Evaluator):
             loss.backward()
             self.process_gradients(global_step)
             self.optimizer.step()
+            self.scheduler.step(global_step)
             self.optimizer.zero_grad()
             seconds_per_batch = time.time() - start_time
             examples_per_second = self.global_batch_size / seconds_per_batch
