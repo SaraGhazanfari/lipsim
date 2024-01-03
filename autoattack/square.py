@@ -72,7 +72,7 @@ class SquareAttack():
         :param y:        correct labels if untargeted else target labels
         """
 
-        logits = self.predict(torch.cat((x.unsqueeze(1), self.aux_x), dim=1))
+        logits = self.predict(x)
         xent = F.cross_entropy(logits, y, reduction='none')
         u = torch.arange(x.shape[0])
         y_corr = logits[u, y].clone()
@@ -234,7 +234,7 @@ class SquareAttack():
             if self.norm == 'Linf':
                 x_best = torch.clamp(x + self.eps * self.random_choice(
                     [x.shape[0], c, 1, w]), 0., 1.)
-                margin_min, loss_min = self.margin_and_loss(x_best, y)
+                margin_min, loss_min = self.margin_and_loss(torch.cat((x_best.unsqueeze(1), self.aux_x), dim=1), y)
                 n_queries = torch.ones(x.shape[0]).to(self.device)
                 s_init = int(math.sqrt(self.p_init * n_features / c))
 
@@ -267,7 +267,8 @@ class SquareAttack():
                     x_new = torch.clamp(x_new, 0., 1.)
                     x_new = self.check_shape(x_new)
 
-                    margin, loss = self.margin_and_loss(x_new, y_curr)
+                    margin, loss = self.margin_and_loss(
+                        torch.cat((x_new.unsqueeze(1), self.aux_x[idx_to_fool, :, :, :, :]), dim=1), y_curr)
 
                     # update loss if new loss is better
                     idx_improved = (loss < loss_min_curr).float()
@@ -319,7 +320,7 @@ class SquareAttack():
 
                 x_best = torch.clamp(x + self.normalize(delta_init
                                                         ) * self.eps, 0., 1.)
-                margin_min, loss_min = self.margin_and_loss(x_best, y)
+                margin_min, loss_min = self.margin_and_loss(torch.cat((x_best.unsqueeze(1), self.aux_x), dim=1), y)
                 n_queries = torch.ones(x.shape[0]).to(self.device)
                 s_init = int(math.sqrt(self.p_init * n_features / c))
 
@@ -381,7 +382,8 @@ class SquareAttack():
                     x_new = self.check_shape(x_new)
                     norms_image = self.lp_norm(x_new - x_curr)
 
-                    margin, loss = self.margin_and_loss(x_new, y_curr)
+                    margin, loss = self.margin_and_loss(
+                        torch.cat((x_new.unsqueeze(1), self.aux_x[idx_to_fool, :, :, :, :]), dim=1), y_curr)
 
                     # update loss if new loss is better
                     idx_improved = (loss < loss_min_curr).float()
@@ -438,7 +440,7 @@ class SquareAttack():
                 #    ) * self.eps, 0., 1.)
                 r_best = L1_projection(x, delta_init, self.eps * (1. - 1e-6))
                 x_best = x + delta_init + r_best
-                margin_min, loss_min = self.margin_and_loss(x_best, y)
+                margin_min, loss_min = self.margin_and_loss(torch.cat((x_best.unsqueeze(1), self.aux_x), dim=1), y)
                 n_queries = torch.ones(x.shape[0]).to(self.device)
                 s_init = int(math.sqrt(self.p_init * n_features / c))
 
@@ -503,7 +505,8 @@ class SquareAttack():
                     x_new = self.check_shape(x_new)
                     norms_image = self.lp_norm(x_new - x_curr)
 
-                    margin, loss = self.margin_and_loss(x_new, y_curr)
+                    margin, loss = self.margin_and_loss(
+                        torch.cat((x_new.unsqueeze(1), self.aux_x[idx_to_fool, :, :, :, :]), dim=1), y_curr)
 
                     # update loss if new loss is better
                     idx_improved = (loss < loss_min_curr).float()
@@ -557,8 +560,8 @@ class SquareAttack():
         """
 
         self.init_hyperparam(x)
-        self.aux_x = x[:, 1:, :, :]
-        x = x[:, 0, :, :].squeeze(1)
+        self.aux_x = x[:, 1:, :, :, :]
+        x = x[:, 0, :, :, :].squeeze(1)
         adv = x.clone()
         # adv_all = x.clone()
         if y is None:
