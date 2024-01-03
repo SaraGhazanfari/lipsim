@@ -79,11 +79,11 @@ class GeneralAttack:
                                device='cuda')
         adversary.attacks_to_run = self.attack_names[attack_method]  # ['apgd-ce', 'apgd-t', 'fab-t', 'square']
         if is_dist_attack:
-            img_ref = adversary.run_standard_evaluation(torch.cat((img_ref, img_ref), dim=1), target.long(),
+            img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_ref), dim=1), target.long(),
                                                         bs=img_ref.shape[0])
         else:
-            print(torch.cat((img_ref, img_0, img_1), dim=1).shape)
-            img_ref = adversary.run_standard_evaluation(torch.cat((img_ref, img_0, img_1), dim=1),
+            print(torch.stack((img_ref, img_0, img_1), dim=1).shape)
+            img_ref = adversary.run_standard_evaluation(torch.stack((img_ref, img_0, img_1), dim=1),
                                                         target.long().unsqueeze(0), bs=img_ref.shape[0])
             print(img_ref.shape)
         # img_ref = img_ref[:, 0, :, :].squeeze(1)
