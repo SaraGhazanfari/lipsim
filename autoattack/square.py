@@ -44,7 +44,7 @@ class SquareAttack():
             p_init=.8,
             n_restarts=1,
             seed=0,
-            verbose=False,
+            verbose=True,
             targeted=False,
             loss='margin',
             resc_schedule=True,
