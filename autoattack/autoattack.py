@@ -4,9 +4,9 @@ import time
 import numpy as np
 import torch
 
-from .other_utils import Logger
 from autoattack import checks
 from autoattack.state import EvaluationState
+from .other_utils import Logger
 
 
 class AutoAttack():
@@ -25,47 +25,51 @@ class AutoAttack():
         self.device = device
         self.logger = Logger(log_path)
 
-
         if version in ['standard', 'plus', 'rand'] and attacks_to_run != []:
             raise ValueError("attacks_to_run will be overridden unless you use version='custom'")
 
         if not self.is_tf_model:
             from .autopgd_base import APGDAttack
             self.apgd = APGDAttack(self.model, n_restarts=5, n_iter=100, verbose=False,
-                eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed,
-                device=self.device, logger=self.logger)
+                                   eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed,
+                                   device=self.device, logger=self.logger)
 
             from .fab_pt import FABAttack_PT
             self.fab = FABAttack_PT(self.model, n_restarts=5, n_iter=100, eps=self.epsilon, seed=self.seed,
-                norm=self.norm, verbose=False, device=self.device, n_target_classes=2)
+                                    norm=self.norm, verbose=False, device=self.device, n_target_classes=2)
 
             from .square import SquareAttack
             self.square = SquareAttack(self.model, p_init=.8, n_queries=5000, eps=self.epsilon, norm=self.norm,
-                n_restarts=1, seed=self.seed, verbose=False, device=self.device, resc_schedule=False)
+                                       n_restarts=1, seed=self.seed, verbose=False, device=self.device,
+                                       resc_schedule=False)
 
             from .autopgd_base import APGDAttack_targeted
             self.apgd_targeted = APGDAttack_targeted(self.model, n_restarts=1, n_iter=100, verbose=False,
-                eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed, device=self.device,
-                logger=self.logger, n_target_classes=2)
+                                                     eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75,
+                                                     seed=self.seed, device=self.device,
+                                                     logger=self.logger, n_target_classes=2)
 
         else:
             from .autopgd_base import APGDAttack
             self.apgd = APGDAttack(self.model, n_restarts=5, n_iter=100, verbose=False,
-                eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed, device=self.device,
-                is_tf_model=True, logger=self.logger)
+                                   eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed,
+                                   device=self.device,
+                                   is_tf_model=True, logger=self.logger)
 
             from .fab_tf import FABAttack_TF
             self.fab = FABAttack_TF(self.model, n_restarts=5, n_iter=100, eps=self.epsilon, seed=self.seed,
-                norm=self.norm, verbose=False, device=self.device)
+                                    norm=self.norm, verbose=False, device=self.device)
 
             from .square import SquareAttack
             self.square = SquareAttack(self.model.predict, p_init=.8, n_queries=5000, eps=self.epsilon, norm=self.norm,
-                n_restarts=1, seed=self.seed, verbose=False, device=self.device, resc_schedule=False)
+                                       n_restarts=1, seed=self.seed, verbose=False, device=self.device,
+                                       resc_schedule=False)
 
             from .autopgd_base import APGDAttack_targeted
             self.apgd_targeted = APGDAttack_targeted(self.model, n_restarts=1, n_iter=100, verbose=False,
-                eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75, seed=self.seed, device=self.device,
-                is_tf_model=True, logger=self.logger)
+                                                     eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75,
+                                                     seed=self.seed, device=self.device,
+                                                     is_tf_model=True, logger=self.logger)
 
         if version in ['standard', 'plus', 'rand']:
             self.set_version(version)
@@ -104,20 +108,20 @@ class AutoAttack():
         attacks_to_run = list(filter(lambda attack: attack not in state.run_attacks, self.attacks_to_run))
         if self.verbose:
             self.logger.log('using {} version including {}.'.format(self.version,
-                  ', '.join(attacks_to_run)))
+                                                                    ', '.join(attacks_to_run)))
             if state.run_attacks:
                 self.logger.log('{} was/were already run.'.format(', '.join(state.run_attacks)))
 
         # checks on type of defense
         if self.version != 'rand':
             checks.check_randomized(self.get_logits, x_orig[:bs].to(self.device),
-                y_orig[:bs].to(self.device), bs=bs, logger=self.logger)
+                                    y_orig[:bs].to(self.device), bs=bs, logger=self.logger)
         n_cls = checks.check_range_output(self.get_logits, x_orig[:bs].to(self.device),
-            logger=self.logger)
+                                          logger=self.logger)
         checks.check_dynamic(self.model, x_orig[:bs].to(self.device), self.is_tf_model,
-            logger=self.logger)
+                             logger=self.logger)
         checks.check_n_classes(n_cls, self.attacks_to_run, self.apgd_targeted.n_target_classes,
-            self.fab.n_target_classes, logger=self.logger)
+                               self.fab.n_target_classes, logger=self.logger)
 
         with torch.no_grad():
             # calculate accuracy
@@ -127,7 +131,7 @@ class AutoAttack():
                 y_adv = torch.empty_like(y_orig)
                 for batch_idx in range(n_batches):
                     start_idx = batch_idx * bs
-                    end_idx = min( (batch_idx + 1) * bs, x_orig.shape[0])
+                    end_idx = min((batch_idx + 1) * bs, x_orig.shape[0])
 
                     x = x_orig[start_idx:end_idx, :].clone().to(self.device)
                     y = y_orig[start_idx:end_idx].clone().to(self.device)
@@ -149,7 +153,8 @@ class AutoAttack():
                 robust_accuracy_dict = {'clean': state.clean_accuracy}
                 if self.verbose:
                     self.logger.log('initial clean accuracy: {:.2%}'.format(state.clean_accuracy))
-                    self.logger.log('robust accuracy at the time of restoring the state: {:.2%}'.format(robust_accuracy))
+                    self.logger.log(
+                        'robust accuracy at the time of restoring the state: {:.2%}'.format(robust_accuracy))
 
             x_adv = x_orig.clone().detach()
             startt = time.time()
@@ -185,13 +190,13 @@ class AutoAttack():
                         # apgd on cross-entropy loss
                         self.apgd.loss = 'ce'
                         self.apgd.seed = self.get_seed()
-                        adv_curr = self.apgd.perturb(x, y) #cheap=True
+                        adv_curr = self.apgd.perturb(x, y)  # cheap=True
 
                     elif attack == 'apgd-dlr':
                         # apgd on dlr loss
                         self.apgd.loss = 'dlr'
                         self.apgd.seed = self.get_seed()
-                        adv_curr = self.apgd.perturb(x, y) #cheap=True
+                        adv_curr = self.apgd.perturb(x, y)  # cheap=True
 
                     elif attack == 'fab':
                         # fab
@@ -207,7 +212,7 @@ class AutoAttack():
                     elif attack == 'apgd-t':
                         # targeted apgd
                         self.apgd_targeted.seed = self.get_seed()
-                        adv_curr = self.apgd_targeted.perturb(x, y) #cheap=True
+                        adv_curr = self.apgd_targeted.perturb(x, y)  # cheap=True
 
                     elif attack == 'fab-t':
                         # fab targeted
@@ -219,7 +224,9 @@ class AutoAttack():
                     else:
                         raise ValueError('Attack not supported')
                     print('adv_curr', adv_curr.shape)
-                    output = self.get_logits(adv_curr).max(dim=1)[1]
+                    output = self.get_logits(
+                        torch.cat((adv_curr.unsqueeze(1), x_orig[batch_datapoint_idcs, 1:, :, :, :]), dim=1)).max(
+                        dim=1)[1]
                     false_batch = ~y.eq(output).to(robust_flags.device)
                     non_robust_lin_idcs = batch_datapoint_idcs[false_batch]
                     robust_flags[non_robust_lin_idcs] = False
@@ -277,7 +284,7 @@ class AutoAttack():
     def run_standard_evaluation_individual(self, x_orig, y_orig, bs=250, return_labels=False):
         if self.verbose:
             print('using {} version including {}'.format(self.version,
-                ', '.join(self.attacks_to_run)))
+                                                         ', '.join(self.attacks_to_run)))
 
         l_attacks = self.attacks_to_run
         adv = {}
@@ -293,10 +300,10 @@ class AutoAttack():
             else:
                 adv[c] = x_adv
             if verbose_indiv:
-                acc_indiv  = self.clean_accuracy(x_adv, y_orig, bs=bs)
+                acc_indiv = self.clean_accuracy(x_adv, y_orig, bs=bs)
                 space = '\t \t' if c == 'fab' else '\t'
                 self.logger.log('robust accuracy by {} {} {:.2%} \t (time attack: {:.1f} s)'.format(
-                    c.upper(), space, acc_indiv,  time.time() - startt))
+                    c.upper(), space, acc_indiv, time.time() - startt))
 
         return adv
 
@@ -317,7 +324,7 @@ class AutoAttack():
             self.fab.n_restarts = 1
             self.apgd_targeted.n_restarts = 1
             self.fab.n_target_classes = 9
-            #self.apgd_targeted.n_target_classes = 9
+            # self.apgd_targeted.n_target_classes = 9
             self.square.n_queries = 5000
 
         elif version == 'plus':
@@ -336,4 +343,3 @@ class AutoAttack():
             self.attacks_to_run = ['apgd-ce', 'apgd-dlr']
             self.apgd.n_restarts = 1
             self.apgd.eot_iter = 20
-
