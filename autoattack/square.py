@@ -39,7 +39,7 @@ class SquareAttack():
             self,
             predict,
             norm='Linf',
-            n_queries=5000,
+            n_queries=5, #todo 5000,
             eps=None,
             p_init=.8,
             n_restarts=1,
