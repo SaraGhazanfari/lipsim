@@ -232,7 +232,7 @@ class AutoAttack():
                     robust_flags[non_robust_lin_idcs] = False
                     state.robust_flags = robust_flags
 
-                    x_adv[non_robust_lin_idcs] = adv_curr[false_batch].detach().to(x_adv.device)
+                    x_adv[non_robust_lin_idcs, 0, :, :, :] = adv_curr[false_batch].detach().to(x_adv.device)
                     y_adv[non_robust_lin_idcs] = output[false_batch].detach().to(x_adv.device)
 
                     if self.verbose:
