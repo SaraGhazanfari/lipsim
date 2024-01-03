@@ -331,6 +331,7 @@ class Evaluator:
 
     def model_wrapper(self, img_left, img_right):
         def metric_model(img):
+            print(img.shape)
             if len(img.shape) > 4:
                 img_ref, img_0, img_1 = img[:, 0, :, :, :].squeeze(1), img[:, 1, :, :, :].squeeze(1), img[:, 2, :, :,
                                                                                                       :].squeeze(1)
