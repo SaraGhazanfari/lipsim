@@ -560,10 +560,9 @@ class SquareAttack():
                             targeted attack -> target labels, if None random classes,
                             different from the predicted ones, are sampled
         """
-
-        self.init_hyperparam(x)
         self.aux_x = x[:, 1:, :, :, :]
         x = x[:, 0, :, :, :].squeeze(1)
+        self.init_hyperparam(x)
         adv = x.clone()
         # adv_all = x.clone()
         if y is None:
