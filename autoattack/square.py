@@ -72,7 +72,7 @@ class SquareAttack():
         :param y:        correct labels if untargeted else target labels
         """
 
-        logits = self.predict(torch.stack((x, self.aux_x), dim=1))
+        logits = self.predict(torch.stack((x.unsqueeze(1), self.aux_x), dim=1))
         xent = F.cross_entropy(logits, y, reduction='none')
         u = torch.arange(x.shape[0])
         y_corr = logits[u, y].clone()
@@ -564,12 +564,12 @@ class SquareAttack():
         if y is None:
             if not self.targeted:
                 with torch.no_grad():
-                    output = self.predict(torch.stack((x, self.aux_x), dim=1))
+                    output = self.predict(torch.stack((x.unsqueeze(1), self.aux_x), dim=1))
                     y_pred = output.max(1)[1]
                     y = y_pred.detach().clone().long().to(self.device)
             else:
                 with torch.no_grad():
-                    output = self.predict(torch.stack((x, self.aux_x), dim=1))
+                    output = self.predict(torch.stack((x.unsqueeze(1), self.aux_x), dim=1))
                     n_classes = output.shape[-1]
                     y_pred = output.max(1)[1]
                     y = self.random_target_classes(y_pred, n_classes)
@@ -577,9 +577,9 @@ class SquareAttack():
             y = y.detach().clone().long().to(self.device)
 
         if not self.targeted:
-            acc = self.predict(torch.stack((x, self.aux_x), dim=1)).max(1)[1] == y
+            acc = self.predict(torch.stack((x.unsqueeze(1), self.aux_x), dim=1)).max(1)[1] == y
         else:
-            acc = self.predict(torch.stack((x, self.aux_x), dim=1)).max(1)[1] != y
+            acc = self.predict(torch.stack((x.unsqueeze(1), self.aux_x), dim=1)).max(1)[1] != y
 
         startt = time.time()
 
@@ -596,7 +596,7 @@ class SquareAttack():
 
                 _, adv_curr = self.attack_single_run(x_to_fool, y_to_fool)
 
-                output_curr = self.predict(torch.stack((adv_curr, self.aux_x), dim=1))
+                output_curr = self.predict(torch.stack((adv_curr.unsqueeze(1), self.aux_x), dim=1))
                 if not self.targeted:
                     acc_curr = output_curr.max(1)[1] == y_to_fool
                 else:
