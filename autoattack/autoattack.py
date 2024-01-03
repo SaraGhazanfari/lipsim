@@ -174,6 +174,8 @@ class AutoAttack():
                     if len(batch_datapoint_idcs.shape) > 1:
                         batch_datapoint_idcs.squeeze_(-1)
                     x = x_orig[batch_datapoint_idcs, :].clone().to(self.device)
+                    print('y_orig', y_orig.shape)
+                    print('batch_datapoint_idcs', batch_datapoint_idcs)
                     y = y_orig[batch_datapoint_idcs].clone().to(self.device)
 
                     # make sure that x is a 4d tensor even if there is only a single datapoint left
