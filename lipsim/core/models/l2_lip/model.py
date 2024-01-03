@@ -133,7 +133,7 @@ class PerceptualMetric:
         dist_1 = 1 - self.cos_sim(embed_ref, embed_x1)
         return dist_0, dist_1, bound
 
-    def get_embedding_per_image(self, img, requires_grad=False, requires_normalization=False):
+    def get_embedding_per_image(self, img, requires_grad, requires_normalization):
         embed = self.backbone(img)
 
         if not requires_grad:

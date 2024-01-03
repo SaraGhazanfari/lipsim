@@ -116,7 +116,6 @@ class Finetuner(Trainer, Evaluator):
             self.model = nn.DataParallel(self.model, device_ids=[0])  # range(torch.cuda.device_count()))
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
-        self.optimizer.param_groups[0]['lr'] = self.config.lr
         self.saved_ckpts = set([0])
         self._load_state()
         # define set for saved ckpt
@@ -152,6 +151,7 @@ class Finetuner(Trainer, Evaluator):
 
         epoch_id = 0
         self.optimizer.zero_grad()
+        self.optimizer.param_groups[0]['lr'] = self.config.lr
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
