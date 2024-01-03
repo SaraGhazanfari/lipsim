@@ -596,7 +596,8 @@ class SquareAttack():
 
                 _, adv_curr = self.attack_single_run(x_to_fool, y_to_fool)
 
-                output_curr = self.predict(torch.cat((adv_curr.unsqueeze(1), self.aux_x), dim=1))
+                output_curr = self.predict(
+                    torch.cat((adv_curr.unsqueeze(1), self.aux_x[ind_to_fool, :, :, :, :]), dim=1))
                 if not self.targeted:
                     acc_curr = output_curr.max(1)[1] == y_to_fool
                 else:
