@@ -18,7 +18,7 @@ from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 from lipsim.core.evaluate import Evaluator
-from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric
+from lipsim.core.models.l2_lip.model import NormalizedModel, PerceptualMetric, L2LipschitzNetwork
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.trainer import Trainer
 from lipsim.core.utils import N_CLASSES
@@ -95,9 +95,11 @@ class Finetuner(Trainer, Evaluator):
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
-
         # load model
-        self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+        if self.config.target == 'lipsim_v2':
+            self.model = L2LipschitzNetworkV2(self.config, self.n_classes)
+        else:
+            self.model = L2LipschitzNetwork(self.config, self.n_classes)
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
 
         self.model = self.model.cuda()
