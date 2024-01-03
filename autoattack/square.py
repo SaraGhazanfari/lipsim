@@ -305,6 +305,7 @@ class SquareAttack():
                         break
 
             elif self.norm == 'L2':
+                print('x_after_initial', x.shape)
                 delta_init = torch.zeros_like(x)
                 s = h // 5
                 sp_init = (h - s * 5) // 2
@@ -320,6 +321,7 @@ class SquareAttack():
 
                 x_best = torch.clamp(x + self.normalize(delta_init
                                                         ) * self.eps, 0., 1.)
+                print('x_best', x_best.shape)
                 print('margin_and_loss', x_best.unsqueeze(1).shape, self.aux_x.shape)
                 margin_min, loss_min = self.margin_and_loss(torch.cat((x_best.unsqueeze(1), self.aux_x), dim=1), y)
                 n_queries = torch.ones(x.shape[0]).to(self.device)
@@ -563,6 +565,7 @@ class SquareAttack():
         self.init_hyperparam(x)
         self.aux_x = x[:, 1:, :, :, :]
         x = x[:, 0, :, :, :].squeeze(1)
+        print('initial_x', x.shape)
         adv = x.clone()
         # adv_all = x.clone()
         if y is None:
