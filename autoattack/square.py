@@ -317,11 +317,8 @@ class SquareAttack():
                             [x.shape[0], c, 1, 1])
                         vw += s
                     vh += s
-                print('normalized_x', self.normalize(delta_init).shape, x.shape)
                 x_best = torch.clamp(x + self.normalize(delta_init
                                                         ) * self.eps, 0., 1.)
-                print('x_best', x_best.shape)
-                print('margin_and_loss', x_best.unsqueeze(1).shape, self.aux_x.shape)
                 margin_min, loss_min = self.margin_and_loss(torch.cat((x_best.unsqueeze(1), self.aux_x), dim=1), y)
                 n_queries = torch.ones(x.shape[0]).to(self.device)
                 s_init = int(math.sqrt(self.p_init * n_features / c))
