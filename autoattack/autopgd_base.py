@@ -196,6 +196,8 @@ class APGDAttack():
     #
 
     def attack_single_run(self, x, y, x_init=None):
+        self.inter_aux_x = x[:, 1:, :, :, :]
+        x = x[:, 0, :, :, :].squeeze(1)
         if len(x.shape) < self.ndims:
             x = x.unsqueeze(0)
             y = y.unsqueeze(0)
@@ -257,7 +259,7 @@ class APGDAttack():
         for _ in range(self.eot_iter):
             if not self.is_tf_model:
                 with torch.enable_grad():
-                    logits = self.model(x_adv)
+                    logits = self.model(torch.cat((x_adv.unsqueeze(1), self.inter_aux_x), dim=1))
                     loss_indiv = criterion_indiv(logits, y)
                     loss = loss_indiv.sum()
 
@@ -357,7 +359,7 @@ class APGDAttack():
             for _ in range(self.eot_iter):
                 if not self.is_tf_model:
                     with torch.enable_grad():
-                        logits = self.model(x_adv)
+                        logits = self.model(torch.cat((x_adv.unsqueeze(1), self.inter_aux_x), dim=1))
                         loss_indiv = criterion_indiv(logits, y)
                         loss = loss_indiv.sum()
 
