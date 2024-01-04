@@ -610,6 +610,9 @@ class APGDAttack_targeted(APGDAttack):
         if not y is None and len(y.shape) == 0:
             x.unsqueeze_(0)
             y.unsqueeze_(0)
+
+        self.aux_x = x[:, 1:, :, :, :]
+        x = x[:, 0, :, :, :].squeeze(1)
         self.init_hyperparam(x)
 
         x = x.detach().clone().float().to(self.device)

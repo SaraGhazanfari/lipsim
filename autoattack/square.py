@@ -55,7 +55,7 @@ class SquareAttack():
 
         self.predict = predict
         self.norm = norm
-        self.n_queries = 10 #todo n_queries
+        self.n_queries = 1 #todo n_queries
         self.eps = eps
         self.p_init = p_init
         self.n_restarts = n_restarts

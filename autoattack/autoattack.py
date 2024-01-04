@@ -36,7 +36,7 @@ class AutoAttack():
 
             from .fab_pt import FABAttack_PT
             self.fab = FABAttack_PT(self.model, n_restarts=5, n_iter=100, eps=self.epsilon, seed=self.seed,
-                                    norm=self.norm, verbose=False, device=self.device, n_target_classes=2)
+                                    norm=self.norm, verbose=False, device=self.device)
 
             from .square import SquareAttack
             self.square = SquareAttack(self.model, p_init=.8, n_queries=5000, eps=self.epsilon, norm=self.norm,
@@ -47,7 +47,7 @@ class AutoAttack():
             self.apgd_targeted = APGDAttack_targeted(self.model, n_restarts=1, n_iter=100, verbose=False,
                                                      eps=self.epsilon, norm=self.norm, eot_iter=1, rho=.75,
                                                      seed=self.seed, device=self.device,
-                                                     logger=self.logger, n_target_classes=2)
+                                                     logger=self.logger)
 
         else:
             from .autopgd_base import APGDAttack
