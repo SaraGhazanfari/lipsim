@@ -21,7 +21,6 @@ def check_randomized(model, x, y, bs=250, n=5, alpha=1e-4, logger=None):
     outputs = []
     with torch.no_grad():
         for _ in range(n):
-            print('x.shape', x.shape)
             output = model(x)
             corrcl_curr = (output.max(1)[1] == y).sum().item()
             corrcl.append(corrcl_curr)
