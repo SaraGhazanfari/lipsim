@@ -670,7 +670,8 @@ class APGDAttack_targeted(APGDAttack):
                     self.y_target = output.sort(dim=1)[1][:, -target_class]
 
                     if not self.use_largereps:
-                        res_curr = self.attack_single_run(x_to_fool, y_to_fool)
+                        res_curr = self.attack_single_run(
+                            torch.cat((x_to_fool.unsqueeze(1), self.aux_x[ind_to_fool, :, :, :, :]), dim=1), y_to_fool)
                     else:
                         res_curr = self.decr_eps_pgd(x_to_fool, y_to_fool, epss, iters)
                     best_curr, acc_curr, loss_curr, adv_curr = res_curr
