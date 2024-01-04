@@ -59,13 +59,22 @@ class Trainer:
             if exists(ckpt_path) and not best:
                 return
             self.saved_ckpts.add(epoch)
-            state = {
-                'epoch': epoch,
-                'global_step': step,
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict(),
-                'scheduler': self.scheduler.state_dict()
-            }
+            try:
+                state = {
+                    'epoch': epoch,
+                    'global_step': step,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'scheduler': self.scheduler.state_dict()
+                }
+            except Exception as e:
+                print(e)
+                state = {
+                    'epoch': epoch,
+                    'global_step': step,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict()
+                }
             logging.debug("Saving checkpoint '{}'.".format(ckpt_name))
             torch.save(state, ckpt_path)
 
