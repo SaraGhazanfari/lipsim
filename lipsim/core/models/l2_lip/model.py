@@ -112,13 +112,15 @@ class PerceptualMetric:
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
 
-    def add_bias_before_projection(self, embed_ref):
+    def add_one_dim_to_embed(self, embed_ref):
         return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
-        # norm_ref = torch.norm(embed_ref, p=2, dim=(1))
-        # bias = torch.ones_like(embed_ref)
-        # bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
-        # bias = (2 / sqrt(embed_ref.shape[1])) * bias
-        # return embed_ref + bias
+
+    def add_bias_to_embed(self, embed_ref):
+        norm_ref = torch.norm(embed_ref, p=2, dim=(1))
+        bias = torch.ones_like(embed_ref)
+        bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
+        bias = (2 / torch.sqrt(embed_ref.shape[1])) * bias
+        return embed_ref + bias
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
                                     requires_normalization=False):
@@ -139,14 +141,10 @@ class PerceptualMetric:
             embed = embed.detach()
 
         if self.requires_bias:
-            embed = self.add_bias_before_projection(embed)
+            embed = self.add_one_dim_to_embed(embed)
 
         if requires_normalization:
             norm_embed = torch.norm(embed, p=2, dim=(1)).unsqueeze(1)
             embed = embed / norm_embed
 
         return embed
-# def add_one_dim(self, embed_x0):
-#     norm_x_0 = torch.norm(embed_x0, p=2, dim=(1)).unsqueeze(1)
-#     embed_x0 = torch.cat((embed_x0, torch.sqrt(torch.ones_like(norm_x_0) - torch.pow(norm_x_0, 2))), dim=1)
-#     return embed_x0
