@@ -109,13 +109,13 @@ class DISTSMetric:
 
 
 class PerceptualMetric:
-    def __init__(self, backbone, requires_bias=True, n_classes=1792):
+    def __init__(self, backbone, requires_bias=True, n_classes=1792, device='cuda'):
         self.backbone = backbone
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
 
         self.bias = nn.Parameter(
-            (1 / sqrt(n_classes)) * torch.ones(1, n_classes, 1, 1))
+            (1 / sqrt(n_classes)) * torch.ones(1, n_classes, 1, 1)).to(device)
 
     def add_one_dim_to_embed(self, embed_ref):
         return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
