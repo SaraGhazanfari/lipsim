@@ -96,7 +96,7 @@ class Evaluator:
         if self.config.target == 'dreamsim':
             print('dreamsim is loading as perceputal metric...')
             self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
-                                                      requires_bias=self.config.requires_bias)
+                                                      requires_bias=self.config.requires_bias, n_classes=self.n_classes)
         elif self.config.target == 'lpips':
             import lpips
             lpips_model = lpips.LPIPS(net='alex', model_path='../R-LPIPS/checkpoints/latest_net_linf_x0.pth')
@@ -138,7 +138,8 @@ class Evaluator:
         self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
         self.load_ckpt()
-        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
+        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias,
+                                                  n_classes=self.n_classes)
 
     # @torch.no_grad()
     def lpips_eval(self):
