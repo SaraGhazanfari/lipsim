@@ -112,6 +112,9 @@ class PerceptualMetric:
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
 
+        self.bias = nn.Parameter(
+            (1 / torch.sqrt(self.backbone.n_classe)) * torch.ones(1, self.backbone.n_classes, 1, 1))
+
     def add_one_dim_to_embed(self, embed_ref):
         return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
 
@@ -141,7 +144,7 @@ class PerceptualMetric:
             embed = embed.detach()
 
         if self.requires_bias:
-            embed = self.add_one_dim_to_embed(embed)
+            embed = self.add_one_dim_to_embed(embed) + self.bias
 
         if requires_normalization:
             norm_embed = torch.norm(embed, p=2, dim=(1)).unsqueeze(1)
