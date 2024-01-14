@@ -1,3 +1,5 @@
+from math import sqrt
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -113,7 +115,7 @@ class PerceptualMetric:
         self.requires_bias = requires_bias
 
         self.bias = nn.Parameter(
-            (1 / torch.sqrt(n_classes)) * torch.ones(1, n_classes, 1, 1))
+            (1 / sqrt(n_classes)) * torch.ones(1, n_classes, 1, 1))
 
     def add_one_dim_to_embed(self, embed_ref):
         return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
@@ -122,7 +124,7 @@ class PerceptualMetric:
         norm_ref = torch.norm(embed_ref, p=2, dim=(1))
         bias = torch.ones_like(embed_ref)
         bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
-        bias = (2 / torch.sqrt(embed_ref.shape[1])) * bias
+        bias = (2 / sqrt(embed_ref.shape[1])) * bias
         return embed_ref + bias
 
     def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
