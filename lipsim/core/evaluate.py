@@ -61,7 +61,7 @@ class Evaluator:
                     new_checkpoint[k] = v
 
         msg = self.model.load_state_dict(new_checkpoint, strict=False)
-        logging.info(f'Dino: pretrained weights found at {ckpt_path} and loaded with msg: {msg}')
+        logging.info(f'model loaded with message: {msg}')
         epoch = checkpoint['epoch']
         return epoch
 
