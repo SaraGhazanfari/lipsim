@@ -4,9 +4,9 @@ import time
 import numpy as np
 import torch
 
+from .other_utils import Logger
 from autoattack import checks
 from autoattack.state import EvaluationState
-from .other_utils import Logger
 
 
 class AutoAttack():
@@ -223,16 +223,14 @@ class AutoAttack():
 
                     else:
                         raise ValueError('Attack not supported')
-                    print('adv_curr', adv_curr.shape)
-                    output = self.get_logits(
-                        torch.cat((adv_curr.unsqueeze(1), x_orig[batch_datapoint_idcs, 1:, :, :, :]), dim=1)).max(
-                        dim=1)[1]
+
+                    output = self.get_logits(adv_curr).max(dim=1)[1]
                     false_batch = ~y.eq(output).to(robust_flags.device)
                     non_robust_lin_idcs = batch_datapoint_idcs[false_batch]
                     robust_flags[non_robust_lin_idcs] = False
                     state.robust_flags = robust_flags
 
-                    x_adv[non_robust_lin_idcs, 0, :, :, :] = adv_curr[false_batch].detach().to(x_adv.device)
+                    x_adv[non_robust_lin_idcs] = adv_curr[false_batch].detach().to(x_adv.device)
                     y_adv[non_robust_lin_idcs] = output[false_batch].detach().to(x_adv.device)
 
                     if self.verbose:
@@ -343,3 +341,4 @@ class AutoAttack():
             self.attacks_to_run = ['apgd-ce', 'apgd-dlr']
             self.apgd.n_restarts = 1
             self.apgd.eot_iter = 20
+

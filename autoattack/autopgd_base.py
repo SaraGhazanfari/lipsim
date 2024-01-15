@@ -5,15 +5,15 @@
 # LICENSE file in the root directory of this source tree
 #
 
-import math
 import time
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
+import random
 
-from autoattack.checks import check_zero_gradients
 from autoattack.other_utils import L0_norm, L1_norm, L2_norm
+from autoattack.checks import check_zero_gradients
 
 
 def L1_projection(x2, y2, eps1):
@@ -196,8 +196,6 @@ class APGDAttack():
     #
 
     def attack_single_run(self, x, y, x_init=None):
-        self.inter_aux_x = x[:, 1:, :, :, :]
-        x = x[:, 0, :, :, :].squeeze(1)
         if len(x.shape) < self.ndims:
             x = x.unsqueeze(0)
             y = y.unsqueeze(0)
@@ -259,7 +257,7 @@ class APGDAttack():
         for _ in range(self.eot_iter):
             if not self.is_tf_model:
                 with torch.enable_grad():
-                    logits = self.model(torch.cat((x_adv.unsqueeze(1), self.inter_aux_x), dim=1))
+                    logits = self.model(x_adv)
                     loss_indiv = criterion_indiv(logits, y)
                     loss = loss_indiv.sum()
 
@@ -273,7 +271,7 @@ class APGDAttack():
                 grad += grad_curr
 
         grad /= float(self.eot_iter)
-        # grad[:, 1:, :, :] = 0
+        grad[:, 1:, :, :] = 0
         grad_best = grad.clone()
 
         if self.loss in ['dlr', 'dlr-targeted']:
@@ -359,7 +357,7 @@ class APGDAttack():
             for _ in range(self.eot_iter):
                 if not self.is_tf_model:
                     with torch.enable_grad():
-                        logits = self.model(torch.cat((x_adv.unsqueeze(1), self.inter_aux_x), dim=1))
+                        logits = self.model(x_adv)
                         loss_indiv = criterion_indiv(logits, y)
                         loss = loss_indiv.sum()
 
@@ -372,7 +370,7 @@ class APGDAttack():
                     grad += grad_curr
 
             grad /= float(self.eot_iter)
-            # grad[:, 1:, :, :] = 0
+            grad[:, 1:, :, :] = 0
             pred = logits.detach().max(1)[1] == y
             acc = torch.min(acc, pred)
             acc_steps[i + 1] = acc + 0
@@ -449,14 +447,11 @@ class APGDAttack():
         if not y is None and len(y.shape) == 0:
             x.unsqueeze_(0)
             y.unsqueeze_(0)
-
-        self.aux_x = x[:, 1:, :, :, :]
-        x = x[:, 0, :, :, :].squeeze(1)
         self.init_hyperparam(x)
 
         x = x.detach().clone().float().to(self.device)
         if not self.is_tf_model:
-            y_pred = self.model(torch.cat((x.unsqueeze(1), self.aux_x), dim=1)).max(1)[1]
+            y_pred = self.model(x).max(1)[1]
         else:
             y_pred = self.model.predict(x).max(1)[1]
         if y is None:
@@ -503,8 +498,7 @@ class APGDAttack():
                     y_to_fool = y[ind_to_fool].clone()
 
                     if not self.use_largereps:
-                        res_curr = self.attack_single_run(
-                            torch.cat((x_to_fool.unsqueeze(1), self.aux_x[ind_to_fool, :, :, :, :]), dim=1), y_to_fool)
+                        res_curr = self.attack_single_run(x_to_fool, y_to_fool)
                     else:
                         res_curr = self.decr_eps_pgd(x_to_fool, y_to_fool, epss, iters)
                     best_curr, acc_curr, loss_curr, adv_curr = res_curr
@@ -610,14 +604,11 @@ class APGDAttack_targeted(APGDAttack):
         if not y is None and len(y.shape) == 0:
             x.unsqueeze_(0)
             y.unsqueeze_(0)
-
-        self.aux_x = x[:, 1:, :, :, :]
-        x = x[:, 0, :, :, :].squeeze(1)
         self.init_hyperparam(x)
 
         x = x.detach().clone().float().to(self.device)
         if not self.is_tf_model:
-            y_pred = self.model(torch.cat((x.unsqueeze(1), self.aux_x), dim=1)).max(1)[1]
+            y_pred = self.model(x).max(1)[1]
         else:
             y_pred = self.model.predict(x).max(1)[1]
         if y is None:
@@ -663,15 +654,13 @@ class APGDAttack_targeted(APGDAttack):
                     y_to_fool = y[ind_to_fool].clone()
 
                     if not self.is_tf_model:
-                        output = self.model(
-                            torch.cat((x_to_fool.unsqueeze(1), self.aux_x[ind_to_fool, :, :, :, :]), dim=1))
+                        output = self.model(x_to_fool)
                     else:
                         output = self.model.predict(x_to_fool)
                     self.y_target = output.sort(dim=1)[1][:, -target_class]
 
                     if not self.use_largereps:
-                        res_curr = self.attack_single_run(
-                            torch.cat((x_to_fool.unsqueeze(1), self.aux_x[ind_to_fool, :, :, :, :]), dim=1), y_to_fool)
+                        res_curr = self.attack_single_run(x_to_fool, y_to_fool)
                     else:
                         res_curr = self.decr_eps_pgd(x_to_fool, y_to_fool, epss, iters)
                     best_curr, acc_curr, loss_curr, adv_curr = res_curr
