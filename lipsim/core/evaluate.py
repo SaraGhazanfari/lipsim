@@ -377,7 +377,7 @@ class Evaluator:
             targets.append(target)
             # twoafc_score = get_2afc_score(d0s, d1s, targets)
 
-        twoafc_score, count = get_2afc_score(d0s, d1s, targets)
+        twoafc_score = get_2afc_score(d0s, d1s, targets)
         return twoafc_score
 
     def one_step_2afc_score_eval(self, img_ref, img_left, img_right, target):
