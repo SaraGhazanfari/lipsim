@@ -117,7 +117,9 @@ class PerceptualMetric:
             (1 / sqrt(n_classes)) * torch.ones(1, n_classes, 1, 1)).to(device)
 
     def add_one_dim_to_embed(self, embed_ref):
+        print(embed_ref.shape, self.bias.shape)
         embed_ref = embed_ref + self.bias
+        print(embed_ref.shape, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device).shape)
         return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
 
     def add_bias_to_embed(self, embed_ref):
