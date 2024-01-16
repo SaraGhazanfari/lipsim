@@ -61,6 +61,8 @@ class Evaluator:
                     new_checkpoint[k] = v
 
         msg = self.model.load_state_dict(new_checkpoint, strict=False)
+        if 'bias' in checkpoint:
+            self.perceptual_metric.bias = checkpoint['bias']
         logging.info(f'model loaded with message: {msg}')
         epoch = checkpoint['epoch']
         return epoch
