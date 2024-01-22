@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 import pprint
@@ -178,8 +179,8 @@ class Finetuner(Trainer, Evaluator):
             start_time = time.time()
 
             dist_0, dist_1, _ = self.perceptual_metric(img_ref, img_left, img_right,
-                                                               requires_grad=True,
-                                                               requires_normalization=True)
+                                                       requires_grad=True,
+                                                       requires_normalization=True)
             logit = dist_0 - dist_1
             loss = self.criterion(logit.squeeze(), target)
             loss.backward()
@@ -245,3 +246,20 @@ class Finetuner(Trainer, Evaluator):
                 }
             logging.debug("Saving checkpoint '{}'.".format(ckpt_name))
             torch.save(state, ckpt_path)
+
+    def _load_state(self):
+        # load last checkpoint
+        checkpoints = glob.glob(join(self.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
+        get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
+        checkpoints = sorted(
+            [ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)
+        path_last_ckpt = join(self.train_dir, 'checkpoints', checkpoints[-1])
+
+        self.checkpoint = torch.load(path_last_ckpt)['model_state_dict']  # , map_location=self.model.device)
+        self.checkpoint = {k.replace('module.', ''): v for k, v in self.checkpoint.items()}
+        self.model.load_state_dict(self.checkpoint)
+        self.optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
+        self.saved_ckpts.add(self.checkpoint['epoch'])
+        epoch = self.checkpoint['epoch']
+        if self.local_rank == 0:
+            logging.info('Loading checkpoint {}'.format(checkpoints[-1]))
