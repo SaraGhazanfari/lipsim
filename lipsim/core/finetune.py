@@ -254,13 +254,10 @@ class Finetuner(Trainer, Evaluator):
         checkpoints = sorted(
             [ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)
         path_last_ckpt = join(self.train_dir, 'checkpoints', checkpoints[-1])
-        print(torch.load(path_last_ckpt).keys())
-        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-        self.checkpoint = torch.load(path_last_ckpt)['model_state_dict']
-        print(self.checkpoint.keys())# , map_location=self.model.device)
-        self.checkpoint = {k.replace('module.', ''): v for k, v in self.checkpoint.items()}
-        self.model.load_state_dict(self.checkpoint)
-        self.optimizer.load_state_dict(self.checkpoint)
+        self.checkpoint = torch.load(path_last_ckpt)# , map_location=self.model.device)
+        model_checkpoint = {k.replace('module.', ''): v for k, v in self.checkpoint['model_state_dict'].items()}
+        self.model.load_state_dict(model_checkpoint)
+        self.optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
         self.saved_ckpts.add(self.checkpoint['epoch'])
         epoch = self.checkpoint['epoch']
         if self.local_rank == 0:
