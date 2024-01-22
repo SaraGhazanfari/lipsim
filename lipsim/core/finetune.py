@@ -103,7 +103,8 @@ class Finetuner(Trainer, Evaluator):
         self.model = NormalizedModel(self.model, self.reader.means, self.reader.stds)
 
         self.model = self.model.cuda()
-        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias)
+        self.perceptual_metric = PerceptualMetric(backbone=self.model, requires_bias=self.config.requires_bias).to(
+            'cuda')
         param_size = np.sum([p.numel() for p in self.model.parameters() if p.requires_grad])
         if self.local_rank == 0:
             logging.info(f'Number of parameters to train: {param_size}')
@@ -254,7 +255,7 @@ class Finetuner(Trainer, Evaluator):
         checkpoints = sorted(
             [ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)
         path_last_ckpt = join(self.train_dir, 'checkpoints', checkpoints[-1])
-        self.checkpoint = torch.load(path_last_ckpt)# , map_location=self.model.device)
+        self.checkpoint = torch.load(path_last_ckpt)  # , map_location=self.model.device)
         model_checkpoint = {k.replace('module.', ''): v for k, v in self.checkpoint['model_state_dict'].items()}
         self.model.load_state_dict(model_checkpoint)
         self.optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
