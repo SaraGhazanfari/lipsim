@@ -254,7 +254,7 @@ class Finetuner(Trainer, Evaluator):
         checkpoints = sorted(
             [ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)
         path_last_ckpt = join(self.train_dir, 'checkpoints', checkpoints[-1])
-        print(self.checkpoint.keys())
+        print(torch.load(path_last_ckpt).keys())
         print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
         self.checkpoint = torch.load(path_last_ckpt)['model_state_dict']
         print(self.checkpoint.keys())# , map_location=self.model.device)
