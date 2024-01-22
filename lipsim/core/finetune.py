@@ -158,8 +158,6 @@ class Finetuner(Trainer, Evaluator):
                 sampler.set_epoch(epoch_id)
             global_step, epoch = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
             self.certified_eval_for_night()
-            if epoch > self.config.epochs:
-                break
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
         if self.config.dataset == 'night':
@@ -194,6 +192,8 @@ class Finetuner(Trainer, Evaluator):
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
+            if epoch > epoch_id + 1:
+                break
 
         return global_step, epoch
 
