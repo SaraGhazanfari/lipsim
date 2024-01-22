@@ -86,12 +86,12 @@ class Finetuner(Trainer, Evaluator):
                              is_distributed=self.is_distributed)
 
         if self.config.dataset == 'night':
-            data_loader, _ = NightDataset(config=self.config, batch_size=self.config.batch_size,
+            data_loader, _ = NightDataset(config=self.config, batch_size=self.batch_size,
                                           split='train').get_dataloader()
         else:
             data_loader, _ = BAPPSDataset(data_dir=self.config.data_dir, load_size=224,
                                           split='train', dataset='traditional', make_path=True).get_dataloader(
-                batch_size=self.config.batch_size)
+                batch_size=self.batch_size)
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset}")
         self.n_classes = N_CLASSES[self.config.teacher_model_name]
