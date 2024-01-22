@@ -157,17 +157,19 @@ class Finetuner(Trainer, Evaluator):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
             global_step, epoch = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
-            self.certified_eval_for_night()
+            if self.config.dataset == 'night':
+                self.certified_eval_for_night()
+            else:
+                self.lpips_eval()
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
-        if self.config.dataset == 'night':
-            self.certified_eval_for_night()
-        else:
-            self.lpips_eval()
+
 
     def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
 
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            if epoch > epoch_id + 1:
+                break
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
 
@@ -192,8 +194,7 @@ class Finetuner(Trainer, Evaluator):
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
-            if epoch > epoch_id + 1:
-                break
+
 
         return global_step, epoch
 
