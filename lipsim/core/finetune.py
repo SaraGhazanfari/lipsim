@@ -169,13 +169,14 @@ class Finetuner(Trainer, Evaluator):
 
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             print(img_ref.shape)
+            epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
             if epoch > epoch_id + 1:
                 break
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
 
             start_time = time.time()
-            epoch = (int(global_step) * self.global_batch_size) / self.reader.n_train_files
+
             dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right,
                                                                                    requires_grad=True,
                                                                                    requires_normalization=True)
