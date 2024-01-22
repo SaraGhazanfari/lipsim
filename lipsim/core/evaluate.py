@@ -220,9 +220,9 @@ class Evaluator:
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
                 img_right.cuda(), target.cuda()
             target = target.squeeze()
-            dist_0, dist_1, bound = self.perceptual_metric.get_distance_between_images(img_ref, img_left=img_left,
-                                                                                       img_right=img_right,
-                                                                                       requires_normalization=True)
+            dist_0, dist_1, bound = self.perceptual_metric(img_ref, img_left=img_left,
+                                                                   img_right=img_right,
+                                                                   requires_normalization=True)
             outputs = torch.stack((dist_1, dist_0), dim=1)
             predicted = outputs.argmax(axis=1)
             correct = outputs.max(1)[1] == torch.round(target)
@@ -340,8 +340,8 @@ class Evaluator:
                 img_ref = img
                 img_0, img_1 = img_left, img_right
 
-            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_0, img_1,
-                                                                                   requires_grad=True)
+            dist_0, dist_1, _ = self.perceptual_metric(img_ref, img_0, img_1,
+                                                               requires_grad=True)
             return torch.stack((dist_1, dist_0), dim=1)
 
         return metric_model
@@ -349,15 +349,15 @@ class Evaluator:
     def dist_wrapper(self):
         def metric_model(img):
             img_ref, img_0 = img[:, 0, :, :].squeeze(1), img[:, 1, :, :].squeeze(1)
-            dist_0, _, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_0, img_0,
-                                                                              requires_grad=True)
+            dist_0, _, _ = self.perceptual_metric(img_ref, img_0, img_0,
+                                                          requires_grad=True)
             return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
 
     def dist_2_wrapper(self, img_ref):
         def metric_model(img):
-            dist_0, _, _ = self.perceptual_metric.get_distance_between_images(img_ref, img, img, requires_grad=True)
+            dist_0, _, _ = self.perceptual_metric(img_ref, img, img, requires_grad=True)
             return torch.stack((1 - dist_0, dist_0), dim=1)
 
         return metric_model
@@ -387,7 +387,7 @@ class Evaluator:
             img_ref = self.general_attack.generate_attack(img_ref, img_left, img_right, target.squeeze(),
                                                           target_model=self.model_wrapper(img_left, img_right))
             img_ref = img_ref.detach()
-        dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right)
+        dist_0, dist_1, _ = self.perceptual_metric(img_ref, img_left, img_right)
         if len(dist_0.shape) < 1:
             dist_0 = dist_0.unsqueeze(0)
             dist_1 = dist_1.unsqueeze(0)

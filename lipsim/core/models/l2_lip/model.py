@@ -108,8 +108,9 @@ class DISTSMetric:
         return dist_0, dist_1, None
 
 
-class PerceptualMetric:
+class PerceptualMetric(nn.Module):
     def __init__(self, backbone, requires_bias=True, n_classes=1792, device='cuda'):
+        super(PerceptualMetric, self).__init__()
         self.backbone = backbone
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
@@ -127,8 +128,8 @@ class PerceptualMetric:
         bias = (2 / sqrt(embed_ref.shape[1])) * bias
         return embed_ref + bias
 
-    def get_distance_between_images(self, img_ref, img_left, img_right, requires_grad=False,
-                                    requires_normalization=False):
+    def forward(self, img_ref, img_left, img_right, requires_grad=False,
+                requires_normalization=False):
 
         embed_ref = self.get_embedding_per_image(img_ref, requires_grad, requires_normalization)
         embed_x0 = self.get_embedding_per_image(img_left, requires_grad, requires_normalization)

@@ -114,7 +114,7 @@ class Finetuner(Trainer, Evaluator):
             if self.local_rank == 0:
                 logging.info('Model defined with DistributedDataParallel')
         else:
-            self.model = nn.DataParallel(self.model, device_ids=range(
+            self.perceptual_metric = nn.DataParallel(self.perceptual_metric, device_ids=range(
                 torch.cuda.device_count()))  # range(torch.cuda.device_count()))
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
@@ -177,9 +177,9 @@ class Finetuner(Trainer, Evaluator):
 
             start_time = time.time()
 
-            dist_0, dist_1, _ = self.perceptual_metric.get_distance_between_images(img_ref, img_left, img_right,
-                                                                                   requires_grad=True,
-                                                                                   requires_normalization=True)
+            dist_0, dist_1, _ = self.perceptual_metric(img_ref, img_left, img_right,
+                                                               requires_grad=True,
+                                                               requires_normalization=True)
             logit = dist_0 - dist_1
             loss = self.criterion(logit.squeeze(), target)
             loss.backward()
