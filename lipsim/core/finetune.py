@@ -168,6 +168,7 @@ class Finetuner(Trainer, Evaluator):
     def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
 
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            print(img_ref.shape)
             if epoch > epoch_id + 1:
                 break
             img_ref, img_left, img_right, target = img_ref.cuda(), img_left.cuda(), \
