@@ -115,7 +115,7 @@ class PerceptualMetric(nn.Module):
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
         self.bias = nn.Parameter(
-            (1 / sqrt(n_classes)) * torch.ones(1, n_classes)).to(device)
+            (1 / sqrt(n_classes)) * torch.ones(1, n_classes))
 
     def add_one_dim_to_embed(self, embed_ref):
         embed_ref = embed_ref + self.bias
