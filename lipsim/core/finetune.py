@@ -154,7 +154,6 @@ class Finetuner(Trainer, Evaluator):
         epoch_id = 0
         self.optimizer.zero_grad()
         for epoch_id in range(start_epoch, self.config.epochs):
-            print(epoch_id)
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
             global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
@@ -199,6 +198,7 @@ class Finetuner(Trainer, Evaluator):
         if self._to_print(global_step):
             lr = self.optimizer.param_groups[0]['lr']
             self.message.add("epoch", epoch, format="4.2f")
+            self.message.add("epoch_id", epoch_id, format="4.2f")
             self.message.add("step", global_step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
             self.message.add("loss", loss, format=".4f")
