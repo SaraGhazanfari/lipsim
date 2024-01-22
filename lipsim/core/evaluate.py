@@ -41,7 +41,6 @@ class Evaluator:
         self.config = config
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.criterion = utils.get_loss(self.config)
-        self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.general_attack = GeneralAttack(config=config)
 
     def load_ckpt(self, ckpt_path=None):
@@ -230,14 +229,14 @@ class Evaluator:
             fy_fi = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs)
             mask = (outputs.max(dim=1)[0].reshape(-1, 1) - outputs) == 0
             fy_fi[mask] = torch.inf
-            index_list = list()
+            # index_list = list()
 
-            for idx, target_elem in enumerate(target):
-                if target_elem != 0.5:
-                    index_list.append(idx)
+            # for idx, target_elem in enumerate(target):
+            #     if target_elem != 0.5:
+            #         index_list.append(idx)
 
-            correct = correct[index_list]
-            bound = bound[index_list]
+            # correct = correct[index_list]
+            # bound = bound[index_list]
 
             radius = (fy_fi / bound).min(dim=1)[0]
 
@@ -246,7 +245,7 @@ class Evaluator:
                 running_certified[i] += torch.sum(correct & certified).item()
                 running_accuracy[i] += correct.sum().cpu().numpy()  # predicted.eq(target.data).cpu().sum().numpy()
 
-            running_inputs += len(index_list)  # img_ref.size(0)
+            running_inputs += img_ref.size(0) #len(index_list)
         accuracy = running_accuracy / running_inputs
         certified = running_certified / running_inputs
 
