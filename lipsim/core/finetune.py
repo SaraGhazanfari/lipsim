@@ -154,6 +154,7 @@ class Finetuner(Trainer, Evaluator):
         epoch_id = 0
         self.optimizer.zero_grad()
         for epoch_id in range(start_epoch, self.config.epochs):
+            print(epoch_id)
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
             global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
