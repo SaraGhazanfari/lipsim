@@ -156,7 +156,10 @@ class Finetuner(Trainer, Evaluator):
         for epoch_id in range(start_epoch, self.config.epochs):
             if self.is_distributed:
                 sampler.set_epoch(epoch_id)
-            global_step = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
+            global_step, epoch = self.one_epoch_finetuning(data_loader, epoch_id, global_step)
+            self.certified_eval_for_night()
+            if epoch > self.config.epochs:
+                break
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
         if self.config.dataset == 'night':
@@ -192,13 +195,12 @@ class Finetuner(Trainer, Evaluator):
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
 
-        return global_step
+        return global_step, epoch
 
     def log_training(self, epoch, epoch_id, examples_per_second, global_step, loss, start_time):
         if self._to_print(global_step):
             lr = self.optimizer.param_groups[0]['lr']
             self.message.add("epoch", epoch, format="4.2f")
-            self.message.add("epoch_id", epoch_id, format="4.2f")
             self.message.add("step", global_step, width=5, format=".0f")
             self.message.add("lr", lr, format=".6f")
             self.message.add("loss", loss, format=".4f")
