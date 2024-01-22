@@ -114,7 +114,8 @@ class Finetuner(Trainer, Evaluator):
             if self.local_rank == 0:
                 logging.info('Model defined with DistributedDataParallel')
         else:
-            self.model = nn.DataParallel(self.model, device_ids=[0])  # range(torch.cuda.device_count()))
+            self.model = nn.DataParallel(self.model, device_ids=range(
+                torch.cuda.device_count()))  # range(torch.cuda.device_count()))
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
         self.saved_ckpts = set([0])
@@ -164,7 +165,6 @@ class Finetuner(Trainer, Evaluator):
         self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
 
-
     def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
 
         for i, (img_ref, img_left, img_right, target, idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
@@ -196,7 +196,6 @@ class Finetuner(Trainer, Evaluator):
                 self._print_approximated_train_time(start_time)
             global_step += 1
             self.log_training(epoch, epoch_id, examples_per_second, global_step, loss, start_time)
-
 
         return global_step, epoch
 
