@@ -190,7 +190,6 @@ class Finetuner(Trainer, Evaluator):
             examples_per_second = self.global_batch_size / seconds_per_batch
             examples_per_second *= self.world_size
 
-            self._save_ckpt(global_step, epoch_id)
             if global_step == 20 and self.is_master:
                 self._print_approximated_train_time(start_time)
             global_step += 1
@@ -210,7 +209,6 @@ class Finetuner(Trainer, Evaluator):
                 self.message.add("grad", grad_norm, format=".4f")
             self.message.add("imgs/sec", examples_per_second, width=5, format=".0f")
             logging.info(self.message.get_message())
-        self._save_ckpt(global_step, epoch_id)
         if global_step == 20 and self.is_master:
             self._print_approximated_train_time(start_time)
 
