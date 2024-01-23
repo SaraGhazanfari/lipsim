@@ -114,18 +114,16 @@ class PerceptualMetric(nn.Module):
         self.backbone = backbone
         self.cos_sim = nn.CosineSimilarity(dim=1, eps=1e-6)
         self.requires_bias = requires_bias
-        self.bias = nn.Parameter(
-            (1 / sqrt(n_classes)) * torch.ones(1, n_classes))
+        # self.bias = nn.Parameter(
+        #     (1 / sqrt(n_classes)) * torch.ones(1, n_classes))
 
-    def add_one_dim_to_embed(self, embed_ref):
-        embed_ref = embed_ref + self.bias
-        return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
+    # def add_one_dim_to_embed(self, embed_ref):
+    #     embed_ref = embed_ref + self.bias
+    #     return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
 
     def add_bias_to_embed(self, embed_ref):
-        norm_ref = torch.norm(embed_ref, p=2, dim=(1))
-        bias = torch.ones_like(embed_ref)
-        bias[norm_ref > 1, :] = torch.zeros(embed_ref.shape[1], device=bias.device)
-        bias = (2 / sqrt(embed_ref.shape[1])) * bias
+        bias = (2 / sqrt(embed_ref.shape[1]))
+        print(bias)
         return embed_ref + bias
 
     def forward(self, img_ref, img_left, img_right, requires_grad=False,
@@ -147,7 +145,7 @@ class PerceptualMetric(nn.Module):
             embed = embed.detach()
 
         if self.requires_bias:
-            embed = self.add_one_dim_to_embed(embed)
+            embed = self.add_bias_to_embed(embed)
 
         if requires_normalization:
             norm_embed = torch.norm(embed, p=2, dim=(1)).unsqueeze(1)

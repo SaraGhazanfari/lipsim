@@ -4,7 +4,7 @@ import os
 import pprint
 import socket
 import time
-from os.path import join, exists
+from os.path import join
 
 import numpy as np
 import torch
@@ -211,37 +211,6 @@ class Finetuner(Trainer, Evaluator):
             logging.info(self.message.get_message())
         if global_step == 20 and self.is_master:
             self._print_approximated_train_time(start_time)
-
-    def _save_ckpt(self, step, epoch, final=False, best=False):
-        """Save ckpt in train directory."""
-        freq_ckpt_epochs = self.config.save_checkpoint_epochs
-        if (epoch % freq_ckpt_epochs == 0 and self.is_master and epoch not in self.saved_ckpts) or (
-                final and self.is_master) or best:
-            prefix = "model" if not best else "best_model"
-            ckpt_name = f"{prefix}.ckpt-{step}.pth"
-            ckpt_path = join(self.train_dir, 'checkpoints', ckpt_name)
-            if exists(ckpt_path) and not best:
-                return
-            self.saved_ckpts.add(epoch)
-            try:
-                state = {
-                    'epoch': epoch,
-                    'global_step': step,
-                    'model_state_dict': self.model.state_dict(),
-                    'bias': self.perceptual_metric.module.bias,
-                    'optimizer_state_dict': self.optimizer.state_dict(),
-                    'scheduler': self.scheduler.state_dict()
-                }
-            except Exception as e:
-                print(e)
-                state = {
-                    'epoch': epoch,
-                    'global_step': step,
-                    'model_state_dict': self.model.state_dict(),
-                    'optimizer_state_dict': self.optimizer.state_dict()
-                }
-            logging.debug("Saving checkpoint '{}'.".format(ckpt_name))
-            torch.save(state, ckpt_path)
 
     def _load_state(self):
         # load last checkpoint
