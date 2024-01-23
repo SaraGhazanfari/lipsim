@@ -230,7 +230,7 @@ class Finetuner(Trainer, Evaluator):
                     'epoch': epoch,
                     'global_step': step,
                     'model_state_dict': self.model.state_dict(),
-                    'bias': self.perceptual_metric.bias,
+                    'bias': self.perceptual_metric.module.bias,
                     'optimizer_state_dict': self.optimizer.state_dict(),
                     'scheduler': self.scheduler.state_dict()
                 }
