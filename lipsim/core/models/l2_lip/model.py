@@ -122,11 +122,12 @@ class PerceptualMetric(nn.Module):
     #     return torch.concat((embed_ref, torch.ones(embed_ref.shape[0], 1, device=embed_ref.device)), dim=1)
 
     def add_bias_to_embed(self, embed_ref):
-        bias = (2 / sqrt(embed_ref.shape[1]))
+        bias = (2 / sqrt(embed_ref.shape[1])) * torch.ones_like(embed_ref)
         print(embed_ref)
         print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
-        embed_ref = + bias
-        print(embed_ref)
+        print(embed_ref + bias)
+        print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+        print(embed_ref + (2 / sqrt(embed_ref.shape[1])))
         return embed_ref + bias
 
     def forward(self, img_ref, img_left, img_right, requires_grad=False,
