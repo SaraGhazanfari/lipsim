@@ -164,9 +164,8 @@ class Finetuner(Trainer, Evaluator):
                 self.certified_eval_for_night()
             else:
                 self.lpips_eval()
-            if epoch_id == 1:
-                self._save_ckpt(global_step, epoch_id, final=True)
-        self._save_ckpt(global_step, epoch_id, final=True)
+
+        # self._save_ckpt(global_step, epoch_id, final=True)
         logging.info("Done training -- epoch limit reached.")
 
     def one_epoch_finetuning(self, data_loader, epoch_id, global_step):
