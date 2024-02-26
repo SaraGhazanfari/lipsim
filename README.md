@@ -53,7 +53,7 @@ python -m lipsim.main --mode certified --dataset night --model-name small --trai
 ```
 * Evaluating the empirical robustness of LipSim:
 ```
-python -m lipsim.main --mode attack --dataset imagenet-1k --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local --attack AA-L2 --eps 1.0
+python -m lipsim.main --mode attack --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local --attack AA-L2 --eps 1.0
 ```
 <a name="bibtex"></a>
 
