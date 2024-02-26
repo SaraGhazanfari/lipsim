@@ -231,7 +231,7 @@ if __name__ == '__main__':
     parser.add_argument("--target", type=str, default='lipsim',
                         help='dreamsim, lipsim')
     parser.add_argument("--margin", type=float, default=0)
-    parser.add_argument("--requires_bias", type=bool, default=True)
+    parser.add_argument("--requires_bias", action='store_true', default=False)
     parser.add_argument("--subset", type=int, default=1)
 
     # parse all arguments
