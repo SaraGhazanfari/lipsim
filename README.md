@@ -12,12 +12,12 @@ LipSim aims to provide good image embeddings that are less sensitive to adversar
 <img width="1472" alt="model" src="https://github.com/SaraGhazanfari/lipsim/assets/8003662/ccd68321-155c-4018-91bf-fe2b2c30c406">
 
 <a name="results"></a>
-## Certified Accuracy on 2AFC dataset (NIGHT)
+## Table 1: Certified Accuracy on 2AFC dataset (NIGHT)
 <p align="justify"> Certified scores of LipSim given different settings. The natural and certified 2AFC scores of all variants of LipSim are shown in this figure. The LipSim - DreamSim version outperforms other variants regarding certified scores. The tradeoff between robustness and accuracy compares the results for different margins in the hinge loss. A higher margin parameter leads to a higher certified score and a lower natural score.</p>
 
 <img width="500" align="center" alt="Certified_acc" src="https://github.com/SaraGhazanfari/lipsim/assets/8003662/f95b375b-5e0e-47e1-8b03-ae397fe44f8c">
 
-## Empirical Accuracy on 2AFC dataset (NIGHT)
+## Table 2: Empirical Accuracy on 2AFC dataset (NIGHT)
 * <p align="justify"> Alignment on NIGHT dataset for original and perturbed images using AutoAttack. In this experiment, the perturbation is only applied on the reference images. While DreamSim employs an ensemble of three ViT-based models as the feature extractors, LipSim Backbone consists of a 1-Lipschitz network (composed of CNN and Linear layers) and is trained from scratch using the knowledge distillation approach.</p>
 
 <img width="500" alt="L2" src="https://github.com/SaraGhazanfari/lipsim/assets/8003662/92293c29-03ad-4b60-9e58-cc41519d12d8">
@@ -38,6 +38,15 @@ python -m lipsim.main --mode finetune --dataset night --model-name small --train
 ```
 You can download the NIGHT dataset using [this](https://github.com/ssundaram21/dreamsim/blob/main/dataset/download_dataset.sh) bash script.
 ## Commands for Evaluation
+To do the evaluation first pull the project and create the structure as follows:
+```
+cd lipsim
+mkdir lipsim/trained_models
+mkdir lipsim/trained_models/{instance_name}
+mkdir lipsim/trained_models/{instance_name}/checkpoints
+```
+Note that the instance_name can be anything but other directories should be the same as mentioned. 
+Then place the checkpoint in "lipsim/trained_models/{instance_name}/checkpoints". Now the project is ready and the following commands can be run to generate the results.
 * Calculating the certified accuracy on the NIGHT dataset:
 ```
 python -m lipsim.main --mode certified --dataset night --model-name small --train_dir ensemble_lipsim_0.2 --data_dir /path/to/the/data --batch_size 64 --teacher_model_name ensemble --local
@@ -50,11 +59,13 @@ python -m lipsim.main --mode attack --dataset imagenet-1k --model-name small --t
 
 <a name="checkpoints"></a>
 ##  Checkpoints
+The checkpoints provided here correspond to the LipSim-DreamSim version of our work. Using these checkpoints, you can generate the last three rows of Table 1. 
+The Finetuned - (0.5 margin) is the primary version of LipSim used for other evaluations of the paper including Table 2.
 | LipSim Version | Link |
 | ---- | --- |
 | Pretrained | [Link](https://drive.google.com/file/d/1Y39Wnpxq3ZS8JMRe6j-Yx7x3E_nardbv/view?usp=drive_link) |
-| Finetuned - (0.2 margin)| [Link](https://drive.google.com/file/d/1XGxMAXozph72x9sRPUgkcJ7ql7IWacyM/view?usp=sharing) | 
-| Finetuned - (0.5 margin)| [Link](https://drive.google.com/file/d/1i5zP72O-vzxgFOyKn2JPUAqaD9mz2rDI/view?usp=sharing) | 
+| Finetuned - (0.2 margin)| [Link](https://drive.google.com/file/d/1OHRP0uwFrRJ6zXsPrCUDxlTjALa_690c/view?usp=sharing) | 
+| Finetuned - (0.5 margin)| [Link](https://drive.google.com/file/d/11JoY5jrm4qmk0QmncQ5eVqXQpXQNLG1X/view?usp=sharing) | 
 
 
 ## Citation
