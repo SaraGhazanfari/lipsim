@@ -13,7 +13,6 @@ from torch.nn.parallel import DistributedDataParallel
 from tqdm import tqdm
 
 from lipsim.core import utils
-from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
@@ -135,9 +134,12 @@ class Finetuner(Trainer, Evaluator):
 
         # define learning rate scheduler
         num_steps = self.config.epochs * (self.reader.n_train_files // self.global_batch_size)
-        # self.scheduler, self.warmup = utils.get_scheduler(self.optimizer, self.config, num_steps)
-        self.scheduler = CosineAnnealingWarmupRestarts(
-            optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=200)
+        self.scheduler, self.warmup = utils.get_scheduler(self.optimizer, self.config, num_steps)
+        if self.config.warmup_scheduler is not None:
+            logging.info(f"Warmup scheduler on {self.config.warmup_scheduler * 100:.0f}% of training")
+
+        # self.scheduler = CosineAnnealingWarmupRestarts(
+        #     optimizer=self.optimizer, max_lr=self.config.lr, min_lr=0.0, first_cycle_steps=num_steps, warmup_steps=200)
 
         # define the loss
         self.criterion = utils.get_loss(self.config)
@@ -181,8 +183,9 @@ class Finetuner(Trainer, Evaluator):
             loss.backward()
             self.process_gradients(global_step)
             self.optimizer.step()
-            self.scheduler.step(global_step)
             self.optimizer.zero_grad()
+            with self.warmup.dampening() if self.warmup else nullcontext():
+                self.scheduler.step(global_step)
             seconds_per_batch = time.time() - start_time
             examples_per_second = self.global_batch_size / seconds_per_batch
             examples_per_second *= self.world_size
