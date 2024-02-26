@@ -32,11 +32,8 @@ def override_args(config, depth, num_channels, depth_linear, n_features):
     return config
 
 
-def get_init_file(shared_folder):
-    # Init file must not exist, but it's parent dir must exist.
-    shared_folder = '/home/sg7457' if not shared_folder else shared_folder
-    os.makedirs(str(shared_folder), exist_ok=True)
-    init_file = Path(shared_folder) / f"{uuid.uuid4().hex}_init"
+def get_init_file():
+    init_file = Path('.') / f"{uuid.uuid4().hex}_init"
     if init_file.exists():
         os.remove(str(init_file))
     return init_file
@@ -121,7 +118,7 @@ def main(config):
         timeout_min=config.timeout,
     )
     shared_folder = os.environ.get('folder_path')
-    config.dist_url = get_init_file(shared_folder).as_uri()
+    config.dist_url = get_init_file().as_uri()
     if config.mode == 'train':
         trainer = Trainer(config)
         job = executor.submit(trainer)
