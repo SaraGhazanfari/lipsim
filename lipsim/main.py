@@ -32,8 +32,8 @@ def override_args(config, depth, num_channels, depth_linear, n_features):
     return config
 
 
-def get_init_file():
-    init_file = Path('.') / f"{uuid.uuid4().hex}_init"
+def get_init_file(shared_folder):
+    init_file = Path(shared_folder) / f"{uuid.uuid4().hex}_init"
     if init_file.exists():
         os.remove(str(init_file))
     return init_file
@@ -117,8 +117,7 @@ def main(config):
         slurm_mem='64GB',
         timeout_min=config.timeout,
     )
-    shared_folder = os.environ.get('folder_path')
-    config.dist_url = get_init_file().as_uri()
+    config.dist_url = get_init_file(config.train_dir).as_uri()
     if config.mode == 'train':
         trainer = Trainer(config)
         job = executor.submit(trainer)
