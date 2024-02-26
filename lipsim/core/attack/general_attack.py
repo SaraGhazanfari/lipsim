@@ -3,7 +3,6 @@ from advertorch.attacks import L2PGDAttack, LinfPGDAttack, CarliniWagnerL2Attack
 from torch import nn
 
 from autoattack import AutoAttack
-from lipsim.core.attack.deepfool_attack import DeepFool
 
 
 class GeneralAttack:
@@ -30,6 +29,7 @@ class GeneralAttack:
         #     img_adv = attack.perturb(torch.cat((img_ref, img_0, img_1), dim=1), target.long())
 
         elif attack_method == 'DF':  # DeepFool
+            from lipsim.core.attack.deepfool_attack import DeepFool
             attack = DeepFool(target_model, steps=50, overshoot=0.02)
             img_adv = attack(img_ref, target.long())
 
