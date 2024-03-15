@@ -142,10 +142,10 @@ class LinearEvaluation:
             target = target.cuda(non_blocking=True)
 
             # forward
-            with torch.no_grad():
-                output = self.model(inp)
+            # with torch.no_grad():
+            #     output = self.model(inp)
 
-            output = self.linear_classifier(output)
+            output = self.linear_classifier(inp)
 
             # compute cross entropy loss
             loss = nn.CrossEntropyLoss()(output, target)
