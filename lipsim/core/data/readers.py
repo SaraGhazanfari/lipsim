@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
 
 from torchvision.datasets import ImageNet, ImageFolder
+
+from lipsim.core.data.embedding_dataset import EmbeddingDataset
 from lipsim.core.data.imagenet_embedding_dataset import ImageNetEmbeddingDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.bapps_dataset import BAPPSDataset
@@ -213,6 +215,7 @@ class TinyImageNetReader(BaseReader):
 readers_config = {
     'imagenet': ImagenetReader,
     'imagenet_embedding': ImagenetEmbeddingReader,
+    'lipsim_embedding': EmbeddingDataset,
     'night': NightDataset,
     'bapps': BAPPSDataset,
     'coco': COCODataset,

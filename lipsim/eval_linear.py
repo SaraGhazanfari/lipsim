@@ -5,11 +5,13 @@ from pathlib import Path
 
 import submitit
 import torch
-from torch import nn
 import torch.backends.cudnn as cudnn
+from torch import nn
 from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data import DataLoader
 
 from lipsim.core import utils
+from lipsim.core.data.embedding_dataset import EmbeddingDataset
 from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import NormalizedModel, ClassificationLayer
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
@@ -54,10 +56,14 @@ class LinearEvaluation:
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
         Reader = readers_config[self.config.dataset]
-        self.train_loader, self.train_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
-                                                       is_training=True, is_distributed=True).load_dataset()
-        self.val_loader, self.val_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
-                                                   is_training=False).load_dataset()
+        train_dataset = EmbeddingDataset(root=self.config.root, split='train')
+        val_dataset = EmbeddingDataset(root=self.config.root, split='val')
+        self.sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.config.batch_size, num_workers=4,
+                                       shuffle=False,
+                                       pin_memory=False, sampler=self.sampler)
+        self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
+                                     pin_memory=False)
         self.metric_logger = utils.MetricLogger(delimiter="  ")
 
     def load_ckpt(self):
@@ -103,7 +109,7 @@ class LinearEvaluation:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
         print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
-            self.train_sampler.set_epoch(epoch)
+            self.sampler.set_epoch(epoch)
             train_stats = self.train(epoch)
             scheduler.step()
 
