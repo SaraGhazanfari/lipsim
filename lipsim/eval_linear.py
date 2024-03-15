@@ -56,8 +56,8 @@ class LinearEvaluation:
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
 
-        train_dataset = EmbeddingDataset(root=self.config.root, split='train')
-        val_dataset = EmbeddingDataset(root=self.config.root, split='val')
+        train_dataset = EmbeddingDataset(root=self.config.data_dir, split='train')
+        val_dataset = EmbeddingDataset(root=self.config.data_dir, split='val')
         self.sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
         self.train_loader = DataLoader(train_dataset, batch_size=self.config.batch_size, num_workers=4,
                                        shuffle=False,
