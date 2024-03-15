@@ -10,8 +10,6 @@ from pathlib import Path
 
 import submitit
 
-
-from lipsim.core.finetune import Finetuner
 from lipsim.core.trainer import Trainer
 from lipsim.eval_linear import LinearEvaluation
 
@@ -125,6 +123,7 @@ def main(config):
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'finetune':
+        from lipsim.core.finetune import Finetuner
         finetuner = Finetuner(config)
         job = executor.submit(finetuner())
         job_id = job.job_id
