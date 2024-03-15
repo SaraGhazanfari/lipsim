@@ -113,6 +113,7 @@ def main(config):
         timeout_min=config.timeout,
     )
     config.dist_url = get_init_file(config.train_dir).as_uri()
+
     if config.mode == 'train':
         from lipsim.core.trainer import Trainer
         trainer = Trainer(config)

@@ -39,7 +39,7 @@ class LinearEvaluation:
         model = L2LipschitzNetworkV2(self.config, self.embed_dim)
         self.model = NormalizedModel(model, means, stds)
         self.model = self.model.cuda()
-        utils.setup_distributed_training(self.world_size, self.rank)
+        utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
         self.model = DistributedDataParallel(
             self.model, device_ids=[self.local_rank], output_device=self.local_rank)
 
