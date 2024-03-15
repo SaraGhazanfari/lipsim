@@ -112,7 +112,7 @@ def main(config):
         slurm_mem='64GB',
         timeout_min=config.timeout,
     )
-    config.dist_url = get_init_file(config.train_dir).as_uri()
+    config.dist_url = get_init_file(os.environ.get('DIST_URL')).as_uri()
 
     if config.mode == 'train':
         from lipsim.core.trainer import Trainer
