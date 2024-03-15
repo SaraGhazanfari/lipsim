@@ -55,7 +55,7 @@ class LinearEvaluation:
             self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
 
         self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
-        Reader = readers_config[self.config.dataset]
+
         train_dataset = EmbeddingDataset(root=self.config.root, split='train')
         val_dataset = EmbeddingDataset(root=self.config.root, split='val')
         self.sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
