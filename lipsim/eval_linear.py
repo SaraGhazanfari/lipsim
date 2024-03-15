@@ -11,7 +11,8 @@ from torch.nn.parallel import DistributedDataParallel
 
 from lipsim.core import utils
 from lipsim.core.data.readers import readers_config
-from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, ClassificationLayer
+from lipsim.core.models.l2_lip.model import NormalizedModel, ClassificationLayer
+from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.utils import N_CLASSES
 
 
@@ -33,7 +34,7 @@ class LinearEvaluation:
 
         means = (0.0000, 0.0000, 0.0000)
         stds = (1.0000, 1.0000, 1.0000)
-        model = L2LipschitzNetwork(self.config, self.embed_dim)
+        model = L2LipschitzNetworkV2(self.config, self.embed_dim)
         self.model = NormalizedModel(model, means, stds)
         self.model = self.model.cuda()
         utils.setup_distributed_training(self.world_size, self.rank)
@@ -51,12 +52,7 @@ class LinearEvaluation:
         self.linear_classifier = DistributedDataParallel(
             self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
 
-        self.optimizer = torch.optim.SGD(
-            self.linear_classifier.parameters(),
-            self.config.lr * self.config.batch_size,  # linear scaling rule
-            momentum=0.9,
-            weight_decay=0,  # we do not apply weight decay
-        )
+        self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
         Reader = readers_config[self.config.dataset]
         self.train_loader, self.train_sampler = Reader(config=self.config, batch_size=self.config.batch_size,
                                                        is_training=True, is_distributed=True).load_dataset()
