@@ -10,9 +10,6 @@ from pathlib import Path
 
 import submitit
 
-from lipsim.core.trainer import Trainer
-from lipsim.eval_linear import LinearEvaluation
-
 # from lipsim.core.evaluate import Evaluator
 
 warnings.filterwarnings("ignore")
@@ -117,6 +114,7 @@ def main(config):
     )
     config.dist_url = get_init_file(config.train_dir).as_uri()
     if config.mode == 'train':
+        from lipsim.core.trainer import Trainer
         trainer = Trainer(config)
         job = executor.submit(trainer)
         job_id = job.job_id
@@ -130,6 +128,7 @@ def main(config):
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'classifier':
+        from lipsim.eval_linear import LinearEvaluation
         linear_eval = LinearEvaluation(config)
         job = executor.submit(linear_eval)
         job_id = job.job_id
