@@ -10,7 +10,7 @@ from pathlib import Path
 
 import submitit
 
-from lipsim.core.evaluate import Evaluator
+
 from lipsim.core.finetune import Finetuner
 from lipsim.core.trainer import Trainer
 from lipsim.eval_linear import LinearEvaluation
@@ -137,12 +137,14 @@ def main(config):
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode == 'knn':
+        from lipsim.core.evaluate import Evaluator
         evaluate = Evaluator(config)
         job = executor.submit(evaluate)
         job_id = job.job_id
         folder = config.train_dir.split('/')[-1]
         print(f"Submitted batch job {job_id} in folder {folder}")
     elif config.mode in eval_mode:
+        from lipsim.core.evaluate import Evaluator
         evaluate = Evaluator(config)
         model = evaluate()
         return model
