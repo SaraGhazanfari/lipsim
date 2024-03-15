@@ -177,9 +177,9 @@ class LinearEvaluation:
             target = target.cuda(non_blocking=True)
 
             # forward
-            with torch.no_grad():
-                output = self.model(inp)
-            output = self.linear_classifier(output)
+            # with torch.no_grad():
+            #     output = self.model(inp)
+            output = self.linear_classifier(inp)
             loss = nn.CrossEntropyLoss()(output, target)
 
             # if self.linear_classifier.module.num_labels >= 5:
