@@ -1,4 +1,6 @@
 import logging
+import pprint
+import socket
 from os.path import join, exists
 
 import submitit
@@ -34,7 +36,22 @@ class LinearEvaluation:
 
         self.message = utils.MessageBuilder()
         utils.setup_logging(self.config, 0)
+        logging.info(self.rank)
+        logging.info(self.local_rank)
+        logging.info(self.num_nodes)
+        logging.info(self.num_tasks)
+
+        torch.cuda.init()
+
         utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
+        if self.local_rank == 0:
+            logging.info(self.config.cmd)
+            pp = pprint.PrettyPrinter(indent=2, compact=True)
+            logging.info(pp.pformat(vars(self.config)))
+            logging.info(f"PyTorch version: {torch.__version__}.")
+            logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
+            logging.info(f"Hostname: {socket.gethostname()}.")
+
         # means = (0.0000, 0.0000, 0.0000)
         # stds = (1.0000, 1.0000, 1.0000)
         # model = L2LipschitzNetworkV2(self.config, self.embed_dim)
@@ -61,23 +78,13 @@ class LinearEvaluation:
         val_dataset = EmbeddingDataset(root=self.config.data_dir, split='val')
         self.sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.config.batch_size, num_workers=4,
-                                       shuffle=False,
-                                       pin_memory=False, sampler=self.sampler)
+                                       shuffle=False, pin_memory=False, sampler=self.sampler)
         self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
                                      pin_memory=False)
 
-    # def load_ckpt(self):
-    #     checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
-    #     get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
-    #     ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
-    #     ckpt_path = join(self.config.train_dir, 'checkpoints', ckpt_name)
-    #     checkpoint = torch.load(ckpt_path)
-    #     new_checkpoint = {}
-    #     for k, v in checkpoint['model_state_dict'].items():
-    #         if 'alpha' not in k:
-    #             new_checkpoint[k] = v
-    #     self.model.load_state_dict(new_checkpoint)
-    #     return self.model
+        param_size = utils.get_parameter_number(self.linear_classifier)
+        if self.local_rank == 0:
+            logging.info(f'Number of parameters to train: {param_size}')
 
     def _save_ckpt(self, step, epoch, final=False, best=False):
         """Save ckpt in train directory."""
@@ -99,7 +106,6 @@ class LinearEvaluation:
             }
             torch.save(state, ckpt_path)
 
-    # @record
     def __call__(self):
         self._init_class_properties()
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
