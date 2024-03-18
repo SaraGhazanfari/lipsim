@@ -133,8 +133,9 @@ class LinearEvaluation:
             torch.cuda.synchronize()
             if idx % 1000 == 999:
                 lr = self.optimizer.param_groups[0]['lr']
-                self.message.add("epoch", epoch, format="4.2f")
-                self.message.add("step", idx, width=5, format=".0f")
+                self.message.add("epoch_id", epoch)
+                self.message.add("epoch", idx/len(self.train_loader), format="4.2f")
+                self.message.add("step", idx+1, width=5, format=".0f")
                 self.message.add("lr", lr, format=".6f")
                 self.message.add("loss", loss, format=".4f")
                 logging.info(self.message.get_message())
