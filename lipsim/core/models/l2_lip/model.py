@@ -75,8 +75,8 @@ class ClassificationLayer(nn.Module):
         super(ClassificationLayer, self).__init__()
         self.config = config
         self.linear_head = list()
-        # for _ in range(3):
-        #     self.linear_head.append(SDPBasedLipschitzLinearLayer(embed_dim, config.dense_inner_dim))
+        for _ in range(3):
+            self.linear_head.append(SDPBasedLipschitzLinearLayer(embed_dim, config.dense_inner_dim))
 
         self.linear_head.append(LinearNormalized(embed_dim, n_classes))
         self.linear_head = nn.Sequential(*self.linear_head)
