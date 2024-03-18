@@ -67,14 +67,15 @@ class LinearEvaluation:
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
-        self.linear_classifier = self.linear_classifier.cuda()
-
-        self.linear_classifier = DistributedDataParallel(
-
-            self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
-        param_size = utils.get_parameter_number(self.linear_classifier)
         if self.local_rank == 0:
+            param_size = utils.get_parameter_number(self.linear_classifier)
             logging.info(f'Number of parameters to train: {param_size}')
+
+        self.linear_classifier = self.linear_classifier.cuda()
+        self.linear_classifier = DistributedDataParallel(self.linear_classifier, device_ids=[self.local_rank],
+                                                         output_device=self.local_rank)
+
+
 
         self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
 
