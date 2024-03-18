@@ -15,7 +15,7 @@ from lipsim.core.attack.general_attack import GeneralAttack
 from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
-from lipsim.core.eval_knn import KNNEval
+from lipsim.core.eval_knn import KNNEval, TempKNNEval
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric, LPIPSMetric, \
     DISTSMetric
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
@@ -127,7 +127,7 @@ class Evaluator:
         elif self.config.mode == 'lpips':
             self.lpips_eval()
         elif self.config.mode == 'knn':
-            KNNEval(self.config, self.perceptual_metric.backbone).knn_classifier()
+            TempKNNEval(self.config, self.perceptual_metric.backbone).knn_classifier()
 
         logging.info('Done with batched inference.')
 
