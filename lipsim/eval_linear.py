@@ -120,7 +120,7 @@ class LinearEvaluation:
         self.scheduler = CosineAnnealingWarmupRestarts(optimizer=self.optimizer, max_lr=self.config.lr,
                                                        min_lr=0,
                                                        first_cycle_steps=num_steps,
-                                                       warmup_steps=num_steps * 5 / self.config.epochs)
+                                                       warmup_steps=num_steps * 10 / self.config.epochs)
         for epoch in range(0, self.config.epochs):
             self.sampler.set_epoch(epoch)
             self.train(epoch)
