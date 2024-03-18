@@ -215,6 +215,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_channels", type=int, default=30)
     parser.add_argument("--depth_linear", type=int, default=5)
     parser.add_argument("--n_features", type=int, default=2048)
+    parser.add_argument("--dense_inner_dim", type=int, default=2048)
     parser.add_argument("--conv_size", type=int, default=5)
     parser.add_argument("--init", type=str, default='xavier_normal')
 
