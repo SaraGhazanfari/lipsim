@@ -1,4 +1,6 @@
-import glob
+import logging
+from os.path import join, exists
+
 import logging
 from os.path import join, exists
 
@@ -12,8 +14,7 @@ from tqdm import tqdm
 
 from lipsim.core import utils
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
-from lipsim.core.models.l2_lip.model import NormalizedModel, ClassificationLayer
-from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
+from lipsim.core.models.l2_lip.model import ClassificationLayer
 from lipsim.core.utils import N_CLASSES
 
 
@@ -35,13 +36,13 @@ class LinearEvaluation:
 
         self.message = utils.MessageBuilder()
         utils.setup_logging(self.config, 0)
-
-        means = (0.0000, 0.0000, 0.0000)
-        stds = (1.0000, 1.0000, 1.0000)
-        model = L2LipschitzNetworkV2(self.config, self.embed_dim)
+        utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
+        # means = (0.0000, 0.0000, 0.0000)
+        # stds = (1.0000, 1.0000, 1.0000)
+        # model = L2LipschitzNetworkV2(self.config, self.embed_dim)
+        #
         # self.model = NormalizedModel(model, means, stds)
         # self.model = self.model.cuda()
-        # utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
         # self.model = DistributedDataParallel(
         #     self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         #
@@ -134,8 +135,8 @@ class LinearEvaluation:
             if idx % 1000 == 999:
                 lr = self.optimizer.param_groups[0]['lr']
                 self.message.add("epoch_id", epoch)
-                self.message.add("epoch", idx/len(self.train_loader), format="4.2f")
-                self.message.add("step", idx+1, width=5, format=".0f")
+                self.message.add("epoch", idx / len(self.train_loader), format="4.2f")
+                self.message.add("step", idx + 1, width=5, format=".0f")
                 self.message.add("lr", lr, format=".6f")
                 self.message.add("loss", loss, format=".4f")
                 logging.info(self.message.get_message())
