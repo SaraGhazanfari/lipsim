@@ -6,7 +6,7 @@ import torch.nn as nn
 from torchvision.transforms import Normalize
 
 from lipsim.core.models.dists.dists_model import DISTS
-from lipsim.core.models.l2_lip.layers import PoolingLinear, PaddingChannels
+from lipsim.core.models.l2_lip.layers import PoolingLinear, PaddingChannels, LinearNormalized
 from lipsim.core.models.l2_lip.layers import SDPBasedLipschitzConvLayer, SDPBasedLipschitzLinearLayer
 
 
@@ -74,10 +74,15 @@ class ClassificationLayer(nn.Module):
     def __init__(self, config, embed_dim, n_classes):
         super(ClassificationLayer, self).__init__()
         self.config = config
-        self.finetuning_layer = SDPBasedLipschitzLinearLayer(embed_dim, n_classes)
+        self.linear_head = list()
+        for _ in range(self.n_dense):
+            self.linear_head.append(SDPBasedLipschitzLinearLayer(embed_dim, config.dense_inner_dim))
+
+        self.linear_head.append(LinearNormalized(embed_dim, n_classes))
+        self.linear_head = nn.Sequential(*self.linear_head)
 
     def forward(self, x):
-        return self.finetuning_layer(x)
+        return self.linear_head(x)
 
 
 class LPIPSMetric:

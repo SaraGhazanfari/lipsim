@@ -1,5 +1,3 @@
-import logging
-import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -178,3 +176,13 @@ class PoolingLinear(nn.Module):
         elif self.agg == "max":
             out, _ = out.max(axis=2)
         return out
+
+
+class LinearNormalized(nn.Linear):
+
+    def __init__(self, in_features, out_features, bias=True):
+        super(LinearNormalized, self).__init__(in_features, out_features, bias)
+
+    def forward(self, x):
+        self.Q = F.normalize(self.weight, p=2, dim=1)
+        return F.linear(x, self.Q, self.bias)

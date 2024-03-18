@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 from lipsim.core import utils
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
-from lipsim.core.data.readers import readers_config
 from lipsim.core.models.l2_lip.model import NormalizedModel, ClassificationLayer
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.utils import N_CLASSES
