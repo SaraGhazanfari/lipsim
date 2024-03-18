@@ -8,8 +8,6 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-# from dreamsim.model import download_weights, dreamsim
-# from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from lipsim.core import utils
@@ -18,7 +16,6 @@ from lipsim.core.data.bapps_dataset import BAPPSDataset
 from lipsim.core.data.night_dataset import NightDataset
 from lipsim.core.data.readers import readers_config
 from lipsim.core.eval_knn import KNNEval
-from lipsim.core.models.dreamsim.model import download_weights, dreamsim
 from lipsim.core.models.l2_lip.model import L2LipschitzNetwork, NormalizedModel, PerceptualMetric, LPIPSMetric, \
     DISTSMetric
 from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
@@ -69,9 +66,6 @@ class Evaluator:
         '''Run evaluation of model or eval under attack'''
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-        download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
-        self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
-                                          cache_dir='./checkpoints', device=self.device)
         cudnn.benchmark = True
 
         # create a mesage builder for logging
@@ -94,7 +88,11 @@ class Evaluator:
         # Different perceptual metrics used while evaluation
 
         if self.config.target == 'dreamsim':
+            from lipsim.core.models.dreamsim.model import download_weights, dreamsim
             print('dreamsim is loading as perceputal metric...')
+            download_weights(cache_dir='./checkpoints', dreamsim_type=self.config.teacher_model_name)
+            self.dreamsim_model, _ = dreamsim(pretrained=True, dreamsim_type=self.config.teacher_model_name,
+                                              cache_dir='./checkpoints', device=self.device)
             self.perceptual_metric = PerceptualMetric(backbone=self.dreamsim_model.embed,
                                                       requires_bias=self.config.requires_bias, n_classes=self.n_classes)
         elif self.config.target == 'lpips':
