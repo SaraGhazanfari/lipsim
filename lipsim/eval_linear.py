@@ -131,7 +131,7 @@ class LinearEvaluation:
             loss.backward()
             self.optimizer.step()
             torch.cuda.synchronize()
-            if self.config.frequency_log_steps % idx == 0:
+            if idx % self.config.frequency_log_steps == 0:
                 lr = self.optimizer.param_groups[0]['lr']
                 self.message.add("epoch", epoch, format="4.2f")
                 self.message.add("step", idx, width=5, format=".0f")
