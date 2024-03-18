@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from lipsim.core import utils
+from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
 from lipsim.core.models.l2_lip.model import ClassificationLayer
 from lipsim.core.utils import N_CLASSES
@@ -59,10 +60,10 @@ class LinearEvaluation:
 
         self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
 
-        train_dataset = EmbeddingDataset(root=self.config.data_dir, split='train')
+        self.train_dataset = EmbeddingDataset(root=self.config.data_dir, split='train')
         val_dataset = EmbeddingDataset(root=self.config.data_dir, split='val')
-        self.sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        self.train_loader = DataLoader(train_dataset, batch_size=self.config.batch_size, num_workers=4,
+        self.sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
+        self.train_loader = DataLoader(self.train_dataset, batch_size=self.config.batch_size, num_workers=4,
                                        shuffle=False,
                                        pin_memory=False, sampler=self.sampler)
         self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
@@ -107,11 +108,16 @@ class LinearEvaluation:
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
         self.saved_ckpts = set([0])
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
+        num_steps = (self.config.epochs * len(self.train_dataset) // (
+                self.config.batch_size * torch.cuda.device_count()))
+        self.scheduler = CosineAnnealingWarmupRestarts(optimizer=self.optimizer, max_lr=self.config.lr,
+                                                       min_lr=0,
+                                                       first_cycle_steps=num_steps,
+                                                       warmup_steps=num_steps * 5 / self.config.epochs)
         for epoch in range(0, self.config.epochs):
             self.sampler.set_epoch(epoch)
             self.train(epoch)
-            scheduler.step()
+
             if epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1:
                 acc1, loss = self.evaluate()
                 self.message.add("epoch", epoch, format="4.2f")
@@ -131,6 +137,7 @@ class LinearEvaluation:
             loss = nn.CrossEntropyLoss()(output, target)
             loss.backward()
             self.optimizer.step()
+            self.scheduler.step()
             torch.cuda.synchronize()
             if idx % 1000 == 999:
                 lr = self.optimizer.param_groups[0]['lr']
