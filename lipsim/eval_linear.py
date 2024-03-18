@@ -1,7 +1,6 @@
 import glob
-import json
+import logging
 from os.path import join, exists
-from pathlib import Path
 
 import submitit
 import torch
@@ -9,6 +8,7 @@ import torch.backends.cudnn as cudnn
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from lipsim.core import utils
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
@@ -32,6 +32,9 @@ class LinearEvaluation:
         self.ngpus = torch.cuda.device_count()
         self.world_size = self.num_nodes * self.ngpus
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
+
+        self.message = utils.MessageBuilder()
+        utils.setup_logging(self.config, 0)
 
         means = (0.0000, 0.0000, 0.0000)
         stds = (1.0000, 1.0000, 1.0000)
@@ -63,7 +66,6 @@ class LinearEvaluation:
                                        pin_memory=False, sampler=self.sampler)
         self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
                                      pin_memory=False)
-        self.metric_logger = utils.MetricLogger(delimiter="  ")
 
     def load_ckpt(self):
         checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
@@ -104,97 +106,46 @@ class LinearEvaluation:
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
         self.saved_ckpts = set([0])
-        best_acc = 0
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, self.config.epochs, eta_min=0)
-        print(self.config.epochs)
         for epoch in range(0, self.config.epochs):
             self.sampler.set_epoch(epoch)
-            train_stats = self.train(epoch)
+            self.train(epoch)
             scheduler.step()
-
-            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                         'epoch': epoch}
             if epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1:
-                test_stats = self.evaluate()
-                print(
-                    f"Accuracy at epoch {epoch} of the network on the test images: {test_stats['acc1']:.1f}%")
-                best_acc = max(best_acc, test_stats["acc1"])
-                print(f'Max accuracy so far: {best_acc:.2f}%')
-                log_stats = {**{k: v for k, v in log_stats.items()},
-                             **{f'test_{k}': v for k, v in test_stats.items()}}
-
-            with (Path(self.train_dir) / "log.txt").open("a") as f:
-                f.write(json.dumps(log_stats) + "\n")
+                acc1, loss = self.evaluate()
+                self.message.add("epoch", epoch, format="4.2f")
+                self.message.add("loss", loss, format=".4f")
+                self.message.add("acc", acc1, format=".4f")
+                logging.info(self.message.get_message())
             self._save_ckpt(step=1, epoch=epoch)
-        print("Training of the supervised linear classifier on frozen features completed.\n"
-              "Top-1 test accuracy: {acc:.1f}".format(acc=best_acc))
         self._save_ckpt(step=1, epoch=self.config.epochs, final=True)
 
     def train(self, epoch):
         self.linear_classifier.train()
-        self.metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
-        header = 'Epoch: [{}]'.format(epoch)
-        for (inp, target) in self.metric_logger.log_every(self.train_loader, 20, header):
+        for idx, (inp, target) in tqdm(enumerate(self.train_loader)):
             self.optimizer.zero_grad()
-            # move to gpu
-            # inp = inp[:, 0, :, :, :].squeeze(1)
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
-
-            # forward
-            # with torch.no_grad():
-            #     output = self.model(inp)
-
             output = self.linear_classifier(inp)
-
-            # compute cross entropy loss
             loss = nn.CrossEntropyLoss()(output, target)
-
-            # compute the gradients
             loss.backward()
-
-            # step
             self.optimizer.step()
-
-            # log
             torch.cuda.synchronize()
-            self.metric_logger.update(loss=loss.item())
-            self.metric_logger.update(lr=self.optimizer.param_groups[0]["lr"])
-        # gather the stats from all processes
-        self.metric_logger.synchronize_between_processes()
-        print("Averaged stats:", self.metric_logger)
-        return {k: meter.global_avg for k, meter in self.metric_logger.meters.items()}
+            if self.config.frequency_log_steps % idx == 0:
+                lr = self.optimizer.param_groups[0]['lr']
+                self.message.add("epoch", epoch, format="4.2f")
+                self.message.add("step", idx, width=5, format=".0f")
+                self.message.add("lr", lr, format=".6f")
+                self.message.add("loss", loss, format=".4f")
+                logging.info(self.message.get_message())
 
     @torch.no_grad()
     def evaluate(self):
         self.linear_classifier.eval()
-
         for inp, target in self.val_loader:
-            # self.val_sampler.set_epoch(0)
-            # move to gpu
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
-
-            # forward
-            # with torch.no_grad():
-            #     output = self.model(inp)
             output = self.linear_classifier(inp)
             loss = nn.CrossEntropyLoss()(output, target)
-
-            # if self.linear_classifier.module.num_labels >= 5:
-            #     acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-            # else:
             acc1, = utils.accuracy(output, target, topk=(1,))
-
-            batch_size = inp.shape[0]
-            self.metric_logger.update(loss=loss.item())
-            self.metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-            # if self.linear_classifier.module.num_labels >= 5:
-            #     self.metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        # if self.linear_classifier.module.num_labels >= 5:
-        #     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-        #           .format(top1=self.metric_logger.acc1, top5=self.metric_logger.acc5, losses=self.metric_logger.loss))
-        # else:
-        print('* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}'
-              .format(top1=self.metric_logger.acc1, losses=self.metric_logger.loss))
-        return {k: meter.global_avg for k, meter in self.metric_logger.meters.items()}
+        return acc1, loss
