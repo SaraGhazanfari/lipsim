@@ -72,10 +72,11 @@ class LinearEvaluation:
             logging.info(f'Number of parameters to train: {param_size}')
 
         self.linear_classifier = self.linear_classifier.cuda()
+        logging.info(f"Distributed Training on {self.local_rank} gpus")
         self.linear_classifier = DistributedDataParallel(self.linear_classifier, device_ids=[self.local_rank],
                                                          output_device=self.local_rank)
 
-        logging.info(f"Distributed Training on {self.local_rank} gpub")
+
 
         self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
         if self.local_rank == 0:
