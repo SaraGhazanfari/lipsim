@@ -63,7 +63,7 @@ class LinearEvaluation:
         #
         # self.model = self.load_ckpt()
         # self.model = self.model.eval()
-
+        torch.cuda.set_device(self.local_rank)
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
                                                      n_classes=1000)
@@ -75,8 +75,6 @@ class LinearEvaluation:
         logging.info(f"Distributed Training on {self.local_rank} gpus")
         self.linear_classifier = DistributedDataParallel(self.linear_classifier, device_ids=[self.local_rank],
                                                          output_device=self.local_rank)
-
-
 
         self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
         if self.local_rank == 0:
