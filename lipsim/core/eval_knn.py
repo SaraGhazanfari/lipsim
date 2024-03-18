@@ -6,9 +6,7 @@ from torch import nn
 from torch.backends import cudnn
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
-
 from lipsim.core import utils
-from lipsim.core.data.embedding_dataset import EmbeddingDataset
 
 
 class ReturnIndexDataset(ImageFolder):
@@ -43,9 +41,9 @@ class KNNEval:
             transforms.ToTensor(),
             # pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
-        dataset_train = EmbeddingDataset(root=self.config.data_dir, split='train')
+        dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
         self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
-        dataset_val = EmbeddingDataset(root=self.config.data_dir, split='val')
+        dataset_val = ReturnIndexDataset(os.path.join(self.config.data_dir, "val"), transform=transform)
         self.train_loader = torch.utils.data.DataLoader(
             dataset_train,
             batch_size=self.config.batch_size,
@@ -103,10 +101,10 @@ class KNNEval:
         features = None
         # start_index = 0
 
-        for feats, index in metric_logger.log_every(data_loader, 10):
-            feats = feats.to('cuda:0')
+        for samples, index in metric_logger.log_every(data_loader, 10):
+            samples = samples.to('cuda:0')
             index = index.to('cuda:0')
-            # feats = self.model(samples).clone()
+            feats = self.model(samples).clone()
 
             if features is None:  # dist.get_rank() == 0 and
                 features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
