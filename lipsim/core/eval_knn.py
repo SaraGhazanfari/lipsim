@@ -4,6 +4,7 @@ import os
 import torch
 from torch import nn
 from torch.backends import cudnn
+from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 
@@ -11,7 +12,7 @@ from lipsim.core import utils
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
 
 
-class ReturnIndexDataset(ImageFolder):
+class ReturnIndexDataset(EmbeddingDataset):
     def __getitem__(self, idx):
         img, lab = super(ReturnIndexDataset, self).__getitem__(idx)
         return img, idx
@@ -46,7 +47,7 @@ class KNNEval:
         dataset_train = ReturnIndexDataset(os.path.join(self.config.data_dir, "train"), transform=transform)
         self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
         dataset_val = ReturnIndexDataset(os.path.join(self.config.data_dir, "val"), transform=transform)
-        self.train_loader = torch.utils.data.DataLoader(
+        self.train_loader = DataLoader(
             dataset_train,
             batch_size=self.config.batch_size,
             num_workers=1,
@@ -54,7 +55,7 @@ class KNNEval:
             pin_memory=True,
             drop_last=False,
         )
-        self.test_loader = torch.utils.data.DataLoader(
+        self.test_loader = DataLoader(
             dataset_val,
             batch_size=self.config.batch_size,
             num_workers=1,
@@ -101,7 +102,6 @@ class KNNEval:
     def extract_features(self, data_loader):
         metric_logger = utils.MetricLogger(delimiter="  ")
         features = None
-        # start_index = 0
 
         for samples, index in metric_logger.log_every(data_loader, 10):
             samples = samples.to('cuda:0')
@@ -113,6 +113,7 @@ class KNNEval:
                 features = features.to('cuda:0')
                 logging.info(f"Storing features into tensor of shape {features.shape}")
             features[index, :] = feats.to('cuda:0')
+
         return features
 
     def knn_classifier(self):
@@ -187,9 +188,9 @@ class TempKNNEval:
         # self.model = nn.DataParallel(self.model, device_ids=range(torch.cuda.device_count()))
 
     def _load_dataloader(self):
-        dataset_train = EmbeddingDataset(self.config.data_dir, split='train')
+        dataset_train = ReturnIndexDataset(self.config.data_dir, split='train')
         self.sampler = None  # torch.utils.data.DistributedSampler(dataset_train, shuffle=False)
-        dataset_val = EmbeddingDataset(self.config.data_dir, split='val')
+        dataset_val = ReturnIndexDataset(self.config.data_dir, split='val')
         self.train_loader = torch.utils.data.DataLoader(
             dataset_train,
             batch_size=self.config.batch_size,
