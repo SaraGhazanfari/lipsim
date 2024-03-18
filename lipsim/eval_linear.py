@@ -1,9 +1,6 @@
 import logging
 from os.path import join, exists
 
-import logging
-from os.path import join, exists
-
 import submitit
 import torch
 import torch.backends.cudnn as cudnn
@@ -118,7 +115,8 @@ class LinearEvaluation:
             self.sampler.set_epoch(epoch)
             self.train(epoch)
 
-            if epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1:
+            if (
+                    epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1) and self.local_rank == 0:
                 acc1, loss = self.evaluate()
                 self.message.add("epoch", epoch, format="4.2f")
                 self.message.add("loss", loss, format=".4f")
@@ -139,7 +137,7 @@ class LinearEvaluation:
             self.optimizer.step()
             self.scheduler.step()
             torch.cuda.synchronize()
-            if idx % 1000 == 999:
+            if idx % 1000 == 999 and self.local_rank == 0:
                 lr = self.optimizer.param_groups[0]['lr']
                 self.message.add("epoch_id", epoch)
                 self.message.add("epoch", idx / len(self.train_loader), format="4.2f")
