@@ -28,7 +28,7 @@ class LinearEvaluation:
         self.num_nodes = int(job_env.num_nodes)
         self.num_tasks = int(job_env.num_tasks)
         self.is_master = bool(self.rank == 0)
-        self.ngpus = torch.cuda.device_count()
+        self.ngpus = self.config.ngpus
         self.world_size = self.num_nodes * self.ngpus
         self.embed_dim = N_CLASSES[self.config.teacher_model_name]
 
@@ -105,8 +105,7 @@ class LinearEvaluation:
         print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(self.config)).items())))
         cudnn.benchmark = True
         self.saved_ckpts = set([0])
-        num_steps = (self.config.epochs * len(self.train_dataset) // (
-                self.config.batch_size * torch.cuda.device_count()))
+        num_steps = (self.config.epochs * len(self.train_dataset) // (self.config.batch_size * self.world_size))
         self.scheduler = CosineAnnealingWarmupRestarts(optimizer=self.optimizer, max_lr=self.config.lr,
                                                        min_lr=0,
                                                        first_cycle_steps=num_steps,
@@ -126,7 +125,7 @@ class LinearEvaluation:
         self._save_ckpt(step=1, epoch=self.config.epochs, final=True)
 
     def train(self, epoch):
-        num_steps = len(self.train_dataset) // (self.config.batch_size * torch.cuda.device_count())
+        num_steps = len(self.train_dataset) // (self.config.batch_size * self.world_size)
         self.linear_classifier.train()
         for idx, (inp, target) in tqdm(enumerate(self.train_loader)):
             self.optimizer.zero_grad()
