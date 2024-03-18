@@ -136,6 +136,7 @@ class LinearEvaluation:
         self.metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
         header = 'Epoch: [{}]'.format(epoch)
         for (inp, target) in self.metric_logger.log_every(self.train_loader, 20, header):
+            self.optimizer.zero_grad()
             # move to gpu
             # inp = inp[:, 0, :, :, :].squeeze(1)
             inp = inp.cuda(non_blocking=True)
@@ -151,7 +152,6 @@ class LinearEvaluation:
             loss = nn.CrossEntropyLoss()(output, target)
 
             # compute the gradients
-            self.optimizer.zero_grad()
             loss.backward()
 
             # step
