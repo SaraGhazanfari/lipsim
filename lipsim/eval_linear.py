@@ -126,6 +126,7 @@ class LinearEvaluation:
         self._save_ckpt(step=1, epoch=self.config.epochs, final=True)
 
     def train(self, epoch):
+        num_steps = len(self.train_dataset) // (self.config.batch_size * torch.cuda.device_count())
         self.linear_classifier.train()
         for idx, (inp, target) in tqdm(enumerate(self.train_loader)):
             self.optimizer.zero_grad()
@@ -137,7 +138,8 @@ class LinearEvaluation:
             self.optimizer.step()
             self.scheduler.step()
             torch.cuda.synchronize()
-            if idx % 1000 == 999 and self.local_rank == 0:
+
+            if idx % int(num_steps / 10) == int(num_steps / 10) - 1 and self.local_rank == 0:
                 lr = self.optimizer.param_groups[0]['lr']
                 self.message.add("epoch_id", epoch)
                 self.message.add("epoch", idx / len(self.train_loader), format="4.2f")
