@@ -14,7 +14,7 @@ from tqdm import tqdm
 from lipsim.core import utils
 from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
 from lipsim.core.data.embedding_dataset import EmbeddingDataset
-from lipsim.core.models.l2_lip.model import ClassificationLayer
+from lipsim.core.models.l2_lip.model import LinearClassifier
 from lipsim.core.utils import N_CLASSES
 
 
@@ -64,9 +64,7 @@ class LinearEvaluation:
         # self.model = self.load_ckpt()
         # self.model = self.model.eval()
         torch.cuda.set_device(self.local_rank)
-        self.linear_classifier = ClassificationLayer(self.config,
-                                                     embed_dim=N_CLASSES[self.config.teacher_model_name],
-                                                     n_classes=1000)
+        self.linear_classifier = LinearClassifier(dim=N_CLASSES[self.config.teacher_model_name])
         if self.local_rank == 0:
             param_size = utils.get_parameter_number(self.linear_classifier)
             logging.info(f'Number of parameters to train: {param_size}')
