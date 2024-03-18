@@ -85,6 +85,16 @@ class ClassificationLayer(nn.Module):
         return self.linear_head(x)
 
 
+class LipschitzClassifier(nn.Module):
+    def __init__(self, backbone, classifier):
+        super(LipschitzClassifier, self).__init__()
+        self.backbone = backbone
+        self.classifier = classifier
+
+    def forward(self, x):
+        return self.classifier(self.backbone(x))
+
+
 class LinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
 

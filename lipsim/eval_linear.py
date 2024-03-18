@@ -1,4 +1,6 @@
+import glob
 import logging
+import os
 import pprint
 import socket
 from os.path import join, exists
@@ -9,12 +11,14 @@ import torch.backends.cudnn as cudnn
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
+from torchvision.datasets import ImageFolder
+from torchvision.transforms import transforms
 from tqdm import tqdm
 
 from lipsim.core import utils
 from lipsim.core.cosine_scheduler import CosineAnnealingWarmupRestarts
-from lipsim.core.data.embedding_dataset import EmbeddingDataset
-from lipsim.core.models.l2_lip.model import LinearClassifier
+from lipsim.core.models.l2_lip.model import NormalizedModel, ClassificationLayer, LipschitzClassifier
+from lipsim.core.models.l2_lip.model_v2 import L2LipschitzNetworkV2
 from lipsim.core.utils import N_CLASSES
 
 
@@ -52,34 +56,41 @@ class LinearEvaluation:
             logging.info(f"NCCL Version {torch.cuda.nccl.version()}")
             logging.info(f"Hostname: {socket.gethostname()}.")
 
-        # means = (0.0000, 0.0000, 0.0000)
-        # stds = (1.0000, 1.0000, 1.0000)
-        # model = L2LipschitzNetworkV2(self.config, self.embed_dim)
-        #
-        # self.model = NormalizedModel(model, means, stds)
-        # self.model = self.model.cuda()
-        # self.model = DistributedDataParallel(
-        #     self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-        #
-        # self.model = self.load_ckpt()
-        # self.model = self.model.eval()
+        means = (0.0000, 0.0000, 0.0000)
+        stds = (1.0000, 1.0000, 1.0000)
+        model = L2LipschitzNetworkV2(self.config, self.embed_dim)
+
+        self.model = NormalizedModel(model, means, stds)
+        self.model = self.model.cuda()
+        self.model = DistributedDataParallel(
+            self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+
+        self.model = self.load_ckpt()
+        self.model = self.model.eval()
         torch.cuda.set_device(self.local_rank)
-        self.linear_classifier = LinearClassifier(dim=N_CLASSES[self.config.teacher_model_name])
+        self.linear_classifier = ClassificationLayer(self.config,
+                                                     embed_dim=N_CLASSES[self.config.teacher_model_name],
+                                                     n_classes=1000)
         if self.local_rank == 0:
             param_size = utils.get_parameter_number(self.linear_classifier)
             logging.info(f'Number of parameters to train: {param_size}')
 
         self.linear_classifier = self.linear_classifier.cuda()
         logging.info(f"Distributed Training on {self.local_rank} gpus")
-        self.linear_classifier = DistributedDataParallel(self.linear_classifier, device_ids=[self.local_rank],
-                                                         output_device=self.local_rank)
+        self.lipschitz_classifier = LipschitzClassifier(backbone=self.model, classifier=self.linear_classifier)
+        self.lipschitz_classifier = DistributedDataParallel(self.lipschitz_classifier, device_ids=[self.local_rank],
+                                                            output_device=self.local_rank)
 
-        self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
+        self.optimizer = utils.get_optimizer(self.config, self.lipschitz_classifier.parameters())
         if self.local_rank == 0:
             logging.info(f'Optimizer created for the classifier')
-
-        self.train_dataset = EmbeddingDataset(root=self.config.data_dir, split='train')
-        val_dataset = EmbeddingDataset(root=self.config.data_dir, split='val')
+        standard_transform = transforms.Compose([
+            transforms.Resize(256, interpolation=3),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+        ])
+        self.train_dataset = ImageFolder(root=os.path.join(self.config.data_dir, 'train'), transform=standard_transform)
+        val_dataset = ImageFolder(root=os.path.join(self.config.data_dir, 'val'), transform=standard_transform)
         self.sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.config.batch_size, num_workers=4,
                                        shuffle=False, pin_memory=False, sampler=self.sampler)
@@ -103,7 +114,7 @@ class LinearEvaluation:
             state = {
                 'epoch': epoch,
                 'global_step': step,
-                'model_state_dict': self.linear_classifier.state_dict(),
+                'model_state_dict': self.lipschitz_classifier.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 # 'scheduler': self.scheduler.state_dict()
             }
@@ -140,7 +151,7 @@ class LinearEvaluation:
             self.optimizer.zero_grad()
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
-            output = self.linear_classifier(inp)
+            output = self.lipschitz_classifier(inp)
             loss = nn.CrossEntropyLoss()(output, target)
             loss.backward()
             self.optimizer.step()
@@ -166,3 +177,16 @@ class LinearEvaluation:
             loss = nn.CrossEntropyLoss()(output, target)
             acc1, = utils.accuracy(output, target, topk=(1,))
         return acc1, loss
+
+    def load_ckpt(self):
+        checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
+        get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
+        ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
+        ckpt_path = join(self.config.train_dir, 'checkpoints', ckpt_name)
+        checkpoint = torch.load(ckpt_path)
+        new_checkpoint = {}
+        for k, v in checkpoint['model_state_dict'].items():
+            if 'alpha' not in k:
+                new_checkpoint[k] = v
+        self.model.load_state_dict(new_checkpoint)
+        return self.model
