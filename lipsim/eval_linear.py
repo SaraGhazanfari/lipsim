@@ -70,7 +70,11 @@ class LinearEvaluation:
         self.linear_classifier = self.linear_classifier.cuda()
 
         self.linear_classifier = DistributedDataParallel(
+
             self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
+        param_size = utils.get_parameter_number(self.linear_classifier)
+        if self.local_rank == 0:
+            logging.info(f'Number of parameters to train: {param_size}')
 
         self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
 
@@ -82,9 +86,8 @@ class LinearEvaluation:
         self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
                                      pin_memory=False)
 
-        param_size = utils.get_parameter_number(self.linear_classifier)
         if self.local_rank == 0:
-            logging.info(f'Number of parameters to train: {param_size}')
+            logging.info(f"Using dataset: {self.config.dataset} with size:{len(self.train_dataset)}")
 
     def _save_ckpt(self, step, epoch, final=False, best=False):
         """Save ckpt in train directory."""
