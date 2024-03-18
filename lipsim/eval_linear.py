@@ -39,14 +39,14 @@ class LinearEvaluation:
         means = (0.0000, 0.0000, 0.0000)
         stds = (1.0000, 1.0000, 1.0000)
         model = L2LipschitzNetworkV2(self.config, self.embed_dim)
-        self.model = NormalizedModel(model, means, stds)
-        self.model = self.model.cuda()
-        utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
-        self.model = DistributedDataParallel(
-            self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-
-        self.model = self.load_ckpt()
-        self.model = self.model.eval()
+        # self.model = NormalizedModel(model, means, stds)
+        # self.model = self.model.cuda()
+        # utils.setup_distributed_training(self.world_size, self.rank, self.config.dist_url)
+        # self.model = DistributedDataParallel(
+        #     self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+        #
+        # self.model = self.load_ckpt()
+        # self.model = self.model.eval()
 
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
@@ -56,7 +56,7 @@ class LinearEvaluation:
         self.linear_classifier = DistributedDataParallel(
             self.linear_classifier, device_ids=[self.local_rank], output_device=self.local_rank)
 
-        self.optimizer = utils.get_optimizer(self.config, self.model.parameters())
+        self.optimizer = utils.get_optimizer(self.config, self.linear_classifier.parameters())
 
         train_dataset = EmbeddingDataset(root=self.config.data_dir, split='train')
         val_dataset = EmbeddingDataset(root=self.config.data_dir, split='val')
@@ -67,18 +67,18 @@ class LinearEvaluation:
         self.val_loader = DataLoader(val_dataset, batch_size=self.config.batch_size, num_workers=4, shuffle=False,
                                      pin_memory=False)
 
-    def load_ckpt(self):
-        checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
-        get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
-        ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
-        ckpt_path = join(self.config.train_dir, 'checkpoints', ckpt_name)
-        checkpoint = torch.load(ckpt_path)
-        new_checkpoint = {}
-        for k, v in checkpoint['model_state_dict'].items():
-            if 'alpha' not in k:
-                new_checkpoint[k] = v
-        self.model.load_state_dict(new_checkpoint)
-        return self.model
+    # def load_ckpt(self):
+    #     checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
+    #     get_model_id = lambda x: int(x.strip('.pth').strip('model.ckpt-'))
+    #     ckpt_name = sorted([ckpt.split('/')[-1] for ckpt in checkpoints], key=get_model_id)[-1]
+    #     ckpt_path = join(self.config.train_dir, 'checkpoints', ckpt_name)
+    #     checkpoint = torch.load(ckpt_path)
+    #     new_checkpoint = {}
+    #     for k, v in checkpoint['model_state_dict'].items():
+    #         if 'alpha' not in k:
+    #             new_checkpoint[k] = v
+    #     self.model.load_state_dict(new_checkpoint)
+    #     return self.model
 
     def _save_ckpt(self, step, epoch, final=False, best=False):
         """Save ckpt in train directory."""
@@ -94,7 +94,7 @@ class LinearEvaluation:
             state = {
                 'epoch': epoch,
                 'global_step': step,
-                'model_state_dict': self.model.state_dict(),
+                'model_state_dict': self.linear_classifier.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 # 'scheduler': self.scheduler.state_dict()
             }
