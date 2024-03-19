@@ -185,6 +185,8 @@ class LinearEvaluation:
         for k, v in checkpoint['model_state_dict'].items():
             if 'alpha' not in k:
                 new_checkpoint[k] = v
+            if 'module' in k:
+                new_checkpoint[k.replace('module.', '')] = v
         msg = self.model.load_state_dict(new_checkpoint)
         logging.info(f'The checkpoint {ckpt_name} was loaded with {msg}')
         return self.model
