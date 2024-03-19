@@ -187,6 +187,7 @@ class LinearEvaluation:
                 new_checkpoint[k] = v
             if 'module' in k:
                 new_checkpoint[k.replace('module.', '')] = v
+                del new_checkpoint[k]
         msg = self.model.load_state_dict(new_checkpoint)
         logging.info(f'The checkpoint {ckpt_name} was loaded with {msg}')
         return self.model
