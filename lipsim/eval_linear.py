@@ -96,20 +96,20 @@ class LinearEvaluation:
         if self.local_rank == 0:
             logging.info(f"Using dataset: {self.config.dataset} with size:{len(self.train_dataset)}")
 
-    def _save_ckpt(self, step, epoch, final=False, best=False):
+    def _save_ckpt(self, epoch, final=False, best=False):
         """Save ckpt in train directory."""
         freq_ckpt_epochs = self.config.save_checkpoint_epochs
         if (epoch % freq_ckpt_epochs == 0 and self.is_master and epoch not in self.saved_ckpts) or (
                 final and self.is_master) or best:
             prefix = "model" if not best else "best_model"
-            ckpt_name = f"{prefix}.ckpt-{step}.pth"
+            ckpt_name = f"{prefix}.ckpt-{epoch}.pth"
             ckpt_path = join(self.train_dir, 'checkpoints', ckpt_name)
             if exists(ckpt_path) and not best:
                 return
             self.saved_ckpts.add(epoch)
             state = {
                 'epoch': epoch,
-                'global_step': step,
+                # 'global_step': step,
                 'model_state_dict': self.lipschitz_classifier.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 # 'scheduler': self.scheduler.state_dict()
@@ -137,8 +137,8 @@ class LinearEvaluation:
                 self.message.add("loss", loss, format=".4f")
                 self.message.add("acc", acc1, format=".4f")
                 logging.info(self.message.get_message())
-            self._save_ckpt(step=1, epoch=epoch)
-        self._save_ckpt(step=1, epoch=self.config.epochs, final=True)
+            self._save_ckpt(epoch=epoch)
+        self._save_ckpt(epoch=self.config.epochs, final=True)
 
     def train(self, epoch):
         num_steps = len(self.train_dataset) // (self.config.batch_size * self.world_size)
@@ -150,6 +150,7 @@ class LinearEvaluation:
             output = self.lipschitz_classifier(inp)
             loss = nn.CrossEntropyLoss()(output, target)
             loss.backward()
+            self.process_gradients()
             self.optimizer.step()
             self.scheduler.step()
             torch.cuda.synchronize()
@@ -201,3 +202,6 @@ class LinearEvaluation:
         msg = self.model.load_state_dict(new_checkpoint)
         logging.info(f'The checkpoint {ckpt_name} was loaded with {msg}')
         return self.model
+
+    def process_gradients(self) -> None:
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=100, norm_type=2)
