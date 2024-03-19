@@ -61,7 +61,7 @@ class LinearEvaluation:
         model = L2LipschitzNetworkV2(self.config, self.embed_dim)
 
         self.model = NormalizedModel(model, means, stds)
-        self.model = self.model.cuda()
+
         if self.local_rank == 0:
             self.model = self.load_ckpt()
         torch.cuda.set_device(self.local_rank)
@@ -72,9 +72,8 @@ class LinearEvaluation:
             param_size = utils.get_parameter_number(self.linear_classifier)
             logging.info(f'Number of parameters to train: {param_size}')
 
-        self.linear_classifier = self.linear_classifier.cuda()
         logging.info(f"Distributed Training on {self.local_rank} gpus")
-        self.lipschitz_classifier = LipschitzClassifier(backbone=self.model, classifier=self.linear_classifier)
+        self.lipschitz_classifier = LipschitzClassifier(backbone=self.model, classifier=self.linear_classifier).cuda()
         self.lipschitz_classifier = DistributedDataParallel(self.lipschitz_classifier, device_ids=[self.local_rank],
                                                             output_device=self.local_rank)
 
