@@ -130,8 +130,8 @@ class LinearEvaluation:
             self.sampler.set_epoch(epoch)
             self.train(epoch)
 
-            if (
-                    epoch % self.config.frequency_log_steps == 0 or epoch == self.config.epochs - 1) and self.local_rank == 0:
+            if (epoch % self.config.frequency_log_steps == self.config.frequency_log_steps - 1
+                or epoch == self.config.epochs - 1) and self.local_rank == 0:
                 acc1, loss = self.evaluate()
                 self.message.add("epoch", epoch, format="4.2f")
                 self.message.add("loss", loss, format=".4f")
@@ -161,6 +161,8 @@ class LinearEvaluation:
                 self.message.add("step", idx + 1, width=5, format=".0f")
                 self.message.add("lr", lr, format=".6f")
                 self.message.add("loss", loss, format=".4f")
+                grad_norm = self.compute_gradient_norm()
+                self.message.add("grad", grad_norm, format=".4f")
                 logging.info(self.message.get_message())
 
     @torch.no_grad()
@@ -169,10 +171,19 @@ class LinearEvaluation:
         for inp, target in self.val_loader:
             inp = inp.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
-            output = self.linear_classifier(inp)
+            output = self.lipschitz_classifier(inp)
             loss = nn.CrossEntropyLoss()(output, target)
             acc1, = utils.accuracy(output, target, topk=(1,))
         return acc1, loss
+
+    def compute_gradient_norm(self):
+        grad_norm = 0.
+        for name, p in self.model.named_parameters():
+            if p.grad is None: continue
+            norm = p.grad.detach().data.norm(2)
+            grad_norm += norm.item() ** 2
+        grad_norm = grad_norm ** 0.5
+        return grad_norm
 
     def load_ckpt(self):
         checkpoints = glob.glob(join(self.config.train_dir, 'checkpoints', 'model.ckpt-*.pth'))
