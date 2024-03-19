@@ -154,7 +154,7 @@ class LinearEvaluation:
             self.scheduler.step()
             torch.cuda.synchronize()
 
-            if idx % int(num_steps / 10) == int(num_steps / 10) - 1 and self.local_rank == 0:
+            if idx % int(num_steps / 100) == int(num_steps / 100) - 1 and self.local_rank == 0:
                 lr = self.optimizer.param_groups[0]['lr']
                 self.message.add("epoch_id", epoch)
                 self.message.add("epoch", idx / len(self.train_loader), format="4.2f")
