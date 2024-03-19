@@ -62,11 +62,8 @@ class LinearEvaluation:
 
         self.model = NormalizedModel(model, means, stds)
         self.model = self.model.cuda()
-        self.model = DistributedDataParallel(
-            self.model, device_ids=[self.local_rank], output_device=self.local_rank)
-
-        self.model = self.load_ckpt()
-        self.model = self.model.eval()
+        if self.local_rank == 0:
+            self.model = self.load_ckpt()
         torch.cuda.set_device(self.local_rank)
         self.linear_classifier = ClassificationLayer(self.config,
                                                      embed_dim=N_CLASSES[self.config.teacher_model_name],
@@ -188,5 +185,6 @@ class LinearEvaluation:
         for k, v in checkpoint['model_state_dict'].items():
             if 'alpha' not in k:
                 new_checkpoint[k] = v
-        self.model.load_state_dict(new_checkpoint)
+        msg = self.model.load_state_dict(new_checkpoint)
+        logging.info(f'The checkpoint {ckpt_name} was loaded with {msg}')
         return self.model
