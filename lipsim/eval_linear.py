@@ -204,4 +204,4 @@ class LinearEvaluation:
         return self.model
 
     def process_gradients(self) -> None:
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=50, norm_type=2)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0, norm_type=2)
